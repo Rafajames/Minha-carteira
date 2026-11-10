@@ -721,17 +721,18 @@ let auth=null,db=null,fbUser=null,famId=null,famMembers=1,unsub=null,started=fal
 const INV=new URLSearchParams(location.search).get("f");
 const lsGet=k=>{try{return localStorage.getItem(k)}catch(e){return null}},lsSet=(k,v)=>{try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}};
 const first=u=>((u&&u.displayName)||"").split(" ")[0]||"Eu";
-const ERR={"auth/unauthorized-domain":"Este endereço não está autorizado no Firebase. Adicione rafajames.github.io em Authentication → Configurações → Domínios autorizados.","auth/network-request-failed":"Sem conexão com a internet. Tente de novo.","permission-denied":"Sem permissão. O convite pode ser inválido, ou a família já tem 6 pessoas.","auth/popup-closed-by-user":"","auth/cancelled-popup-request":""};
+const ERR={"auth/unauthorized-domain":"Este endereço não está autorizado no Firebase. Adicione rafajames.github.io em Authentication → Configurações → Domínios autorizados.","auth/network-request-failed":"Sem conexão com a internet. Tente de novo.","permission-denied":"Sem permissão. O convite pode ser inválido, ou a família já tem 6 pessoas.","auth/popup-closed-by-user":"","auth/cancelled-popup-request":"","unavailable":"Não consegui conectar ao banco de dados. Se estiver no Brave, toque no leão da barra de endereço e desative o Shields para este site.","failed-precondition":"O banco de dados ainda não foi criado. No console do Firebase, abra Firestore Database e clique em Criar banco de dados.","not-found":"O banco de dados ainda não foi criado. No console do Firebase, abra Firestore Database e clique em Criar banco de dados.","timeout":"A conexão está demorando demais. Se estiver no Brave, desative o Shields para este site (ícone do leão) e tente de novo. Confira também se o Firestore Database foi criado no console."};
 const errMsg=e=>{const c=e&&e.code;return c in ERR?ERR[c]:`Algo deu errado (${c||e}).`};
 const EMPTY=()=>({...structuredClone(SEED),salario:0,salEsposa:0,pessoais:0,diaADia:0,casa:[],bills:[],dia:[],extra:[],cards:[],acertos:[],reserva:{meta:10000,saldo:0,aportes:[]},settled:false});
 function gate(st,msg=""){
- const g=$("gate");if(st==="off"){g.hidden=true;return}
+ const g=$("gate");if(st==="off"){clearTimeout(gate.t);g.hidden=true;return}
  const head=`<img src="${ICON("money_with_wings")}" alt=""><h1>Minha Carteira</h1>`,err=msg?`<div class="gerr">${esc(msg)}</div>`:"";
  const H={
-  loading:`${head}<div class="spin" role="status" aria-label="Carregando"></div>`,
+  loading:`${head}<div class="spin" role="status" aria-label="Carregando"></div><p>${esc(msg||"Carregando…")}</p>`,
   login:`${head}<p>${INV?"Você foi convidado para uma família. Entre com sua conta Google para participar.":"Organize as contas do mês junto com a sua família."}</p><button class="gbtn p" id="gLogin">Entrar com Google</button>${INV?"":`<button class="gbtn" id="gLocal">Usar sem conta, só neste aparelho</button>`}${err}`,
   nofamily:`${head}<p>Olá, ${esc(first(fbUser))}! Crie a sua família para começar. Depois você envia o link de convite para quem divide as contas com você.</p><button class="gbtn p" id="gSeed">${lsGet(KEY)?"Criar com os dados deste aparelho":"Criar com dados de exemplo"}</button><button class="gbtn" id="gZero">Começar do zero</button><button class="link" id="gOut">Sair da conta</button>${err}`,
-  error:`${head}${err}<button class="gbtn p" id="gRetry">Tentar de novo</button><button class="link" id="gOut">Sair da conta</button>`};
+  error:`${head}${err}<button class="gbtn p" id="gRetry">Tentar de novo</button><button class="gbtn" id="gLocal">Usar sem conta, só neste aparelho</button><button class="link" id="gOut">Sair da conta</button>`};
+ clearTimeout(gate.t);if(st==="loading")gate.t=setTimeout(()=>gate("error",ERR.timeout+(msg?` (parou em: ${msg})`:"")),15000);
  g.innerHTML=`<div class="gcard box">${H[st]}</div>`;g.hidden=false;
  const b=(id,fn)=>{const el=$(id);if(el)el.onclick=fn};
  b("gLogin",login);b("gLocal",useLocal);b("gSeed",()=>createFam(lsGet(KEY)?D:structuredClone(SEED)));b("gZero",()=>createFam(EMPTY()));b("gOut",logout);b("gRetry",()=>location.reload());
@@ -746,7 +747,7 @@ async function login(){
 }
 async function logout(){if(unsub)unsub();lsSet("mc-mode",null);try{await auth.signOut()}catch(e){}location.href=location.pathname}
 async function createFam(data){
- gate("loading");
+ gate("loading","Criando a família…");
  try{
   const d=JSON.parse(JSON.stringify(data));d.n1=first(fbUser);d.uids={y:fbUser.uid};
   const ref=db.collection("families").doc();
@@ -761,7 +762,7 @@ async function join(fid){
  history.replaceState(null,"",location.pathname+location.hash);
 }
 function listen(){
- if(unsub)unsub();let firstSnap=true;
+ if(unsub)unsub();let firstSnap=true;gate("loading","Carregando os dados da família…");
  unsub=db.doc("families/"+famId).onSnapshot(s=>{
   if(!s.exists){famId=null;gate("nofamily","Essa família não existe mais.");return}
   if(!firstSnap&&(dirty||s.metadata.hasPendingWrites))return;
@@ -786,15 +787,15 @@ function bindFam(){
 }
 function boot(){
  if(typeof firebase==="undefined"){MODE="local";start();if(lsGet("mc-mode")!=="local")toast("Sem conexão com o servidor. Usando modo local.");return}
- firebase.initializeApp(FB_CFG);auth=firebase.auth();db=firebase.firestore();
+ firebase.initializeApp(FB_CFG);auth=firebase.auth();db=firebase.firestore();db.settings({experimentalForceLongPolling:true,merge:true});
  auth.getRedirectResult().catch(e=>{const m=errMsg(e);if(m)gate("login",m)});
- if(lsGet("mc-mode")==="local"&&!INV)useLocal();else gate("loading");
+ if(lsGet("mc-mode")==="local"&&!INV)useLocal();else gate("loading","Conectando à sua conta…");
  auth.onAuthStateChanged(async u=>{
   fbUser=u;
   if(!u){if(MODE!=="local"||INV)gate("login");return}
-  MODE="cloud";lsSet("mc-mode",null);gate("loading");
+  MODE="cloud";lsSet("mc-mode",null);gate("loading","Buscando sua família…");
   try{
-   if(INV)await join(INV);
+   if(INV){gate("loading","Entrando na família pelo convite…");await join(INV)}
    const us=await db.doc("users/"+u.uid).get();
    famId=us.exists?us.data().familyId:null;
    if(!famId)return gate("nofamily");
