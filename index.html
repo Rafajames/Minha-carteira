@@ -6,7 +6,9 @@
 <meta name="theme-color" content="#2563eb">
 <title>Minha Carteira</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<link rel="icon" href="icons/money_with_wings.png">
+<link rel="icon" href="icons/logo-light.png">
+<link rel="icon" href="icons/logo-dark.png" media="(prefers-color-scheme: dark)">
+<link rel="apple-touch-icon" href="icons/logo-light.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
 <style>
 /* Layout: sidebar + grid de cards; no celular, coluna única com barra inferior de 5 itens + "Mais" */
@@ -16,11 +18,11 @@
   --tint-b:#2563eb14;--tint-p:#e11d4814;--tint-g:#15803d17;--tint-w:#b4530917;
   --cardA:#1c1d20;--cardB:#ea6a0a;--shadow:0 1px 2px #0f172a0a,0 6px 20px #0f172a08;
   --font:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
-  --v1:clamp(40px,5vw,56px);--v2:28px;
+  --logo:url(icons/logo-light.png);--v1:clamp(40px,5vw,56px);--v2:28px;
   padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
 }
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0b0f17;--card:#141a24;--fg:#e8ecf3;--muted:#a0a9b8;--soft:#5d6676;--line:#232c3a;--chip:#1b2230;--blue:#5b8cf8;--navy:#6d8fe0;--pink:#fb7185;--green:#4ade80;--warn:#fbbf24;--tint-b:#5b8cf81f;--tint-p:#fb71851f;--tint-g:#4ade801a;--tint-w:#fbbf241a;--shadow:none;color-scheme:dark}}
-:root[data-theme="dark"]{--bg:#0b0f17;--card:#141a24;--fg:#e8ecf3;--muted:#a0a9b8;--soft:#5d6676;--line:#232c3a;--chip:#1b2230;--blue:#5b8cf8;--navy:#6d8fe0;--pink:#fb7185;--green:#4ade80;--warn:#fbbf24;--tint-b:#5b8cf81f;--tint-p:#fb71851f;--tint-g:#4ade801a;--tint-w:#fbbf241a;--shadow:none;color-scheme:dark}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0b0f17;--card:#141a24;--fg:#e8ecf3;--muted:#a0a9b8;--soft:#5d6676;--line:#232c3a;--chip:#1b2230;--blue:#5b8cf8;--navy:#6d8fe0;--pink:#fb7185;--green:#4ade80;--warn:#fbbf24;--tint-b:#5b8cf81f;--tint-p:#fb71851f;--tint-g:#4ade801a;--tint-w:#fbbf241a;--shadow:none;--logo:url(icons/logo-dark.png);color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0b0f17;--card:#141a24;--fg:#e8ecf3;--muted:#a0a9b8;--soft:#5d6676;--line:#232c3a;--chip:#1b2230;--blue:#5b8cf8;--navy:#6d8fe0;--pink:#fb7185;--green:#4ade80;--warn:#fbbf24;--tint-b:#5b8cf81f;--tint-p:#fb71851f;--tint-g:#4ade801a;--tint-w:#fbbf241a;--shadow:none;--logo:url(icons/logo-dark.png);color-scheme:dark}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font);font-size:13px;font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased}
 img{max-width:100%}[hidden]{display:none!important}
@@ -30,6 +32,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 .box{background:var(--card);border-radius:16px;border:1px solid var(--line);box-shadow:var(--shadow)}
 .av{width:26px;height:26px;border-radius:50%;display:inline-grid;place-items:center;color:#fff;font-size:11px;font-weight:700;border:2px solid var(--card);flex:none}
 .av.y{background:var(--blue)}.av.e{background:var(--pink)}.av.lg{width:34px;height:34px;font-size:13px}
+.logo{width:38px;height:38px;flex:none;display:block;background:var(--logo) center/contain no-repeat}.logo.lg{width:88px;height:88px}
 .duo{display:flex}.duo .av+.av{margin-left:-9px}
 .nw{white-space:nowrap}
 
@@ -323,7 +326,7 @@ button.chipw:hover{filter:brightness(.95)}
 
 <div class="app">
  <aside class="side box">
-  <div class="brand"><div class="duo" id="brandAv"></div><div><b>Minha Carteira</b><small>Finanças em família</small></div></div>
+  <div class="brand"><span class="logo" role="img" aria-label="Minha Carteira"></span><div><b>Minha Carteira</b><small>Finanças em família</small></div></div>
   <div class="grp">Menu</div><nav id="menu"></nav>
   <div class="grp">Ajustes</div><nav id="menu2"></nav>
   <div class="sfoot">
@@ -516,7 +519,6 @@ $("maisBtn").onclick=openSheet;$("sheetOv").onclick=closeSheet;
 
 /* ===== visão geral ===== */
 function renderSide(){
- $("brandAv").innerHTML=av("y")+av("e");
  $("me").innerHTML=`${av(me,"lg")}<div><b>${N(me)}</b><small><i class="dot" style="background:${MODE==="cloud"?"var(--green)":"var(--soft)"}"></i>${MODE==="cloud"?`Família com ${N(OT())}`:"Modo local"}</small></div><button class="btn" id="outSide" style="margin-left:auto;padding:6px 10px">Sair</button>`;
  $("outSide").onclick=logout;
  const bn=$("banner");bn.hidden=MODE==="cloud";
@@ -758,7 +760,7 @@ const errMsg=e=>{const c=e&&e.code;return c in ERR?ERR[c]:`Algo deu errado (${c|
 const EMPTY=()=>({...structuredClone(SEED),salario:0,salEsposa:0,pessoais:0,diaADia:0,casa:[],bills:[],dia:[],extra:[],cards:[],acertos:[],reserva:{meta:10000,saldo:0,aportes:[]},settled:false});
 function gate(st,msg=""){
  const g=$("gate");if(st==="off"){clearTimeout(gate.t);g.hidden=true;return}
- const head=`<img src="${ICON("money_with_wings")}" alt=""><h1>Minha Carteira</h1>`,err=msg?`<div class="gerr">${esc(msg)}</div>`:"";
+ const head=`<span class="logo lg"></span><h1>Minha Carteira</h1>`,err=msg?`<div class="gerr">${esc(msg)}</div>`:"";
  const H={
   loading:`${head}<div class="spin" role="status" aria-label="Carregando"></div><p>${esc(msg||"Carregando…")}</p>`,
   login:`${head}<p>${INV?"Você foi convidado para uma família. Entre com sua conta Google para participar.":"Organize as contas do mês junto com a sua família."}</p>${WV?`<div class="gerr">Você está no navegador interno de outro app, e o Google não permite login aqui. Copie o link e abra no Chrome ou no Brave.</div><button class="gbtn p" id="gCopy">Copiar link</button>`:`<button class="gbtn p" id="gLogin">Entrar com Google</button>`}${err}
@@ -769,7 +771,7 @@ function gate(st,msg=""){
   nofamily:`${head}<p>Olá, ${esc(first(fbUser))}! Crie a sua família para começar. Depois você envia o link de convite para quem divide as contas com você.</p><button class="gbtn p" id="gSeed">${lsGet(KEY)?"Criar com os dados deste aparelho":"Criar com dados de exemplo"}</button><button class="gbtn" id="gZero">Começar do zero</button><button class="link" id="gOut">Sair da conta</button>${err}`,
   error:`${head}${err}<button class="gbtn p" id="gRetry">Tentar de novo</button><button class="gbtn" id="gLocal">Usar sem conta, só neste aparelho</button><button class="link" id="gOut">Sair da conta</button>`};
  clearTimeout(gate.t);if(st==="loading")gate.t=setTimeout(()=>gate("error",ERR.timeout+(msg?` (parou em: ${msg})`:"")),15000);
- const diag=`<small style="color:var(--soft);font-size:10.5px">versão 10 · Firebase: ${typeof firebase==="undefined"?"bloqueado":"carregado"} · ${fbUser?"logado como "+esc(fbUser.email||"conta Google"):"não logado"}${WV?" · navegador de app":""}</small>`;
+ const diag=`<small style="color:var(--soft);font-size:10.5px">versão 11 · Firebase: ${typeof firebase==="undefined"?"bloqueado":"carregado"} · ${fbUser?"logado como "+esc(fbUser.email||"conta Google"):"não logado"}${WV?" · navegador de app":""}</small>`;
  g.innerHTML=`<div class="gcard box">${H[st]}${diag}</div>`;g.hidden=false;
  const b=(id,fn)=>{const el=$(id);if(el)el.onclick=fn};
  b("gLogin",login);b("gLocal",useLocal);b("gNew",()=>emailAuth(true));b("gForgot",forgot);if($("gForm"))$("gForm").onsubmit=e=>{e.preventDefault();emailAuth(false)};b("gCopy",()=>{(navigator.clipboard?navigator.clipboard.writeText(location.href):Promise.reject()).then(()=>toast("Link copiado. Cole no Chrome ou no Brave.")).catch(()=>toast(location.href))});b("gSeed",()=>createFam(lsGet(KEY)?D:structuredClone(SEED)));b("gZero",()=>createFam(EMPTY()));b("gOut",logout);b("gRetry",()=>location.reload());
