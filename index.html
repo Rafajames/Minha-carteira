@@ -251,6 +251,7 @@ button.chipw:hover{filter:brightness(.95)}
 .sheet .grab{width:40px;height:4px;border-radius:2px;background:var(--line);margin:0 auto 12px}
 .sheet .opt img{width:32px;height:32px}
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:600;z-index:50;box-shadow:0 8px 24px #0004}
+.banner{display:flex;align-items:center;gap:12px;padding:12px 16px;flex-wrap:wrap}.banner p{margin:0;flex:1;min-width:200px;color:var(--muted);line-height:1.45}.banner b{color:var(--fg)}
 .demo{font-size:11px;color:var(--muted);text-align:center}
 
 /* barra inferior */
@@ -321,6 +322,7 @@ button.chipw:hover{filter:brightness(.95)}
    <div class="pop box" id="addPop" hidden></div>
   </header>
 
+  <div class="banner box" id="banner" hidden></div>
   <div class="view" id="v-visao">
    <div class="grid">
     <section class="c box" id="saldo">
@@ -492,6 +494,9 @@ $("maisBtn").onclick=openSheet;$("sheetOv").onclick=closeSheet;
 function renderSide(){
  $("brandAv").innerHTML=av("y")+av("e");
  $("me").innerHTML=`${av(me,"lg")}<div><b>${N(me)}</b><small><i class="dot" style="background:${MODE==="cloud"?"var(--green)":"var(--soft)"}"></i>${MODE==="cloud"?`Família com ${N(OT())}`:"Modo local"}</small></div>`;
+ const bn=$("banner");bn.hidden=MODE==="cloud";
+ if(MODE!=="cloud"){bn.innerHTML=auth?`<p><b>Modo local.</b> Os dados ficam só neste aparelho. Entre com o Google para salvar na nuvem e compartilhar com a família.</p><button class="btnp" id="bnIn">Entrar com Google</button>`:`<p><b>O login não carregou.</b> O navegador bloqueou o Firebase. No Brave, toque no leão da barra de endereço, desative o Shields para este site e recarregue a página.</p><button class="btn" id="bnRe">Recarregar</button>`;
+  const a=$("bnIn"),r=$("bnRe");if(a)a.onclick=login;if(r)r.onclick=()=>location.reload()}
  $("demo").textContent=MODE==="cloud"?`Sincronizado na nuvem · ${famMembers} ${famMembers===1?"pessoa":"pessoas"} na família`:"Modo local · os dados ficam só neste aparelho";
 }
 function renderSaldo(){
