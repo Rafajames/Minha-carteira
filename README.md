@@ -2,4 +2,4 @@
 
 Painel de finanças do casal (HTML único).
 
-Acesse: https://rafajames.github.io/minha-carteira/
+Acesse: https://rafajames.github.io/Minha-carteira/
