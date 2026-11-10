@@ -495,8 +495,9 @@ function renderSide(){
  $("brandAv").innerHTML=av("y")+av("e");
  $("me").innerHTML=`${av(me,"lg")}<div><b>${N(me)}</b><small><i class="dot" style="background:${MODE==="cloud"?"var(--green)":"var(--soft)"}"></i>${MODE==="cloud"?`Família com ${N(OT())}`:"Modo local"}</small></div>`;
  const bn=$("banner");bn.hidden=MODE==="cloud";
- if(MODE!=="cloud"){bn.innerHTML=auth?`<p><b>Modo local.</b> Os dados ficam só neste aparelho. Entre com o Google para salvar na nuvem e compartilhar com a família.</p><button class="btnp" id="bnIn">Entrar com Google</button>`:`<p><b>O login não carregou.</b> O navegador bloqueou o Firebase. No Brave, toque no leão da barra de endereço, desative o Shields para este site e recarregue a página.</p><button class="btn" id="bnRe">Recarregar</button>`;
-  const a=$("bnIn"),r=$("bnRe");if(a)a.onclick=login;if(r)r.onclick=()=>location.reload()}
+ const wv=/; wv\)|\bFBAN|\bInstagram|WebView/i.test(navigator.userAgent);
+ if(MODE!=="cloud"){bn.innerHTML=wv?`<p><b>Abra no navegador para entrar.</b> O Google não permite login dentro do navegador de outros apps. Copie o link e abra no Chrome ou no Brave.</p><button class="btn" id="bnCp">Copiar link</button>`:auth?`<p><b>Modo local.</b> Os dados ficam só neste aparelho. Entre com o Google para salvar na nuvem e compartilhar com a família.</p><button class="btnp" id="bnIn">Entrar com Google</button>`:`<p><b>O login não carregou.</b> O navegador bloqueou o Firebase. No Brave, toque no leão da barra de endereço, desative o Shields para este site e recarregue a página.</p><button class="btn" id="bnRe">Recarregar</button>`;
+  const a=$("bnIn"),r=$("bnRe"),c=$("bnCp");if(a)a.onclick=login;if(r)r.onclick=()=>location.reload();if(c)c.onclick=()=>{(navigator.clipboard?navigator.clipboard.writeText(location.href):Promise.reject()).then(()=>toast("Link copiado. Cole no Chrome ou no Brave.")).catch(()=>toast(location.href))}}
  $("demo").textContent=MODE==="cloud"?`Sincronizado na nuvem · ${famMembers} ${famMembers===1?"pessoa":"pessoas"} na família`:"Modo local · os dados ficam só neste aparelho";
 }
 function renderSaldo(){
