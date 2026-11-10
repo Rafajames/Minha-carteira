@@ -218,6 +218,10 @@ button.chipw:hover{filter:brightness(.95)}
 .gbtn{width:100%;display:flex;justify-content:center;align-items:center;gap:10px;padding:12px;border-radius:10px;font-weight:600;border:1px solid var(--line);background:var(--card)}
 .gbtn.p{background:var(--blue);color:#fff;border-color:var(--blue)}.gbtn:hover{filter:brightness(.97)}
 .gerr{color:var(--pink);font-size:12.5px;line-height:1.45}
+.gform{width:100%;display:flex;flex-direction:column;gap:10px;text-align:left}
+.gform .field input{padding:11px 12px}
+.grow{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.gor{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:12px;width:100%}.gor::before,.gor::after{content:"";flex:1;height:1px;background:var(--line)}
 .spin{width:28px;height:28px;border:3px solid var(--line);border-top-color:var(--blue);border-radius:50%;animation:sp 1s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
 .inv-link{font-family:ui-monospace,Menlo,monospace;font-size:11.5px;background:var(--chip);padding:10px;border-radius:8px;word-break:break-all;user-select:all;margin-top:10px}
@@ -483,8 +487,9 @@ on("[data-v]","click",b=>{location.hash=b.dataset.v});
 
 function openSheet(){
  $("sheet").innerHTML=`<div class="grab"></div>${MAIS.map(([v,t,ic])=>`<button class="opt" data-go="${v}"><img src="${ICON(ic)}" alt=""><div><b>${t}</b></div></button>`).join("")}
+ <button class="opt" id="outSheet"><span class="tic warn">⏻</span><div><b>Sair</b><small>${MODE==="cloud"?esc((fbUser&&fbUser.email)||""):"Voltar para a tela de login"}</small></div></button>
  <div class="theme" style="padding:12px 8px 4px"><span>Tema</span><div class="seg2"><button class="tl" aria-label="Tema claro">☼</button><button class="td" aria-label="Tema escuro">☾</button></div></div>`;
- $("sheet").hidden=$("sheetOv").hidden=false;syncTheme();bindTheme();
+ $("sheet").hidden=$("sheetOv").hidden=false;syncTheme();bindTheme();$("outSheet").onclick=logout;
  on("#sheet [data-go]","click",b=>{closeSheet();location.hash=b.dataset.go});
 }
 function closeSheet(){$("sheet").hidden=$("sheetOv").hidden=true}
@@ -493,7 +498,8 @@ $("maisBtn").onclick=openSheet;$("sheetOv").onclick=closeSheet;
 /* ===== visão geral ===== */
 function renderSide(){
  $("brandAv").innerHTML=av("y")+av("e");
- $("me").innerHTML=`${av(me,"lg")}<div><b>${N(me)}</b><small><i class="dot" style="background:${MODE==="cloud"?"var(--green)":"var(--soft)"}"></i>${MODE==="cloud"?`Família com ${N(OT())}`:"Modo local"}</small></div>`;
+ $("me").innerHTML=`${av(me,"lg")}<div><b>${N(me)}</b><small><i class="dot" style="background:${MODE==="cloud"?"var(--green)":"var(--soft)"}"></i>${MODE==="cloud"?`Família com ${N(OT())}`:"Modo local"}</small></div><button class="btn" id="outSide" style="margin-left:auto;padding:6px 10px">Sair</button>`;
+ $("outSide").onclick=logout;
  const bn=$("banner");bn.hidden=MODE==="cloud";
  if(MODE!=="cloud"){bn.innerHTML=WV?`<p><b>Abra no navegador para entrar.</b> O Google não permite login dentro do navegador de outros apps. Copie o link e abra no Chrome ou no Brave.</p><button class="btn" id="bnCp">Copiar link</button>`:auth?`<p><b>Modo local.</b> Os dados ficam só neste aparelho. Entre com o Google para salvar na nuvem e compartilhar com a família.</p><button class="btnp" id="bnIn">Entrar com Google</button>`:`<p><b>O login não carregou.</b> O navegador bloqueou o Firebase. No Brave, toque no leão da barra de endereço, desative o Shields para este site e recarregue a página.</p><button class="btn" id="bnRe">Recarregar</button>`;
   const a=$("bnIn"),r=$("bnRe"),c=$("bnCp");if(a)a.onclick=login;if(r)r.onclick=()=>location.reload();if(c)c.onclick=()=>{(navigator.clipboard?navigator.clipboard.writeText(location.href):Promise.reject()).then(()=>toast("Link copiado. Cole no Chrome ou no Brave.")).catch(()=>toast(location.href))}}
@@ -726,7 +732,7 @@ let auth=null,db=null,fbUser=null,famId=null,famMembers=1,unsub=null,started=fal
 const INV=new URLSearchParams(location.search).get("f"),WV=/; wv\)|\bFBAN|\bInstagram|WebView/i.test(navigator.userAgent);
 const lsGet=k=>{try{return localStorage.getItem(k)}catch(e){return null}},lsSet=(k,v)=>{try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}};
 const first=u=>((u&&u.displayName)||"").split(" ")[0]||"Eu";
-const ERR={"auth/unauthorized-domain":"Este endereço não está autorizado no Firebase. Adicione rafajames.github.io em Authentication → Configurações → Domínios autorizados.","auth/network-request-failed":"Sem conexão com a internet. Tente de novo.","permission-denied":"Sem permissão. O convite pode ser inválido, ou a família já tem 6 pessoas.","auth/popup-closed-by-user":"","auth/cancelled-popup-request":"","unavailable":"Não consegui conectar ao banco de dados. Se estiver no Brave, toque no leão da barra de endereço e desative o Shields para este site.","failed-precondition":"O banco de dados ainda não foi criado. No console do Firebase, abra Firestore Database e clique em Criar banco de dados.","not-found":"O banco de dados ainda não foi criado. No console do Firebase, abra Firestore Database e clique em Criar banco de dados.","timeout":"A conexão está demorando demais. Se estiver no Brave, desative o Shields para este site (ícone do leão) e tente de novo. Confira também se o Firestore Database foi criado no console."};
+const ERR={"auth/unauthorized-domain":"Este endereço não está autorizado no Firebase. Adicione rafajames.github.io em Authentication → Configurações → Domínios autorizados.","auth/network-request-failed":"Sem conexão com a internet. Tente de novo.","permission-denied":"Sem permissão. O convite pode ser inválido, ou a família já tem 6 pessoas.","auth/popup-closed-by-user":"A janela do Google fechou antes de concluir. Se acontecer de novo, use o login com e-mail e senha.","auth/cancelled-popup-request":"","auth/invalid-credential":"E-mail ou senha incorretos.","auth/wrong-password":"E-mail ou senha incorretos.","auth/user-not-found":"Não existe conta com esse e-mail. Toque em Criar conta.","auth/invalid-login-credentials":"E-mail ou senha incorretos.","auth/email-already-in-use":"Esse e-mail já tem conta. Toque em Entrar.","auth/invalid-email":"E-mail inválido.","auth/weak-password":"A senha precisa ter pelo menos 6 caracteres.","auth/operation-not-allowed":"Esse tipo de login não está ativado. No console do Firebase, abra Authentication → Método de login e ative E-mail/senha.","auth/too-many-requests":"Muitas tentativas. Espere alguns minutos e tente de novo.","auth/web-storage-unsupported":"O navegador está bloqueando o armazenamento do login. Use o login com e-mail e senha.","unavailable":"Não consegui conectar ao banco de dados. Se estiver no Brave, toque no leão da barra de endereço e desative o Shields para este site.","failed-precondition":"O banco de dados ainda não foi criado. No console do Firebase, abra Firestore Database e clique em Criar banco de dados.","not-found":"O banco de dados ainda não foi criado. No console do Firebase, abra Firestore Database e clique em Criar banco de dados.","timeout":"A conexão está demorando demais. Se estiver no Brave, desative o Shields para este site (ícone do leão) e tente de novo. Confira também se o Firestore Database foi criado no console."};
 const errMsg=e=>{const c=e&&e.code;return c in ERR?ERR[c]:`Algo deu errado (${c||e}).`};
 const EMPTY=()=>({...structuredClone(SEED),salario:0,salEsposa:0,pessoais:0,diaADia:0,casa:[],bills:[],dia:[],extra:[],cards:[],acertos:[],reserva:{meta:10000,saldo:0,aportes:[]},settled:false});
 function gate(st,msg=""){
@@ -734,13 +740,17 @@ function gate(st,msg=""){
  const head=`<img src="${ICON("money_with_wings")}" alt=""><h1>Minha Carteira</h1>`,err=msg?`<div class="gerr">${esc(msg)}</div>`:"";
  const H={
   loading:`${head}<div class="spin" role="status" aria-label="Carregando"></div><p>${esc(msg||"Carregando…")}</p>`,
-  login:`${head}<p>${INV?"Você foi convidado para uma família. Entre com sua conta Google para participar.":"Organize as contas do mês junto com a sua família."}</p>${WV?`<div class="gerr">Você está no navegador interno de outro app, e o Google não permite login aqui. Copie o link e abra no Chrome ou no Brave.</div><button class="gbtn p" id="gCopy">Copiar link</button>`:`<button class="gbtn p" id="gLogin">Entrar com Google</button>`}${INV?"":`<button class="gbtn" id="gLocal">Usar sem conta, só neste aparelho</button>`}${err}`,
+  login:`${head}<p>${INV?"Você foi convidado para uma família. Entre com sua conta Google para participar.":"Organize as contas do mês junto com a sua família."}</p>${WV?`<div class="gerr">Você está no navegador interno de outro app, e o Google não permite login aqui. Copie o link e abra no Chrome ou no Brave.</div><button class="gbtn p" id="gCopy">Copiar link</button>`:`<button class="gbtn p" id="gLogin">Entrar com Google</button>`}${err}
+   <div class="gor">ou com e-mail</div>
+   <form class="gform" id="gForm"><label class="field">E-mail<input id="gEm" type="email" autocomplete="email" required></label><label class="field">Senha<input id="gPw" type="password" autocomplete="current-password" minlength="6" required></label>
+   <div class="grow"><button class="gbtn p" type="submit">Entrar</button><button class="gbtn" type="button" id="gNew">Criar conta</button></div><button class="link" type="button" id="gForgot">Esqueci a senha</button></form>
+   ${INV?"":`<button class="link" id="gLocal" style="color:var(--muted)">Usar sem conta, só neste aparelho</button>`}`,
   nofamily:`${head}<p>Olá, ${esc(first(fbUser))}! Crie a sua família para começar. Depois você envia o link de convite para quem divide as contas com você.</p><button class="gbtn p" id="gSeed">${lsGet(KEY)?"Criar com os dados deste aparelho":"Criar com dados de exemplo"}</button><button class="gbtn" id="gZero">Começar do zero</button><button class="link" id="gOut">Sair da conta</button>${err}`,
   error:`${head}${err}<button class="gbtn p" id="gRetry">Tentar de novo</button><button class="gbtn" id="gLocal">Usar sem conta, só neste aparelho</button><button class="link" id="gOut">Sair da conta</button>`};
  clearTimeout(gate.t);if(st==="loading")gate.t=setTimeout(()=>gate("error",ERR.timeout+(msg?` (parou em: ${msg})`:"")),15000);
  g.innerHTML=`<div class="gcard box">${H[st]}</div>`;g.hidden=false;
  const b=(id,fn)=>{const el=$(id);if(el)el.onclick=fn};
- b("gLogin",login);b("gLocal",useLocal);b("gCopy",()=>{(navigator.clipboard?navigator.clipboard.writeText(location.href):Promise.reject()).then(()=>toast("Link copiado. Cole no Chrome ou no Brave.")).catch(()=>toast(location.href))});b("gSeed",()=>createFam(lsGet(KEY)?D:structuredClone(SEED)));b("gZero",()=>createFam(EMPTY()));b("gOut",logout);b("gRetry",()=>location.reload());
+ b("gLogin",login);b("gLocal",useLocal);b("gNew",()=>emailAuth(true));b("gForgot",forgot);if($("gForm"))$("gForm").onsubmit=e=>{e.preventDefault();emailAuth(false)};b("gCopy",()=>{(navigator.clipboard?navigator.clipboard.writeText(location.href):Promise.reject()).then(()=>toast("Link copiado. Cole no Chrome ou no Brave.")).catch(()=>toast(location.href))});b("gSeed",()=>createFam(lsGet(KEY)?D:structuredClone(SEED)));b("gZero",()=>createFam(EMPTY()));b("gOut",logout);b("gRetry",()=>location.reload());
 }
 function start(){renderAll();if(!started){started=true;route()}}
 function useLocal(){MODE="local";gate("off");start()}
@@ -749,6 +759,17 @@ async function login(){
  const p=new firebase.auth.GoogleAuthProvider();p.setCustomParameters({prompt:"select_account"});
  try{await auth.signInWithPopup(p)}
  catch(e){if(["auth/popup-blocked","auth/operation-not-supported-in-this-environment"].includes(e.code))return auth.signInWithRedirect(p);const m=errMsg(e);if(m)gate("login",m)}
+}
+async function emailAuth(create){
+ if(!auth)return;const em=$("gEm").value.trim(),pw=$("gPw").value;
+ if(!em||pw.length<6){gate("login","Informe o e-mail e uma senha com pelo menos 6 caracteres.");return}
+ gate("loading",create?"Criando sua conta…":"Entrando…");
+ try{if(create){const c=await auth.createUserWithEmailAndPassword(em,pw);await c.user.updateProfile({displayName:em.split("@")[0]})}else await auth.signInWithEmailAndPassword(em,pw)}
+ catch(e){gate("login",errMsg(e)||"Não foi possível entrar.");const x=$("gEm");if(x)x.value=em}
+}
+async function forgot(){
+ const em=$("gEm").value.trim();if(!em){gate("login","Digite seu e-mail no campo acima e toque em Esqueci a senha.");return}
+ try{await auth.sendPasswordResetEmail(em);gate("login","Enviamos um link para "+em+" criar uma nova senha. Confira também o spam.")}catch(e){gate("login",errMsg(e))}
 }
 async function logout(){if(unsub)unsub();try{if(auth)await auth.signOut()}catch(e){}location.href=location.pathname}
 async function createFam(data){
