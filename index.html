@@ -1,7 +1,17 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#2563eb">
 <title>Minha Carteira</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
 <style>
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0}
+img{max-width:100%}
+[hidden]{display:none!important}
 /* Layout: sidebar + grid de cards (saldo | contas / divisão | cartões | moradia / obra); no celular vira coluna única com barra inferior */
 :root{
   --bg:#eef1f7;--card:#fff;--fg:#0f172a;--muted:#6b7280;--soft:#9ca3af;--line:#eceef3;--chip:#f4f5f8;
@@ -199,6 +209,8 @@ button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
+</head>
+<body>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
  <defs>
@@ -545,3 +557,5 @@ if(st)setTheme(st);else $(matchMedia("(prefers-color-scheme: dark)").matches?"td
 
 renderSaldo();renderContas();renderDiv();renderMor();renderMonth();route();
 </script>
+</body>
+</html>
