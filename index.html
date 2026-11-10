@@ -117,6 +117,9 @@ button.chipw:hover{filter:brightness(.95)}
 .day.late i b{background:var(--pink)}
 .day.on{background:var(--blue);color:#fff;border-color:var(--blue)}.day.on i b{background:#fff}
 .list{overflow:auto;max-height:236px;margin:0 -4px;padding:0 4px}
+#contas .list{flex:1 1 0;min-height:96px;max-height:none}
+@media (max-width:1180px){#contas .list{min-height:236px}}
+.others{color:var(--muted);font-size:10.5px;font-weight:600;letter-spacing:.08em;padding:14px 0 4px}
 .bill{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line);width:100%;text-align:left}
 .bill:last-child{border:0}
 .ck{width:20px;height:20px;border:1.5px solid var(--soft);border-radius:50%;flex:none;display:grid;place-items:center}
@@ -263,12 +266,28 @@ button.chipw:hover{filter:brightness(.95)}
 @media (max-width:1180px){
   .grid{grid-template-columns:1fr 1fr;grid-template-areas:"saldo saldo" "contas mor" "div cart" "obra obra"}
 }
-@media (max-width:1000px){.g3,.g2{grid-template-columns:1fr 1fr}.g2>:last-child{grid-column:1/-1}}
+@media (min-width:821px) and (max-width:1180px){
+  :root{--z:1.15}
+  .app{zoom:var(--z);grid-template-columns:64px 1fr}
+  .side{padding:14px 8px;align-items:center;height:calc(100vh / var(--z) - 32px)}
+  .brand{padding:0 0 12px}
+  .brand>div:last-child,.grp,.nav .nt,.theme>span,.me>div{display:none}
+  #menu,#menu2{width:100%}
+  #menu2{border-top:1px solid var(--line);margin-top:8px;padding-top:8px}
+  .nav{justify-content:center;padding:12px 0}.nav svg{width:19px;height:19px}
+  .theme{padding:0}.seg2{flex-direction:column}
+  .me{flex-direction:column;padding:10px 0 0;gap:8px;width:100%}
+  .me .btn{margin:0!important;padding:5px 7px;font-size:10.5px}
+  .legend{grid-template-columns:repeat(3,1fr);row-gap:14px}
+  .kpi .money{font-size:22px}
+  .form{grid-template-columns:1fr 1fr}.form .btnp{grid-column:1/-1}
+}
+@media (max-width:1000px){.g2{grid-template-columns:1fr}}
 @media (max-width:820px){
   .app{grid-template-columns:1fr;padding-bottom:calc(88px + env(safe-area-inset-bottom,0px))}
   .side{display:none}
   .grid{grid-template-columns:1fr;grid-template-areas:"saldo" "contas" "div" "cart" "mor" "obra"}
-  .g3,.g2,.persons{grid-template-columns:1fr}.g2>:last-child{grid-column:auto}
+  .g3,.g2,.persons{grid-template-columns:1fr}
   .legend{grid-template-columns:1fr 1fr}.legend>div:first-child{grid-column:1/-1}
   .top{padding:10px}.month{font-size:18px;margin-left:2px}.arrow{width:26px}
   .add .lb{display:none}.add>button{padding:10px 12px}
@@ -479,7 +498,7 @@ document.addEventListener("error",e=>{if(e.target.tagName==="IMG")e.target.style
 const MENU=[["grid","Visão geral","visao","Início"],["flow","Fluxo de caixa","fluxo","Fluxo"],["card","Cartões","cartoes","Cartões"],["build","Nossa casa","casa","Casa"],["safe","Nossa reserva","reserva","Reserva"]];
 const MENU2=[["cash","Nossa renda","renda","Renda"],["home","Contas da casa","contas","Contas"]];
 const MAIS=[["reserva","Nossa reserva","money_bag"],["renda","Nossa renda","dollar_banknote"],["contas","Contas da casa","receipt"]];
-const navBtn=([ic,t,v,s],cls)=>`<button class="${cls}" data-v="${v}"><svg><use href="#i-${ic}"/></svg>${cls==="nav"?t:`<span>${s}</span>`}</button>`;
+const navBtn=([ic,t,v,s],cls)=>`<button class="${cls}" data-v="${v}" title="${t}"><svg><use href="#i-${ic}"/></svg>${cls==="nav"?`<span class="nt">${t}</span>`:`<span>${s}</span>`}</button>`;
 $("menu").innerHTML=MENU.map(m=>navBtn(m,"nav")).join("");
 $("menu2").innerHTML=MENU2.map(m=>navBtn(m,"nav")).join("");
 $("bnav").innerHTML=MENU.slice(0,4).map(m=>navBtn(m,"")).join("")+`<button id="maisBtn"><svg><use href="#i-more"/></svg><span>Mais</span></button>`;
@@ -532,7 +551,9 @@ function renderContas(){
  $("csub").innerHTML=`${dayOpen?`<span class="${dd.late?"late-t":""}">${dd.t}</span>`:"dia pago"} · <b style="color:var(--fg)">${pagas} de ${D.bills.length} pagas</b>`;
  $("days").style.gridTemplateColumns=`repeat(${Math.min(Math.max(days.length,4),6)},1fr)`;
  $("days").innerHTML=days.slice(0,6).map(d=>{const o=aberto.filter(b=>b.d===d).length;return `<button class="day${d===selDay?" on":""}${o&&due(d).late?" late":""}" data-d="${d}">${two(d)}<i>${"<b></b>".repeat(Math.min(o,5))}</i></button>`}).join("");
- $("bills").innerHTML=D.bills.map((b,i)=>b.d!==selDay?"":`<button class="bill${b.done?" done":""}" data-i="${i}"><span class="ck"></span><span class="nm">${esc(b.n)}</span><span class="val">R$ ${brl(b.v)}</span></button>`).join("");
+ const bl=(b,i,o)=>`<button class="bill${b.done?" done":""}" data-i="${i}"><span class="ck"></span><span class="nm">${esc(b.n)}${o?`<small class="${!b.done&&due(b.d).late?"late-t":""}">dia ${two(b.d)}${b.done?" · paga":" · "+due(b.d).t.replace(/^vence dia \d+$/,"a pagar")}</small>`:""}</span><span class="val">R$ ${brl(b.v)}</span></button>`;
+ const idx=D.bills.map((b,i)=>({b,i})),outros=idx.filter(x=>x.b.d!==selDay).sort((a,c)=>a.b.d-c.b.d);
+ $("bills").innerHTML=idx.filter(x=>x.b.d===selDay).map(x=>bl(x.b,x.i)).join("")+(outros.length?`<div class="others">OUTROS DIAS</div>`+outros.map(x=>bl(x.b,x.i,1)).join(""):"");
  on("#days .day","click",x=>{selDay=+x.dataset.d;renderContas()});
  on("#bills .bill","click",x=>{const b=D.bills[x.dataset.i];b.done=!b.done;toast(b.done?`${b.n} marcada como paga`:`${b.n} voltou para a pagar`);renderAll()});
 }
@@ -619,7 +640,7 @@ function pCartoes(){
  $("v-cartoes").innerHTML=PH("credit_card","Cartões",`${D.cards.length} cartões · faturas de ${MESES[mes].toLowerCase()} somam R$ ${brl(tot)}`)+
  `<div class="pg g2"><section class="c box"><div class="h">Seus cartões <small>· toque para ver a fatura</small></div><div class="cgrid">${D.cards.map((k,i)=>`<div class="cc ${k.cls}${i===cSel?" sel":""}" role="button" tabindex="0" data-c="${i}"><div class="bk">${esc(k.bk)}<span class="pill">Aberta</span></div><div class="chip"></div><div class="cname">${esc(k.nm)}</div><div class="cfoot"><div>VENCE<b>${two(k.venc)}/${two(mes+1)}</b></div><div>FATURA<b>R$ ${brl(k.fat)}</b></div></div></div>`).join("")}</div>
  <div class="lbl" style="margin-top:22px">Limite usado · ${esc(c.bk)}</div><div class="pr"><span><b>R$ ${brl(c.fat)}</b> de R$ ${brl(lim)}</span><span>${pct(c.fat,lim)}%</span></div><div class="bar"><div style="width:${lim?c.fat/lim*100:0}%;background:${c.fat/lim>.8?"var(--pink)":"var(--blue)"}"></div></div><div class="note">Livre: R$ ${brl(c.livre)}</div></section>
- <section class="c box"><div class="h">Fatura ${esc(c.bk)} <small>· vence ${two(c.venc)}/${two(mes+1)}</small></div><div class="money">${money(c.fat)}</div><div class="list" style="max-height:400px;margin-top:10px">${c.lanc.map(l=>row(esc(l.n[0]),"out",esc(l.n),l.p?`parcela ${l.p[0]} de ${l.p[1]}`:"à vista",`R$ ${brl(l.v)}`)).join("")}</div></section></div>
+ <section class="c box"><div class="h">Fatura ${esc(c.bk)} <small>· vence ${two(c.venc)}/${two(mes+1)}</small></div><div class="money">${money(c.fat)}</div><div class="list" style="max-height:none;margin-top:10px">${c.lanc.map(l=>row(esc(l.n[0]),"out",esc(l.n),l.p?`parcela ${l.p[0]} de ${l.p[1]}`:"à vista",`R$ ${brl(l.v)}`)).join("")}</div></section></div>
  <section class="c box"><div class="h">Parcelas em andamento</div>${parc.length?`<div class="tw"><table class="tbl"><thead><tr><th>Compra</th><th>Cartão</th><th>Parcela</th><th>Valor</th><th>Falta pagar</th></tr></thead><tbody>${parc.map(l=>`<tr><td>${esc(l.n)}</td><td>${esc(l.bk)}</td><td>${l.p[0]}/${l.p[1]}</td><td>R$ ${brl(l.v)}</td><td>R$ ${brl(l.v*(l.p[1]-l.p[0]))}</td></tr>`).join("")}</tbody></table></div>`:`<div class="note">Nenhuma compra parcelada.</div>`}</section>`+cf;
  bindCf();
  const pick=el=>{cSel=+el.dataset.c;pCartoes()};
@@ -748,7 +769,7 @@ function gate(st,msg=""){
   nofamily:`${head}<p>Olá, ${esc(first(fbUser))}! Crie a sua família para começar. Depois você envia o link de convite para quem divide as contas com você.</p><button class="gbtn p" id="gSeed">${lsGet(KEY)?"Criar com os dados deste aparelho":"Criar com dados de exemplo"}</button><button class="gbtn" id="gZero">Começar do zero</button><button class="link" id="gOut">Sair da conta</button>${err}`,
   error:`${head}${err}<button class="gbtn p" id="gRetry">Tentar de novo</button><button class="gbtn" id="gLocal">Usar sem conta, só neste aparelho</button><button class="link" id="gOut">Sair da conta</button>`};
  clearTimeout(gate.t);if(st==="loading")gate.t=setTimeout(()=>gate("error",ERR.timeout+(msg?` (parou em: ${msg})`:"")),15000);
- const diag=`<small style="color:var(--soft);font-size:10.5px">versão 9 · Firebase: ${typeof firebase==="undefined"?"bloqueado":"carregado"} · ${fbUser?"logado como "+esc(fbUser.email||"conta Google"):"não logado"}${WV?" · navegador de app":""}</small>`;
+ const diag=`<small style="color:var(--soft);font-size:10.5px">versão 10 · Firebase: ${typeof firebase==="undefined"?"bloqueado":"carregado"} · ${fbUser?"logado como "+esc(fbUser.email||"conta Google"):"não logado"}${WV?" · navegador de app":""}</small>`;
  g.innerHTML=`<div class="gcard box">${H[st]}${diag}</div>`;g.hidden=false;
  const b=(id,fn)=>{const el=$(id);if(el)el.onclick=fn};
  b("gLogin",login);b("gLocal",useLocal);b("gNew",()=>emailAuth(true));b("gForgot",forgot);if($("gForm"))$("gForm").onsubmit=e=>{e.preventDefault();emailAuth(false)};b("gCopy",()=>{(navigator.clipboard?navigator.clipboard.writeText(location.href):Promise.reject()).then(()=>toast("Link copiado. Cole no Chrome ou no Brave.")).catch(()=>toast(location.href))});b("gSeed",()=>createFam(lsGet(KEY)?D:structuredClone(SEED)));b("gZero",()=>createFam(EMPTY()));b("gOut",logout);b("gRetry",()=>location.reload());
