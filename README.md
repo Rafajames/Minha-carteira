@@ -4,7 +4,7 @@ Painel de finanças domésticas para casais e famílias organizarem juntos as co
 
 **Acesse:** https://rafajames.github.io/Minha-carteira/
 
-> ⚠️ Protótipo visual. Os valores são de exemplo e voltam ao original quando a página é recarregada. O login e o salvamento compartilhado entram na próxima fase.
+> ⚠️ Protótipo. Os valores iniciais são de exemplo e o que você edita fica salvo **só no seu navegador**. O login e o salvamento compartilhado entre a família entram na próxima fase.
 
 ---
 
@@ -31,7 +31,12 @@ Tudo é recalculado na hora: trocar quem paga uma conta, mudar a regra de divis�
 
 ## 📱 Recursos
 
-- Layout responsivo: no celular, o menu lateral vira uma barra de navegação inferior.
+- **Adicionar lançamento:** conta a pagar, gasto do dia a dia, entrada extra ou compra no cartão (com parcelas).
+- **Sino de vencimentos:** mostra as contas vencidas ou que vencem nos próximos 7 dias.
+- **Mês atual automático**, com "venceu há X dias" e "em X dias" calculados pela data de hoje.
+- **Nomes configuráveis** para as duas pessoas, usados em todas as telas.
+- **Salvamento no navegador** e botão para restaurar os dados de exemplo.
+- Layout responsivo: no celular, o menu vira uma barra inferior com Início, Fluxo, Cartões, Casa e Mais.
 - Tema claro e escuro, que respeita o sistema e lembra a sua escolha.
 - Navegação por link direto para cada tela (`#fluxo`, `#cartoes`, `#casa`, `#reserva`, `#renda`, `#contas`).
 - Um único arquivo HTML, sem dependências e sem etapa de build.
@@ -41,6 +46,7 @@ Tudo é recalculado na hora: trocar quem paga uma conta, mudar a regra de divis�
 - HTML, CSS e JavaScript puros, em um único arquivo (`index.html`).
 - Fonte [Inter](https://fonts.google.com/specimen/Inter) via Google Fonts.
 - Gráficos em SVG desenhados à mão, sem biblioteca externa.
+- Ícones 3D [Fluent Emoji](https://github.com/microsoft/fluentui-emoji) da Microsoft (licença MIT), guardados na pasta `icons/`.
 - Hospedagem no GitHub Pages.
 
 ## 🚀 Rodando localmente
@@ -62,7 +68,7 @@ cd Minha-carteira
 - [ ] Grupo "Família" com convite por link
 - [ ] Salvamento em banco com sincronização em tempo real entre os membros
 - [ ] Contas pessoais privadas (visíveis só para o dono)
-- [ ] Ícones 3D ([Fluent Emoji](https://github.com/microsoft/fluentui-emoji)) no lugar dos emojis
+- [x] Sistema visual único, ícones 3D, botões funcionando e salvamento local
 - [ ] Instalação como app no celular (PWA)
 - [ ] Lembretes de vencimento
 
@@ -71,6 +77,7 @@ cd Minha-carteira
 ```
 Minha-carteira/
 ├── index.html   # aplicação completa (estilos, telas e lógica)
+├── icons/       # ícones 3D Fluent Emoji (PNG)
 └── README.md
 ```
 
