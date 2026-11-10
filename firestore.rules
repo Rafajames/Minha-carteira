@@ -1,0 +1,35 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function isMember() { return signedIn() && request.auth.uid in resource.data.members; }
+
+    // Cada pessoa só lê e altera o próprio perfil (que guarda a família dela)
+    match /users/{uid} {
+      allow read, write: if signedIn() && request.auth.uid == uid;
+    }
+
+    // Dados da família
+    match /families/{familyId} {
+      allow create: if signedIn()
+        && request.resource.data.owner == request.auth.uid
+        && request.resource.data.members == [request.auth.uid];
+
+      allow read: if isMember();
+
+      allow update: if isMember()
+        && request.resource.data.owner == resource.data.owner
+        && request.resource.data.members.hasAll([resource.data.owner]);
+
+      // Entrar pelo link de convite: a pessoa só pode se adicionar à lista
+      allow update: if signedIn()
+        && !(request.auth.uid in resource.data.members)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members'])
+        && request.resource.data.members == resource.data.members.concat([request.auth.uid])
+        && resource.data.members.size() < 6;
+
+      allow delete: if signedIn() && request.auth.uid == resource.data.owner;
+    }
+  }
+}

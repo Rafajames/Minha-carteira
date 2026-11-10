@@ -4,7 +4,7 @@ Painel de finanças domésticas para casais e famílias organizarem juntos as co
 
 **Acesse:** https://rafajames.github.io/Minha-carteira/
 
-> ⚠️ Protótipo. Os valores iniciais são de exemplo e o que você edita fica salvo **só no seu navegador**. O login e o salvamento compartilhado entre a família entram na próxima fase.
+> Entre com sua conta Google, crie a família e envie o link de convite. Todos os membros veem e editam os mesmos dados, sincronizados em tempo real. Também dá para usar sem conta, com os dados salvos só no aparelho.
 
 ---
 
@@ -35,11 +35,13 @@ Tudo é recalculado na hora: trocar quem paga uma conta, mudar a regra de divis�
 - **Sino de vencimentos:** mostra as contas vencidas ou que vencem nos próximos 7 dias.
 - **Mês atual automático**, com "venceu há X dias" e "em X dias" calculados pela data de hoje.
 - **Nomes configuráveis** para as duas pessoas, usados em todas as telas.
-- **Salvamento no navegador** e botão para restaurar os dados de exemplo.
+- **Login com Google e família compartilhada** (Firebase): link de convite, sincronização em tempo real e até 6 pessoas por família.
+- **Visão de cada pessoa:** o saldo previsto e a moradia usam o salário e a parte de quem está conectado.
+- **Modo local** sem conta, com botão para restaurar os dados de exemplo.
 - Layout responsivo: no celular, o menu vira uma barra inferior com Início, Fluxo, Cartões, Casa e Mais.
 - Tema claro e escuro, que respeita o sistema e lembra a sua escolha.
 - Navegação por link direto para cada tela (`#fluxo`, `#cartoes`, `#casa`, `#reserva`, `#renda`, `#contas`).
-- Um único arquivo HTML, sem dependências e sem etapa de build.
+- Um único arquivo HTML, sem etapa de build.
 
 ## 🛠️ Tecnologias
 
@@ -47,6 +49,7 @@ Tudo é recalculado na hora: trocar quem paga uma conta, mudar a regra de divis�
 - Fonte [Inter](https://fonts.google.com/specimen/Inter) via Google Fonts.
 - Gráficos em SVG desenhados à mão, sem biblioteca externa.
 - Ícones 3D [Fluent Emoji](https://github.com/microsoft/fluentui-emoji) da Microsoft (licença MIT), guardados na pasta `icons/`.
+- [Firebase](https://firebase.google.com/) (Authentication com Google e Cloud Firestore), plano gratuito Spark.
 - Hospedagem no GitHub Pages.
 
 ## 🚀 Rodando localmente
@@ -64,13 +67,20 @@ cd Minha-carteira
 - [x] Visão geral fiel ao design
 - [x] Telas de fluxo de caixa, cartões, casa, reserva, renda e contas
 - [x] Versão para celular
-- [ ] Login individual com Supabase
-- [ ] Grupo "Família" com convite por link
-- [ ] Salvamento em banco com sincronização em tempo real entre os membros
+- [x] Login com Google (Firebase)
+- [x] Família com convite por link
+- [x] Sincronização em tempo real entre os membros
 - [ ] Contas pessoais privadas (visíveis só para o dono)
 - [x] Sistema visual único, ícones 3D, botões funcionando e salvamento local
 - [ ] Instalação como app no celular (PWA)
 - [ ] Lembretes de vencimento
+
+## 🔐 Configurando o Firebase (se for criar o seu)
+
+1. Crie um projeto no [console do Firebase](https://console.firebase.google.com/).
+2. Em **Authentication**, ative o login com **Google** e adicione o seu domínio em **Domínios autorizados**.
+3. Crie o **Firestore Database** e publique as regras do arquivo `firestore.rules`.
+4. Registre um app da Web e troque o objeto `FB_CFG` no `index.html` pela sua configuração.
 
 ## 📂 Estrutura
 
@@ -78,6 +88,7 @@ cd Minha-carteira
 Minha-carteira/
 ├── index.html   # aplicação completa (estilos, telas e lógica)
 ├── icons/       # ícones 3D Fluent Emoji (PNG)
+├── firestore.rules  # regras de segurança do Firestore
 └── README.md
 ```
 
