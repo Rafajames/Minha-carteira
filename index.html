@@ -748,7 +748,8 @@ function gate(st,msg=""){
   nofamily:`${head}<p>Olá, ${esc(first(fbUser))}! Crie a sua família para começar. Depois você envia o link de convite para quem divide as contas com você.</p><button class="gbtn p" id="gSeed">${lsGet(KEY)?"Criar com os dados deste aparelho":"Criar com dados de exemplo"}</button><button class="gbtn" id="gZero">Começar do zero</button><button class="link" id="gOut">Sair da conta</button>${err}`,
   error:`${head}${err}<button class="gbtn p" id="gRetry">Tentar de novo</button><button class="gbtn" id="gLocal">Usar sem conta, só neste aparelho</button><button class="link" id="gOut">Sair da conta</button>`};
  clearTimeout(gate.t);if(st==="loading")gate.t=setTimeout(()=>gate("error",ERR.timeout+(msg?` (parou em: ${msg})`:"")),15000);
- g.innerHTML=`<div class="gcard box">${H[st]}</div>`;g.hidden=false;
+ const diag=`<small style="color:var(--soft);font-size:10.5px">versão 8 · Firebase: ${typeof firebase==="undefined"?"bloqueado":"carregado"} · ${fbUser?"logado como "+esc(fbUser.email||"conta Google"):"não logado"}${WV?" · navegador de app":""}</small>`;
+ g.innerHTML=`<div class="gcard box">${H[st]}${diag}</div>`;g.hidden=false;
  const b=(id,fn)=>{const el=$(id);if(el)el.onclick=fn};
  b("gLogin",login);b("gLocal",useLocal);b("gNew",()=>emailAuth(true));b("gForgot",forgot);if($("gForm"))$("gForm").onsubmit=e=>{e.preventDefault();emailAuth(false)};b("gCopy",()=>{(navigator.clipboard?navigator.clipboard.writeText(location.href):Promise.reject()).then(()=>toast("Link copiado. Cole no Chrome ou no Brave.")).catch(()=>toast(location.href))});b("gSeed",()=>createFam(lsGet(KEY)?D:structuredClone(SEED)));b("gZero",()=>createFam(EMPTY()));b("gOut",logout);b("gRetry",()=>location.reload());
 }
