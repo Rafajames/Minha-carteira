@@ -408,6 +408,7 @@ body.priv :is(.bkchips b){filter:blur(7px)}
 .txr.info{opacity:.75}.txr.info .tic{background:var(--chip);color:var(--muted)}
 .ul{margin:8px 0 0;padding-left:20px;line-height:1.6;font-size:13px}.ul li{margin:2px 0}.nv{border-top:1px solid var(--line);padding:10px 0}.nv summary{cursor:pointer;display:flex;gap:8px;align-items:center;flex-wrap:wrap}.nv summary small{color:var(--muted);margin-left:auto}
 .nav[hidden],button[hidden]{display:none!important}
+.meb{display:flex;align-items:center;gap:10px;background:none;border:0;padding:4px;margin:-4px;border-radius:12px;color:inherit;font:inherit;text-align:left;cursor:pointer;min-width:0}.meb:hover{background:var(--chip)}
 </style>
 </head>
 <body>
@@ -816,9 +817,10 @@ $("bnav").innerHTML=MENU.slice(0,4).map(m=>navBtn(m,"")).join("")+`<button id="m
 on("[data-v]","click",b=>{location.hash=b.dataset.v});
 function openSheet(){
  $("sheet").innerHTML=`<div class="grab"></div>${[...MAIS,...(isAdmin()?[["adm","Administração","information"]]:[])].map(([v,t,ic])=>`<button class="opt" data-go="${v}"><img src="${ICON(ic)}" alt=""><div><b>${t}</b></div></button>`).join("")}
+ <button class="opt" id="perfSheet"><span class="tic in">${I(me)}</span><div><b>Meu perfil</b><small>Conta e segurança</small></div></button>
  <button class="opt" id="outSheet"><span class="tic warn">⏻</span><div><b>Sair</b><small>${MODE==="cloud"?esc((fbUser&&fbUser.email)||""):"Voltar para a tela de login"}</small></div></button>
  <div class="theme" style="padding:12px 8px 4px"><span>Tema</span><div class="seg2"><button class="tl" aria-label="Tema claro">☼</button><button class="td" aria-label="Tema escuro">☾</button></div></div>`;
- $("sheet").hidden=$("sheetOv").hidden=false;syncTheme();bindTheme();$("outSheet").onclick=logout;
+ $("sheet").hidden=$("sheetOv").hidden=false;syncTheme();bindTheme();$("outSheet").onclick=logout;if($("perfSheet"))$("perfSheet").onclick=()=>{closeSheet();openPerfil()};
  on("#sheet [data-go]","click",b=>{closeSheet();location.hash=b.dataset.go});
 }
 function closeSheet(){$("sheet").hidden=$("sheetOv").hidden=true}
@@ -826,8 +828,8 @@ $("maisBtn").onclick=openSheet;$("sheetOv").onclick=closeSheet;
 
 /* ===== visão geral ===== */
 function renderSide(){
- $("me").innerHTML=`${av(me,"lg")}<div><b>${N(me)}</b><small><i class="dot" style="background:${MODE==="cloud"?"var(--green)":"var(--soft)"}"></i>${MODE==="cloud"?`Família · ${D.people.length} ${D.people.length===1?"pessoa":"pessoas"}`:"Modo local"}</small></div><button class="btn" id="outSide" style="margin-left:auto;padding:6px 10px">Sair</button>`;
- $("outSide").onclick=logout;
+ $("me").innerHTML=`<button class="meb" id="meBtn" title="Meu perfil: conta e segurança">${av(me,"lg")}<div><b>${N(me)}</b><small><i class="dot" style="background:${MODE==="cloud"?"var(--green)":"var(--soft)"}"></i>${MODE==="cloud"?`Família · ${D.people.length} ${D.people.length===1?"pessoa":"pessoas"}`:"Modo local"}</small></div></button><button class="btn" id="outSide" style="margin-left:auto;padding:6px 10px">Sair</button>`;
+ $("outSide").onclick=logout;$("meBtn").onclick=openPerfil;
  const bn=$("banner");bn.hidden=MODE==="cloud"&&!SUP;
  document.querySelectorAll('[data-v="adm"]').forEach(b=>b.hidden=!isAdmin());
  if(SUP){bn.className="banner box warnban";bn.innerHTML=`<p><b>Modo suporte:</b> você está vendo a família de ${esc(SUP.name||"usuário")}. O que você mudar fica salvo na família dela.</p><button class="btn" id="supBk">Cópias de segurança</button><button class="btnp" id="supOut">Sair do suporte</button>`;$("supOut").onclick=endSup;$("supBk").onclick=()=>{location.hash="renda";setTimeout(()=>{const x=$("bkList");if(x)x.scrollIntoView({behavior:"smooth",block:"center"})},300)};}
@@ -1032,6 +1034,27 @@ function pRenda(){
   selDay=null;cardI=cSel=0;toast("Dados de exemplo restaurados",und);renderAll()};
  $("zeroB").onclick=zeroAll;
  bindFam();bindBk();bindHol();
+}
+function openPerfil(){
+ tipo="perfil";ED=null;$("addPop").hidden=true;const u=MODE==="cloud"?fbUser:null,md=(u&&u.metadata)||{},pv=u?(u.providerData||[]).map(x=>x.providerId):[],gg=pv.includes("google.com"),pw=pv.includes("password"),d=x=>x?new Date(x).toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"}):"—";
+ $("addForm").innerHTML=`<div class="mhead"><h2>Meu perfil</h2><button type="button" class="circ" id="addX" aria-label="Fechar">×</button></div>
+ <div class="row" style="border:0"><span class="nm" style="display:flex;gap:12px;align-items:center">${av(me,"lg")}<span><b>${N(me)}</b><small>${u?esc(u.email||""):"Modo de teste, sem conta"}</small></span></span></div>
+ ${u?`<div class="sub">Conta</div>
+ <div class="row"><span class="nm">E-mail</span><span class="val">${esc(u.email||"—")}</span></div>
+ <div class="row"><span class="nm">Entrou com</span><span class="val">${[gg?"Google":"",pw?"e-mail e senha":""].filter(Boolean).join(" e ")||"—"}</span></div>
+ <div class="row"><span class="nm">E-mail confirmado</span><span class="val ${u.emailVerified?"pos":"late-t"}">${u.emailVerified?"sim":"ainda não"}</span></div>
+ <div class="row"><span class="nm">Conta criada em</span><span class="val">${d(md.creationTime)}</span></div>
+ <div class="row"><span class="nm">Último login</span><span class="val">${d(md.lastSignInTime)}</span></div>
+ <div class="sub">Segurança</div>
+ ${pw?`<div class="note">Para trocar a senha, enviamos um link para o seu e-mail. Abra o link e crie a senha nova.</div><div class="gact"><button type="button" class="btn" id="pfPw">Trocar senha</button>${u.emailVerified?"":`<button type="button" class="btn" id="pfVer">Confirmar e-mail</button>`}</div>`:""}
+ ${gg?`<div class="note">Você entra com a conta Google. A senha e a verificação em duas etapas são as da sua conta Google${pw?"":"; o app não guarda senha"}.</div><div class="gact"><a class="btn" href="https://myaccount.google.com/security" target="_blank" rel="noopener">Segurança da conta Google</a></div>`:""}
+ <div class="note">Seus dados ficam protegidos por regras de acesso: só quem está na sua família vê os dados dela, e os seus extratos e lançamentos "só eu vejo" ficam só com você.</div>`
+ :`<div class="note">Você está no modo de teste: os dados ficam só neste aparelho e não há conta nem senha. Entre com o Google ou com e-mail e senha para salvar na nuvem e proteger os seus dados.</div><div class="gact"><button type="button" class="btnp" id="pfIn">Entrar</button></div>`}
+ <div style="display:flex;gap:8px;margin-top:18px;justify-content:flex-end"><button type="button" class="btn danger" id="pfOut">Sair</button><button type="button" class="btn" id="addCancel">Fechar</button></div>`;
+ $("addOv").hidden=false;$("addX").onclick=$("addCancel").onclick=closeForm;$("pfOut").onclick=logout;
+ if($("pfIn"))$("pfIn").onclick=()=>{closeForm();gate("login")};
+ if($("pfPw"))$("pfPw").onclick=()=>auth.sendPasswordResetEmail(u.email).then(()=>toast(`Link para trocar a senha enviado para ${u.email}`)).catch(e=>toast(errMsg(e)));
+ if($("pfVer"))$("pfVer").onclick=()=>u.sendEmailVerification().then(()=>toast("Link de confirmação enviado para o seu e-mail")).catch(e=>toast(errMsg(e)));
 }
 function zeroAll(e){
  const b=e&&e.currentTarget;if(b&&!b.dataset.ok){b.dataset.ok=1;b.textContent="Toque de novo para zerar";return}
@@ -2171,6 +2194,7 @@ function renderHoje(){
 
 /* ===== sobre e novidades ===== */
 const NOVID=[
+ ["2.12","11/11/2026","Meu perfil",["Toque no seu nome (ou em Mais → Meu perfil, no celular) para ver a conta: e-mail, como entrou, quando criou a conta e o último login.","Trocar a senha pelo e-mail, confirmar o e-mail e atalho para a segurança da conta Google."]],
  ["2.11","11/11/2026","Dados de exemplo novos",["O modo de teste usa uma família fictícia (João e Maria) com valores do dia a dia: salários de R$ 5.200 e R$ 4.300 e contas proporcionais."]],
  ["2.10","11/11/2026","Usuários na administração",["Cada pessoa é registrada na Administração já no login, mesmo antes de criar a família, com o jeito que entrou (Google ou e-mail), quando criou a conta e o último acesso."]],
  ["2.9","11/11/2026","Administração e suporte",["Área de administração para o dono do app: famílias e usuários (sem ver os valores de ninguém) e padrões de categorias para todos.","O administrador pode enviar redefinição de senha, bloquear e desbloquear o acesso, excluir os dados de uma família e restaurar uma cópia de segurança durante o suporte.","Precisa de ajuda? Em Sobre, gere um código de suporte: com ele o administrador consegue ver e corrigir os dados da sua família por 24 horas, e você encerra quando quiser."]],
