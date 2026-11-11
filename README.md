@@ -52,7 +52,8 @@ Tudo é recalculado na hora: trocar quem paga uma conta, mudar a regra de divis�
 - **Cartão com data de fechamento:** cada compra vai para a fatura certa, que aparece como aberta ou fechada.
 - **Reserva ligada:** marcar "Guardar na reserva" como paga soma no saldo da reserva.
 - **Ler boleto e Pix copia e cola:** colar o código preenche valor e vencimento, e o código fica guardado para copiar na hora de pagar.
-- **Importar extrato e fatura** em CSV ou OFX, sem repetir o que já foi lançado.
+- **Importar extrato e fatura** em CSV ou OFX, sem repetir o que já foi lançado. O banco é reconhecido pelo OFX (e lembrado no CSV), contas cadastradas são marcadas como pagas, e salário, pagamento de fatura e Pix entre a família ou entre as próprias contas ficam desmarcados. Só o nome do banco é guardado.
+- **Filtro por banco** no Fluxo de caixa e banco do salário em Nossa renda.
 - **Planejamento:** previsão dos próximos 6 meses, simulador de compra parcelada, objetivos com prazo e lista de assinaturas.
 - **Patrimônio:** bens, reserva, dívidas e financiamentos com o juro embutido.
 - **Lista de compras** compartilhada que vira gasto em Mercado ao fechar a compra.

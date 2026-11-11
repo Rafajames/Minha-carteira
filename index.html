@@ -584,7 +584,7 @@ function seed(){
   lista:Object.fromEntries([["Café",0],["Leite",0],["Arroz",1]].map(([n,ok],i)=>[uid(),{n,ok,t:i+1}])),log:{},
   mes:{[kOff(-1)]:{paid:{...pa},settled:true},[kOff(-2)]:{paid:{...pa},settled:true}}};
 }
-const empty=()=>({v:3,regra:"50",people:[{id:"y",n:"Eu",sal:0,pess:0,dia:0,uid:null}],casa:[],bills:[],dia:[],extra:[],cards:[],reserva:{meta:10000,saldo:0,aportes:[]},acertos:[],metas:{},goals:[],bens:[],dividas:[],vales:[],lista:{},log:{},mes:{},learn:{},carro:{uber:2.4,lemb:[]},ess:{mercado:1,casa:1,carro:1,transporte:1,saude:1,educacao:1,familia:1},mesada:{},hol:{}});
+const empty=()=>({v:3,regra:"50",people:[{id:"y",n:"Eu",sal:0,pess:0,dia:0,uid:null}],casa:[],bills:[],dia:[],extra:[],cards:[],reserva:{meta:10000,saldo:0,aportes:[]},acertos:[],metas:{},goals:[],bens:[],dividas:[],vales:[],lista:{},log:{},mes:{},learn:{},carro:{uber:2.4,lemb:[]},ess:{mercado:1,casa:1,carro:1,transporte:1,saude:1,educacao:1,familia:1},mesada:{},hol:{},bancos:[]});
 function norm(d){
  d=d||{};
  if(!d.people){ // formato antigo → novo
@@ -641,7 +641,7 @@ function flushD(){
 function flushP(){const p=clone(P);baseP=JSON.stringify(P);db.doc("users/"+fbUser.uid).update({priv:p}).catch(e=>toast("Não foi possível salvar: "+errMsg(e)))}
 
 /* ===== utilidades ===== */
-let mes=HOJE.getMonth(),ano=HOJE.getFullYear(),selDay=null,cardI=0,morMode=1,cur="visao",fF="todas",cSel=0;
+let mes=HOJE.getMonth(),ano=HOJE.getFullYear(),selDay=null,cardI=0,morMode=1,cur="visao",fF="todas",fB="",cSel=0;
 const $=id=>document.getElementById(id);
 const brl=v=>(+v||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
 const money=v=>{const [i,c]=brl(Math.abs(v)).split(",");return `<span class="rs">${v<0?"− ":""}R$</span> ${i}<span class="ct">,${c}</span>`};
@@ -711,7 +711,7 @@ const guess=n=>{const L=D&&D.learn,k=nkey(n);return (L&&k&&L[k])||guess0(n)};
 const catOf=x=>x.cat||guess(x.n);
 const CATN=id=>(CATS.find(c=>c[0]===id)||["outros","Outros"])[1];
 function gastos(k=K()){
- const out=[],ki=mIdx(k),A=(x,cat,src,d)=>out.push({v:+x.v||0,cat,n:x.n,d:d===undefined?x.d||0:d,by:x.by,id:x.id,src,km:x.km,l:x.l});
+ const out=[],ki=mIdx(k),A=(x,cat,src,d)=>out.push({v:+x.v||0,cat,n:x.n,d:d===undefined?x.d||0:d,by:x.by,id:x.id,src:src+(x.bco?" · "+x.bco:""),km:x.km,l:x.l});
  billsOf(k).forEach(x=>{if(!isCardBill(x.b))A(x.b,catOf(x.b),"conta")});
  onesOf("dia",k).forEach(x=>A(x.b,catOf(x.b),x.b.cid?"débito "+((D.cards.find(c=>c.id===x.b.cid)||{bk:""}).bk):"dia a dia"));
  D.cards.forEach(c=>c.lanc.forEach(l=>{const i=ki-mIdx(l.k);if(i>=0&&i<l.p)A(l,catOf(l),`cartão ${c.bk}${l.p>1?` ${i+1}/${l.p}`:""}`,i===0&&l.kc===k?l.dd||0:0)}));
@@ -880,11 +880,11 @@ function renderObra(){
 /* ===== Fluxo de caixa ===== */
 function flowTx(k=K()){
  const t=[],p=ME(),ki=mIdx(k),nI=mIdx(NOWK),td=new Date().getDate(),got=d=>ki<nI||(ki===nI&&d<=td);
- salTx(p,k).forEach(s=>t.push({d:s.d,n:s.n+(s.prev&&+p.adD>0?" (previsto)":""),cat:"Renda",v:s.v,done:got(s.d)}));
- onesOf("extra",k).forEach(x=>t.push({d:x.b.d,n:x.b.n,cat:x.b.rec?"Entrada fixa":"Entrada",v:x.b.v,id:x.b.id,x,done:got(x.b.d)}));
+ salTx(p,k).forEach(s=>t.push({d:s.d,n:s.n+(s.prev&&+p.adD>0?" (previsto)":""),cat:"Renda",v:s.v,done:got(s.d),bco:p.bco||""}));
+ onesOf("extra",k).forEach(x=>t.push({d:x.b.d,n:x.b.n,cat:x.b.rec?"Entrada fixa":"Entrada",v:x.b.v,id:x.b.id,x,done:got(x.b.d),bco:x.b.bco||""}));
  if(settled(k))casaCalc().tr.forEach(r=>{if(r.para===me)t.push({d:6,n:`Acerto recebido de ${person(r.de).n}`,cat:"Pix",v:r.v,done:1});if(r.de===me)t.push({d:6,n:`Acerto enviado para ${person(r.para).n}`,cat:"Pix",v:-r.v,done:1})});
- billsOf(k).forEach(x=>{const pd=isPaid(x.S,x.b.id,k);t.push({d:x.b.d,n:x.b.n,cat:pd?"Conta paga":"Conta a pagar",v:-x.b.v,id:x.b.id,x,done:pd})});
- onesOf("dia",k).forEach(x=>t.push({d:x.b.d,n:x.b.n,cat:x.b.cid?`Débito ${(D.cards.find(c=>c.id===x.b.cid)||{bk:""}).bk}`:"Dia a dia",v:-x.b.v,id:x.b.id,x,done:1}));
+ billsOf(k).forEach(x=>{const pd=isPaid(x.S,x.b.id,k),r=pd&&x.S.mes[k].paid[x.b.id];t.push({d:x.b.d,n:x.b.n,cat:pd?"Conta paga":"Conta a pagar",v:-x.b.v,id:x.b.id,x,done:pd,bco:(r&&r.bco)||""})});
+ onesOf("dia",k).forEach(x=>t.push({d:x.b.d,n:x.b.n,cat:x.b.cid?`Débito ${(D.cards.find(c=>c.id===x.b.cid)||{bk:""}).bk}`:"Dia a dia",v:-x.b.v,id:x.b.id,x,done:1,bco:x.b.bco||""}));
  return t.sort((a,b)=>a.d-b.d);
 }
 function pFluxo(){
@@ -895,13 +895,14 @@ function pFluxo(){
  [0,.5,1].forEach(f=>{const y=180-f*150;g+=`<line x1="58" x2="590" y1="${y}" y2="${y}" stroke="var(--line)"/><text x="50" y="${y+4}" text-anchor="end" font-size="11" fill="var(--muted)">${short(mx*f)}</text>`});
  wk.forEach(([e,s],i)=>{const x=70+i*104,he=e/mx*150,hs=s/mx*150;
   g+=`<rect x="${x+14}" y="${180-he}" width="30" height="${he}" rx="5" fill="var(--green)"><title>Entradas R$ ${brl(e)}</title></rect><rect x="${x+48}" y="${180-hs}" width="30" height="${hs}" rx="5" fill="var(--blue)"><title>Saídas R$ ${brl(s)}</title></rect><text x="${x+46}" y="202" text-anchor="middle" font-size="11" fill="var(--muted)">${two(W[i][0])}–${two(W[i][1])}</text>`});
- const list=tx.filter(t=>fF==="todas"||(fF==="ent"?t.v>0:t.v<0));
+ const bks=[...new Set(tx.map(t=>t.bco).filter(Boolean))];if(fB&&!bks.includes(fB))fB="";
+ const list=tx.filter(t=>(fF==="todas"||(fF==="ent"?t.v>0:t.v<0))&&(!fB||t.bco===fB));
  $("v-fluxo").innerHTML=PH("chart_increasing","Fluxo de caixa",`Entradas e saídas de ${MESES[mes].toLowerCase()} de ${ano}`,`<button class="btn" id="metasB">Metas</button><button class="btn" id="ocrB2">Lançar por foto</button><button class="btn" id="impB">Importar extrato</button><button class="btn" id="expB">Exportar planilha</button>`)+
  `<div class="pg g3">${kpi("Entradas",E)}${kpi("Saídas",S)}${kpi("Saldo do mês",E-S,E?`${pct(E-S,E)}% das entradas`:"",E-S>=0?"var(--green)":"var(--pink)")}</div>
  <div class="pg g2"><section class="c box"><div class="h">Por semana</div><div class="leg2"><span><i class="dot" style="background:var(--green)"></i>Entradas</span><span><i class="dot" style="background:var(--blue)"></i>Saídas</span></div><svg class="chart" viewBox="0 0 600 212">${g}</svg></section>
- <section class="c box"><div class="h">Lançamentos</div><div class="seg" style="grid-template-columns:repeat(3,1fr)">${[["todas","Todos"],["ent","Entradas"],["sai","Saídas"]].map(([k,l])=>`<button data-f="${k}" class="${fF===k?"on":""}">${l}</button>`).join("")}</div>
- <div class="list" style="max-height:440px;margin-top:8px">${list.length?list.map(t=>row(t.v>0?"+":"−",t.v>0?"in":"out",esc(t.n)+(t.x?tagp(t.x):""),`dia ${two(t.d)} · ${t.cat}${t.x&&t.v<0?" · "+CATN(catOf(t.x.b)):""}`,`${t.v>0?"+":"−"} R$ ${brl(Math.abs(t.v))}`,t.v>0?"pos":"",t.id)).join(""):`<div class="note">Nenhum lançamento neste mês.</div>`}</div></section></div>`+catSection()+essSection()+yearSection();
- on("#v-fluxo [data-f]","click",b=>{fF=b.dataset.f;pFluxo()});
+ <section class="c box"><div class="h">Lançamentos</div><div class="seg" style="grid-template-columns:repeat(3,1fr)">${[["todas","Todos"],["ent","Entradas"],["sai","Saídas"]].map(([k,l])=>`<button data-f="${k}" class="${fF===k?"on":""}">${l}</button>`).join("")}</div>${bks.length?`<label class="field" style="margin-top:10px">Banco<select id="fBk"><option value="">Todos os bancos</option>${bks.map(b=>`<option${b===fB?" selected":""}>${esc(b)}</option>`).join("")}</select></label>${fB?`<div class="note">Em ${esc(fB)}: entrou R$ ${brl(sum(list.filter(t=>t.v>0)))} · saiu R$ ${brl(-sum(list.filter(t=>t.v<0)))}</div>`:""}`:""}
+ <div class="list" style="max-height:440px;margin-top:8px">${list.length?list.map(t=>row(t.v>0?"+":"−",t.v>0?"in":"out",esc(t.n)+(t.x?tagp(t.x):""),`dia ${two(t.d)} · ${t.cat}${t.x&&t.v<0?" · "+CATN(catOf(t.x.b)):""}${t.bco?" · "+esc(t.bco):""}`,`${t.v>0?"+":"−"} R$ ${brl(Math.abs(t.v))}`,t.v>0?"pos":"",t.id)).join(""):`<div class="note">Nenhum lançamento neste mês.</div>`}</div></section></div>`+catSection()+essSection()+yearSection();
+ on("#v-fluxo [data-f]","click",b=>{fF=b.dataset.f;pFluxo()});if($("fBk"))$("fBk").onchange=e=>{fB=e.target.value;pFluxo()};
  bindControle();$("metasB").onclick=openMetas;$("expB").onclick=exportCSV;$("impB").onclick=openImport;$("ocrB2").onclick=openOCR;
  on("#v-fluxo .ym","click",el=>{mes=+el.dataset.m;selDay=null;renderAll()});
 }
@@ -965,11 +966,11 @@ function pRenda(){
  `<div class="pg" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr))">${kpi("Renda "+casal(),tot)}${D.people.filter(p=>!p.dep).map(p=>kpi(`Renda de ${N(p.id)}`,+p.sal||0,tot?`${pct(+p.sal||0,tot)}% do total · recebe dia ${two(p.pay||1)}`:"")).join("")}${(D.vales||[]).length?kpi("Benefícios (vales)",D.vales.reduce((s,v)=>s+(+v.recarga||0),0),"por mês, fora do salário"):""}</div>
  ${tot?`<section class="c box"><div class="h">Proporção da renda</div><div class="split" style="margin-top:14px">${ds.map(p=>`<div class="sg" style="${pc(p.id)};flex:${p.sal}">${N(p.id)} ${pct(p.sal,tot)}%</div>`).join("")}</div></section>`:""}
  ${salCard()}${holCard()}${famBox()}
- <section class="c box"><div class="h">Pessoas e valores</div><form id="frd">${D.people.map((p,i)=>`<div class="prow">${f("pn"+i,"Nome",p.n,1)}${f("ps"+i,"Salário",+p.sal||0)}<label class="field">${+p.adD>0?"Restante do salário, dia":"Recebe dia"}<input id="py${i}" type="number" min="1" max="31" value="${p.pay||1}"></label>${f("pp"+i,"Outras contas pessoais",+p.pess||0)}${f("pd"+i,"Dia a dia",+p.dia||0)}${D.people.length>1&&!p.uid&&p.id!==me?`<button type="button" class="btn danger rm" data-rm="${p.id}" aria-label="Remover ${N(p.id)}">Remover</button>`:`<span></span>`}<label class="chk pfull"><input type="checkbox" id="pdp${i}"${p.dep?" checked":""}>Dependente: aparece na família, mas não entra na divisão das contas</label><div class="pfull adv"><label class="field">Adiantamento quinzenal, dia<input id="pad${i}" type="number" min="0" max="31" value="${+p.adD||0}" title="0 = não recebe adiantamento"></label><label class="field">Adiantamento previsto (R$)<input id="pav${i}" inputmode="decimal" value="${brl(+p.adV||0)}"></label></div></div>`).join("")}
- <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap"><button class="btnp">Salvar</button>${D.people.length<6?`<button type="button" class="btn" id="addP">+ Adicionar pessoa</button>`:""}</div></form><div class="note">Em "Outras contas pessoais", coloque só o que não está lançado no app. As contas marcadas como "Só eu vejo" já entram sozinhas no seu saldo.</div></section>
+ <section class="c box"><div class="h">Pessoas e valores</div><form id="frd">${D.people.map((p,i)=>`<div class="prow">${f("pn"+i,"Nome",p.n,1)}${f("ps"+i,"Salário",+p.sal||0)}<label class="field">${+p.adD>0?"Restante do salário, dia":"Recebe dia"}<input id="py${i}" type="number" min="1" max="31" value="${p.pay||1}"></label>${f("pp"+i,"Outras contas pessoais",+p.pess||0)}${f("pd"+i,"Dia a dia",+p.dia||0)}${D.people.length>1&&!p.uid&&p.id!==me?`<button type="button" class="btn danger rm" data-rm="${p.id}" aria-label="Remover ${N(p.id)}">Remover</button>`:`<span></span>`}<label class="chk pfull"><input type="checkbox" id="pdp${i}"${p.dep?" checked":""}>Dependente: aparece na família, mas não entra na divisão das contas</label><div class="pfull adv"><label class="field">Adiantamento quinzenal, dia<input id="pad${i}" type="number" min="0" max="31" value="${+p.adD||0}" title="0 = não recebe adiantamento"></label><label class="field">Adiantamento previsto (R$)<input id="pav${i}" inputmode="decimal" value="${brl(+p.adV||0)}"></label><label class="field">Banco do salário<input id="pbc${i}" list="pbcL" value="${esc(p.bco||"")}" placeholder="Ex.: Santander"></label></div></div>`).join("")}
+ <datalist id="pbcL">${[...new Set([...bkList(),"Inter","Santander","Nubank","Itaú","Bradesco","Caixa","Banco do Brasil"])].map(b=>`<option value="${esc(b)}">`).join("")}</datalist><div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap"><button class="btnp">Salvar</button>${D.people.length<6?`<button type="button" class="btn" id="addP">+ Adicionar pessoa</button>`:""}</div></form><div class="note">Em "Outras contas pessoais", coloque só o que não está lançado no app. As contas marcadas como "Só eu vejo" já entram sozinhas no seu saldo.</div></section>
  ${bkHTML()}
  <section class="c box"><div class="h">Zerar ou recomeçar</div><div class="note">${MODE==="cloud"?"Zerar ou restaurar troca os dados da família inteira. Antes, o app guarda uma cópia de segurança.":"Tudo o que você muda fica salvo só neste aparelho. Zere para testar com os seus próprios valores."}</div><div class="gact"><button class="btn danger" id="zeroB">Zerar tudo</button><button class="btn" id="reset">Restaurar dados de exemplo</button></div></section>`;
- const read=()=>D.people.forEach((p,i)=>{if(!$("pn"+i))return;p.n=$("pn"+i).value.trim()||"Pessoa";p.sal=num($("ps"+i).value);p.pay=day($("py"+i).value);p.pess=num($("pp"+i).value);p.dia=num($("pd"+i).value);p.dep=$("pdp"+i).checked?1:0;p.adD=Math.min(Math.max(parseInt($("pad"+i).value,10)||0,0),31);p.adV=num($("pav"+i).value)});
+ const read=()=>D.people.forEach((p,i)=>{if(!$("pn"+i))return;p.n=$("pn"+i).value.trim()||"Pessoa";p.sal=num($("ps"+i).value);p.pay=day($("py"+i).value);p.pess=num($("pp"+i).value);p.dia=num($("pd"+i).value);p.dep=$("pdp"+i).checked?1:0;p.adD=Math.min(Math.max(parseInt($("pad"+i).value,10)||0,0),31);p.adV=num($("pav"+i).value);const bc=$("pbc"+i).value.trim();if(bc)p.bco=bc;else delete p.bco});
  $("frd").onsubmit=e=>{e.preventDefault();read();addLog("atualizou a renda e as pessoas");toast("Valores salvos");renderAll()};
  if($("addP"))$("addP").onclick=()=>{read();D.people.push({id:"p"+uid(),n:"Pessoa "+(D.people.length+1),sal:0,pess:0,dia:0,pay:1,uid:null});renderAll()};
  on("#frd [data-rm]","click",b=>{read();const und=snap(),id=b.dataset.rm;D.casa.forEach(c=>{if(c.q===id)c.q=me;if(c.regra===id)delete c.regra});D.people=D.people.filter(p=>p.id!==id);toast("Pessoa removida. As contas dela passaram para você.",und);renderAll()});
@@ -1414,42 +1415,78 @@ function parseCSV(t){
  const nrm=s=>s.normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase(),hi=lines.findIndex((l,i)=>i<15&&/data|date/.test(nrm(l))&&/valor|amount|quantia/.test(nrm(l)));if(hi<0)return [];
  const hl=lines[hi],sep=(hl.match(/;/g)||[]).length>(hl.match(/,/g)||[]).length?";":hl.includes("\t")?"\t":",";
  const split=l=>{const r=[];let c="",q=false;for(let i=0;i<l.length;i++){const ch=l[i];if(q){if(ch==='"'){if(l[i+1]==='"'){c+='"';i++}else q=false}else c+=ch}else if(ch==='"')q=true;else if(ch===sep){r.push(c);c=""}else c+=ch}r.push(c);return r.map(x=>x.trim())};
- const H=split(hl).map(nrm),fi=re=>H.findIndex(h=>re.test(h)),di=fi(/^(data|date|dt)/),vi=fi(/valor|amount|quantia|montante/),ni=fi(/descri|title|titulo|hist|lancamento|estabelec|memo|detalhe|nome/);
+ const H=split(hl).map(nrm),fi=re=>H.findIndex(h=>re.test(h)),di=fi(/^(data|date|dt)/),vi=fi(/valor|amount|quantia|montante/),ni=H.findIndex((h,i)=>i!==di&&/descri|title|titulo|estabelec|memo|detalhe|nome/.test(h)),hi2=H.findIndex((h,i)=>i!==di&&/hist|lancamento/.test(h));
  if(di<0||vi<0)return [];
  const out=[];
  lines.slice(hi+1).forEach(l=>{const c=split(l),ds=c[di]||"";let y,m,d,mm;
   if(mm=ds.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/)){d=+mm[1];m=+mm[2]-1;y=+mm[3];if(y<100)y+=2000}else if(mm=ds.match(/^(\d{4})-(\d{2})-(\d{2})/)){y=+mm[1];m=+mm[2]-1;d=+mm[3]}else return;
   let s=(c[vi]||"").replace(/r\$|\s/gi,"");const neg=/^\(.*\)$/.test(s)||/-/.test(s);s=s.replace(/[()+-]/g,"");s=s.includes(",")?s.replace(/\./g,"").replace(",","."):s;const v=parseFloat(s);if(isNaN(v)||!v)return;
-  out.push({y,m,d,v:neg?-v:v,n:clean(ni>=0?c[ni]:"")||"Lançamento"})});
+  const a=hi2>=0?clean(c[hi2]):"",b_=ni>=0?clean(c[ni]):"";out.push({y,m,d,v:neg?-v:v,n:clean(a&&b_&&a.toLowerCase()!==b_.toLowerCase()?`${a} · ${b_}`:(b_||a))||"Lançamento"})});
  return out;
 }
 function openImport(){
  tipo="import";ED=null;IMP=[];
  $("addForm").innerHTML=`<div class="mhead"><h2>Importar extrato ou fatura</h2><button type="button" class="circ" id="addX" aria-label="Fechar">×</button></div>
  <div class="note">Baixe o extrato da conta ou a fatura do cartão em CSV ou OFX no app ou no site do banco e escolha o arquivo aqui.</div>
- <div class="mgrid"><label class="field full">Arquivo<input type="file" id="imF" accept=".csv,.ofx,.txt,text/csv"></label><label class="field full">É de onde?<select id="imD"><option value="conta">Extrato da conta (gastos e entradas)</option>${D.cards.map((c,i)=>isDeb(c)?"":`<option value="${i}">Fatura do cartão ${esc(c.bk)} ${esc(c.nm)}</option>`).join("")}</select></label><label class="field full" id="imMw" hidden>Fatura de<select id="imM">${[-1,0,1].map(i=>`<option value="${kPlus(i)}"${i===0?" selected":""}>${kLabel(kPlus(i))}</option>`).join("")}</select></label></div>
+ <div class="mgrid"><label class="field full">Arquivo<input type="file" id="imF" accept=".csv,.ofx,.txt,text/csv"></label><label class="field full">É de onde?<select id="imD"><option value="conta">Extrato da conta (gastos e entradas)</option>${D.cards.map((c,i)=>isDeb(c)?"":`<option value="${i}">Fatura do cartão ${esc(c.bk)} ${esc(c.nm)}</option>`).join("")}</select></label><label class="field full" id="imBw">Banco<input id="imB" list="imBl" placeholder="Ex.: Inter" autocomplete="off"><datalist id="imBl">${bkList().map(b=>`<option value="${esc(b)}">`).join("")}</datalist><small class="hint" id="imBh">O app reconhece o banco pelo arquivo quando dá. Só o nome é guardado, nunca agência ou conta.</small></label><label class="field full" id="imMw" hidden>Fatura de<select id="imM">${[-1,0,1].map(i=>`<option value="${kPlus(i)}"${i===0?" selected":""}>${kLabel(kPlus(i))}</option>`).join("")}</select></label></div>
  <div id="imL"></div>
  <div style="display:flex;gap:8px;margin-top:18px;justify-content:flex-end"><button type="button" class="btn" id="addCancel">Cancelar</button><button class="btnp" id="imGo" disabled>Importar</button></div>`;
  $("addOv").hidden=false;$("addX").onclick=$("addCancel").onclick=closeForm;
- $("imF").onchange=readImport;$("imD").onchange=()=>{$("imMw").hidden=$("imD").value==="conta";readImport()};$("imM").onchange=readImport;
+ $("imF").onchange=readImport;$("imD").onchange=()=>{$("imMw").hidden=$("imD").value==="conta";$("imBw").hidden=$("imD").value!=="conta";readImport()};$("imB").onchange=readImport;$("imM").onchange=readImport;
+}
+let IMP_SIG="";
+const BANKS={1:"Banco do Brasil",33:"Santander",77:"Inter",104:"Caixa",237:"Bradesco",260:"Nubank",341:"Itaú",336:"C6",212:"Original",290:"PagBank",323:"Mercado Pago",380:"PicPay",756:"Sicoob",748:"Sicredi",422:"Safra",41:"Banrisul",70:"BRB",389:"Mercantil",208:"BTG",655:"Neon",403:"Cora",197:"Stone"};
+const BKRE=/\b(inter|santander|nubank|ita[uú]|bradesco|caixa|banco do brasil|c6|picpay|mercado pago|pagbank|sicoob|sicredi|neon|original|btg|safra|banrisul)\b/i;
+const csvSig=txt=>{const l=txt.split(/\r?\n/).slice(0,15).find(x=>/data|date/i.test(x)&&/valor|amount/i.test(x));return l?nkey(l).replace(/\s+/g,"_").slice(0,80):""};
+function detBank(txt,fname){
+ const sg=csvSig(txt);if(!/<STMTTRN>/i.test(txt)&&sg&&(D.bkSig||{})[sg])return D.bkSig[sg];
+ const id=/<BANKID>\s*0*(\d{1,4})/i.exec(txt);if(id&&BANKS[+id[1]])return BANKS[+id[1]];
+ const org=/<ORG>([^<\r\n]+)/i.exec(txt),hit=s=>{const m=BKRE.exec(s||"");return m?titleC(m[1].replace(/^itau$/i,"Itaú")):""};
+ return hit(org&&org[1])||hit(fname)||hit(txt.slice(0,400))||"";
+}
+const bkList=()=>[...new Set([...(D.bancos||[]),...D.people.map(p=>p.bco).filter(Boolean)])];
+function classify(r,v,bco){
+ const k=mk(r.y,r.m),n=r.n,low=n.toLowerCase(),nk=nkey(n),mine=ME();
+ if(v>0){
+  const sx=D.people.flatMap(p=>salTx(p,k).map(x=>({p,x}))).find(({p,x})=>(Math.abs(x.v-v)<=Math.max(x.v*.1,1)&&Math.abs(x.d-r.d)<=4)||(p.bco&&p.bco===bco&&/sal[aá]rio|folha|proventos|adiant|remunera|pagto sal|cred sal/i.test(n)));
+  if(sx||/sal[aá]rio|folha de pag|proventos|remunera[cç]/i.test(n))return {kind:"sal",lbl:`salário${sx?" de "+sx.p.n:""} · já contado em Nossa renda`,on:false};
+ }
+ const others=D.people.filter(p=>p.id!==me).map(p=>(p.n||"").split(" ")[0]).filter(x=>x.length>=3&&!/^(esposa|pessoa|marido)$/i.test(x));
+ const fam=others.find(x=>nkey(n).split(" ").includes(nkey(x)));if(fam)return {kind:"fam",lbl:`Pix ou transferência com ${fam} · entre a família`,on:false};
+ const ownN=[mine.n,fbUser&&fbUser.displayName].filter(Boolean).map(x=>nkey(x).split(" ")[0]).filter(x=>x.length>=3);
+ if(/pix|transf|ted\b|doc\b/i.test(n)&&(ownN.some(x=>nk.split(" ").includes(x))||bkList().some(b=>b!==bco&&new RegExp("\\b"+b+"\\b","i").test(n))))return {kind:"own",lbl:"transferência entre as suas contas",on:false};
+ if(v<0){
+  const amt=-v;
+  if(/fatura|pag(amen)?to cart|pagto cart|cart[aã]o de cr[eé]d|pag fat/i.test(n)){const fb=billsOf(k).find(x=>catOf(x.b)==="fatura"&&!isPaid(x.S,x.b.id,k)&&(Math.abs(x.b.v-amt)<=Math.max(x.b.v*.2,5)||D.cards.some(c=>low.includes((c.bk||"#").toLowerCase())&&(x.b.n||"").toLowerCase().includes(c.bk.toLowerCase()))));
+   return fb?{kind:"pay",lbl:`${fb.b.n} · marcar como paga`,on:true,bill:fb}:{kind:"fat",lbl:"pagamento de fatura · as compras já estão no cartão",on:false}}
+  const toks=nk.split(" ").filter(t=>t.length>=4);
+  const bl=billsOf(k).filter(x=>!isPaid(x.S,x.b.id,k)&&catOf(x.b)!=="fatura").find(x=>{const bt=nkey(x.b.n).split(" ").filter(t=>t.length>=4),name=bt.some(t=>toks.includes(t));return (name&&Math.abs(x.b.v-amt)<=Math.max(x.b.v*.15,2))||(Math.abs(x.b.v-amt)<.011&&Math.abs(x.b.d-r.d)<=5)});
+  if(bl)return {kind:"pay",lbl:`conta ${bl.b.n} · marcar como paga`,on:true,bill:bl};
+ }
+ return null;
 }
 async function readImport(){
  const f=$("imF").files[0];if(!f)return;let txt=await f.text();
  if(/�/.test(txt)){try{txt=new TextDecoder("windows-1252").decode(await f.arrayBuffer())}catch(e){}}
- const rows=/<STMTTRN>/i.test(txt)?parseOFX(txt):parseCSV(txt),dst=$("imD").value,card=dst==="conta"?null:D.cards[+dst];
+ const rows=/<STMTTRN>/i.test(txt)?parseOFX(txt):parseCSV(txt),dst=$("imD").value,card=dst==="conta"?null:D.cards[+dst];IMP_SIG=/<STMTTRN>/i.test(txt)?"":csvSig(txt);
+ if(!card&&!$("imB").value.trim()){const b=detBank(txt,f.name);if(b){$("imB").value=b;$("imBh").textContent="Banco reconhecido pelo arquivo. Pode trocar se não for."}}
  if(!rows.length){IMP=[];$("imL").innerHTML=`<div class="gerr">Não encontrei lançamentos nesse arquivo. Confira se é o CSV ou o OFX do banco.</div>`;$("imGo").disabled=true;return}
- const sign=card?(rows.filter(r=>r.v>0).length>=rows.length/2?1:-1):1,fk=$("imM").value;
- IMP=rows.map(r=>{const v=r.v*sign,kind=card?"cartao":v<0?"dia":"entrada",it={n:r.n,v:Math.abs(r.v),d:r.d,dt:`${two(r.d)}/${two(r.m+1)}`,k:card?fk:mk(r.y,r.m),kind};
-  const list=card?card.lanc:kind==="dia"?D.dia:D.extra,dup=list.some(x=>x.k===it.k&&Math.abs(x.v-it.v)<.005&&(x.n||"").toLowerCase()===it.n.toLowerCase()&&(card||x.d===it.d)),neg=card&&v<=0;
-  return {...it,dup,neg,on:!dup&&!neg}});
- const cnt=()=>IMP.filter(x=>x.on).length,upd=()=>{const n=cnt();$("imGo").disabled=!n;$("imGo").textContent=`Importar ${n}`};
- $("imL").innerHTML=`<div class="sub">${IMP.length} lançamentos no arquivo</div><div class="list imlist">${IMP.map((x,i)=>`<label class="imr"><input type="checkbox" data-im="${i}"${x.on?" checked":""}><span class="nm">${esc(ifoodN(x.n))}<small>${x.dt} · ${x.kind==="entrada"?"Entrada":x.kind==="dia"?"Gasto":"Compra no cartão"} · ${CATN(guess(ifoodN(x.n)))}${x.dup?" · já lançado":""}${x.neg?" · pagamento ou estorno":""}</small></span><span class="val ${x.kind==="entrada"?"pos":""}">R$ ${brl(x.v)}</span></label>`).join("")}</div>`;
+ const sign=card?(rows.filter(r=>r.v>0).length>=rows.length/2?1:-1):1,fk=$("imM").value,bco=card?card.bk:$("imB").value.trim();
+ IMP=rows.map(r=>{const v=r.v*sign,kind=card?"cartao":v<0?"dia":"entrada",n=ifoodN(r.n),it={n,v:Math.abs(r.v),d:r.d,dt:`${two(r.d)}/${two(r.m+1)}`,k:card?fk:mk(r.y,r.m),kind};
+  const list=card?card.lanc:kind==="dia"?D.dia:D.extra,dup=list.some(x=>x.k===it.k&&Math.abs(x.v-it.v)<.005&&[n.toLowerCase(),r.n.toLowerCase()].includes((x.n||"").toLowerCase())&&(card||x.d===it.d)),neg=card&&v<=0,cl=card||dup?null:classify(r,v,bco);
+  return {...it,dup,neg,cl,on:cl?cl.on:!dup&&!neg}});
+ const cnt=()=>IMP.filter(x=>x.on).length,upd=()=>{const n=cnt(),p=IMP.filter(x=>x.on&&x.cl&&x.cl.kind==="pay").length;$("imGo").disabled=!n;$("imGo").textContent=p?`Importar ${n-p} e marcar ${p} paga${p>1?"s":""}`:`Importar ${n}`};
+ const lab=x=>x.cl?`<b class="${x.cl.kind==="pay"?"pos":""}" style="font-weight:600">${esc(x.cl.lbl)}</b>`:`${x.kind==="entrada"?"Entrada":x.kind==="dia"?"Gasto":"Compra no cartão"} · ${CATN(guess(x.n))}${x.dup?" · já lançado":""}${x.neg?" · pagamento ou estorno":""}`;
+ const sk=IMP.filter(x=>x.cl&&!x.cl.on).length,pk=IMP.filter(x=>x.cl&&x.cl.kind==="pay").length;
+ $("imL").innerHTML=`<div class="sub">${IMP.length} lançamentos no arquivo</div>${sk||pk?`<div class="note">${pk?`${pk} ${pk>1?"contas cadastradas serão marcadas":"conta cadastrada será marcada"} como paga${pk>1?"s":""}. `:""}${sk?`${sk} ${sk>1?"linhas ficaram desmarcadas":"linha ficou desmarcada"} (salário, fatura ou transferências), para não contar duas vezes.`:""}</div>`:""}<div class="list imlist">${IMP.map((x,i)=>`<label class="imr"><input type="checkbox" data-im="${i}"${x.on?" checked":""}><span class="nm">${esc(x.n)}<small>${x.dt} · ${lab(x)}</small></span><span class="val ${x.kind==="entrada"?"pos":""}">R$ ${brl(x.v)}</span></label>`).join("")}</div>`;
  upd();on("#imL [data-im]","change",c=>{IMP[+c.dataset.im].on=c.checked;upd()});
 }
 function doImport(){
- const sel=IMP.filter(x=>x.on);if(!sel.length)return;const und=snap(),dst=$("imD").value,card=dst==="conta"?null:D.cards[+dst];
- sel.forEach(x=>{const it={id:uid(),n:ifoodN(x.n),v:x.v,k:x.k,by:me,at:now()};if(card){it.p=1;card.lanc.push(it)}else{it.d=x.d;(x.kind==="dia"?D.dia:D.extra).push(it)}});
- addLog(`importou ${sel.length} lançamentos`);closeForm();toast(`${sel.length} lançamentos importados`,und);renderAll();
+ const sel=IMP.filter(x=>x.on);if(!sel.length)return;const und=snap(),dst=$("imD").value,card=dst==="conta"?null:D.cards[+dst],bco=card?"":$("imB").value.trim();let np=0;
+ if(bco){D.bancos=D.bancos||[];if(!D.bancos.includes(bco))D.bancos.push(bco);const sg=IMP_SIG;if(sg){D.bkSig=D.bkSig||{};D.bkSig[sg]=bco}}
+ sel.forEach(x=>{if(x.cl&&x.cl.kind==="pay"){setPaid({S:x.cl.bill.S,it:x.cl.bill.b},true,x.k);const pd=x.cl.bill.S.mes[x.k].paid[x.cl.bill.b.id];if(bco)pd.bco=bco;np++;return}
+  const it={id:uid(),n:x.n,v:x.v,k:x.k,by:me,at:now()};if(bco)it.bco=bco;if(card){it.p=1;card.lanc.push(it)}else{it.d=x.d;(x.kind==="dia"?D.dia:D.extra).push(it)}});
+ const ni=sel.length-np;addLog(`importou ${ni} lançamentos${bco?" do "+bco:""}`);closeForm();toast(`${ni} importado${ni!==1?"s":""}${np?` · ${np} conta${np>1?"s":""} marcada${np>1?"s":""} como paga${np>1?"s":""}`:""}`,und);renderAll();
 }
 
 /* cópias de segurança */
@@ -1576,7 +1613,7 @@ function doOCR(){
 /* ===== categorias: aprender, detalhe e tendência ===== */
 const nkey=n=>String(n||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/^ifood · /,"").replace(/[^a-z ]+/g," ").replace(/\s+/g," ").trim();
 const titleC=s=>s.toLowerCase().replace(/(^|\s)\S/g,c=>c.toUpperCase());
-const ifoodN=n=>{const m=/^\s*IFD\*\s*(?:BR\s+)?(.*)$/i.exec(n||"");if(!m)return n;const r=m[1].replace(/ifood(\.com)?|agencia de restaurantes?/gi," ").replace(/\s+/g," ").trim();return r?"iFood · "+titleC(r):"iFood"};
+const ifoodN=n=>{const m=/IFD\*\s*(?:BR\s+)?(.*)$/i.exec(n||"");if(!m)return n;const r=m[1].replace(/ifood(\.com)?|agencia de restaurantes?/gi," ").replace(/\s+/g," ").trim();return r?"iFood · "+titleC(r):"iFood"};
 const kAdd=(k,n)=>{const [a,m]=mAdd(+k.slice(1,5),+k.slice(6)-1,n);return mk(a,m)};
 const DIAS=["domingo","segunda","terça","quarta","quinta","sexta","sábado"];
 let catId=lsGet("mc-cat")||"mercado";
@@ -1884,13 +1921,13 @@ function saveEmp(){
 let hojeOff=0;
 function diaItens(dt){
  const k=mk(dt.getFullYear(),dt.getMonth()),d=dt.getDate(),same=t=>{if(!t)return false;const x=new Date(t);return x.getFullYear()===dt.getFullYear()&&x.getMonth()===dt.getMonth()&&x.getDate()===d},o=[];
- const push=(x,v,src,id,t)=>o.push({n:x.n||"?",v,src,id,t:t||x.at||0,by:x.by,priv:x.priv});
+ const push=(x,v,src,id,t)=>o.push({n:x.n||"?",v,src:src+(x.bco?" · "+x.bco:""),id,t:t||x.at||0,by:x.by,priv:x.priv});
  [[D,0],[P,1]].forEach(([S,pv])=>{
   S.dia.filter(x=>x.k===k&&x.d===d).forEach(x=>push(Object.assign({priv:pv},x),-x.v,x.cid?`débito ${(D.cards.find(c=>c.id===x.cid)||{bk:""}).bk}`:"gasto do dia",x.id));
   S.extra.filter(x=>vis(x,k)&&x.d===d).forEach(x=>push(Object.assign({priv:pv},x),+x.v,x.rec?"entrada fixa":"entrada",x.id));
-  Object.entries(S.mes||{}).forEach(([mk_,m])=>Object.entries((m&&m.paid)||{}).forEach(([id,r])=>{if(!r||typeof r!=="object"||!same(r.t))return;const b=S.bills.find(x=>x.id===id);if(b)push({n:b.n,by:r.b,priv:pv},-b.v,`conta paga${mk_!==k?` (${AB[+mk_.slice(6)-1].toLowerCase()})`:""}`,b.id,r.t)}))});
+  Object.entries(S.mes||{}).forEach(([mk_,m])=>Object.entries((m&&m.paid)||{}).forEach(([id,r])=>{if(!r||typeof r!=="object"||!same(r.t))return;const b=S.bills.find(x=>x.id===id);if(b)push({n:b.n,by:r.b,priv:pv,bco:r.bco},-b.v,`conta paga${mk_!==k?` (${AB[+mk_.slice(6)-1].toLowerCase()})`:""}`,b.id,r.t)}))});
  (D.vales||[]).forEach(v=>v.lanc.filter(x=>x.k===k&&x.d===d).forEach(x=>push(x,-x.v,"vale "+v.emp,x.id)));
- salTx(ME(),k).filter(s=>s.d===d).forEach(s=>o.push({n:s.n+(s.prev?" (previsto)":""),v:s.v,src:"salário",id:"",t:0}));
+ salTx(ME(),k).filter(s=>s.d===d).forEach(s=>o.push({n:s.n+(s.prev?" (previsto)":""),v:s.v,src:"salário"+(ME().bco?" · "+ME().bco:""),id:"",t:0}));
  return o.sort((a,b)=>(b.t||0)-(a.t||0));
 }
 function renderHoje(){
@@ -1917,7 +1954,7 @@ const HELP=[
  ["Lançar uma compra no cartão","cartoes",["Toque na setinha ao lado de + Adicionar e escolha No cartão.","Informe descrição, valor total, parcelas, o cartão e o dia da compra.","O app mostra em qual fatura a compra vai entrar. Toque em Adicionar."],"As próximas faturas e o limite livre são calculados pelas parcelas."],
  ["Vale alimentação e refeição","cartoes",["Em Cartões, desça até Vales alimentação e refeição.","Escolha a empresa (Pluxee, VR, Alelo, Ticket…), o tipo, de quem é, o dia e o valor da recarga e o saldo atual. Toque em Adicionar.","Para lançar uma compra no vale, use Adicionar → No vale, ou escreva vale no lançamento rápido: mercado 85 vale.","O saldo cai a cada compra, e a recarga entra sozinha no dia certo."],"Os gastos com o vale aparecem nas categorias, mas não saem do saldo do salário. Se o saldo ficar diferente do app do vale, toque em Corrigir saldo."],
  ["Lançar por foto ou print","cartoes",["Toque na setinha ao lado de + Adicionar e escolha Por foto ou print.","Tire uma foto do comprovante ou escolha um print da fatura no app do banco.","Escolha onde lançar: gasto do dia, cartão ou vale.","Confira o que foi lido, corrija se precisar e toque em Lançar."],"Na primeira vez, o leitor é baixado (uns 10 MB). Prints e comprovantes nítidos dão os melhores resultados."],
- ["Importar extrato ou fatura do banco","fluxo",["No app ou no site do banco, baixe o extrato ou a fatura em CSV ou OFX.","Em Fluxo de caixa, toque em Importar extrato e escolha o arquivo.","Diga se é extrato da conta ou fatura de um cartão.","Confira a lista, desmarque o que não quiser e toque em Importar."],"O que já foi lançado aparece desmarcado, para não entrar repetido."],
+ ["Importar extrato ou fatura do banco","fluxo",["No app ou no site do banco, baixe o extrato ou a fatura em CSV ou OFX. PDF não é lido.","Em Fluxo de caixa, toque em Importar extrato e escolha o arquivo.","Diga se é extrato da conta ou fatura de um cartão. No extrato, confira o Banco: no OFX ele é reconhecido sozinho, e no CSV o app lembra depois da primeira vez.","Contas já cadastradas que aparecem no extrato são marcadas como pagas. Salário, pagamento de fatura e Pix entre vocês ou entre as suas contas ficam desmarcados, para não contar duas vezes.","Confira a lista e toque em Importar."],"Só o nome do banco é guardado, nunca agência ou número da conta. Em Nossa renda, informe o Banco do salário. No Fluxo de caixa, filtre os lançamentos por banco."],
  ["Dividir as contas da casa","casa",["Em Nossa casa, escolha a regra: Partes iguais ou Proporcional à renda.","Toque no nome ao lado de cada conta para trocar quem paga.","Para uma conta ter regra própria, toque no ✎ dela e escolha em Divisão desta conta."],"Dependentes, marcados em Nossa renda, não entram na divisão."],
  ["Fazer o acerto via Pix","casa",["Na Visão geral ou em Nossa casa, veja quem devolve quanto para quem.","Depois de fazer o Pix, toque em Marcar como pago.","O acerto vai para o histórico do mês."],""],
  ["Lançar algo que só você vê","visao",["Ao adicionar uma conta, um gasto ou uma entrada, marque Só eu vejo.","O lançamento aparece só para você, com a etiqueta só você, e entra no seu Saldo previsto."],"Essa opção aparece quando você está conectado à sua conta."],
