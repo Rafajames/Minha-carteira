@@ -406,6 +406,7 @@ body.priv :is(.bkchips b){filter:blur(7px)}
 .cfd{border-top:1px solid var(--line);margin-top:10px;padding-top:8px}.cfd summary{cursor:pointer;font-weight:600;font-size:13px;padding:4px 0}.cfd[open] summary{margin-bottom:6px}
 .catr{display:grid;grid-template-columns:1fr 1.4fr auto;gap:8px;align-items:center;padding:5px 0}.catr.b{grid-template-columns:1fr auto}@media (max-width:480px){.catr{grid-template-columns:1fr auto}.catr [data-ck]{grid-column:1/-1;grid-row:2}}
 .txr.info{opacity:.75}.txr.info .tic{background:var(--chip);color:var(--muted)}
+.ul{margin:8px 0 0;padding-left:20px;line-height:1.6;font-size:13px}.ul li{margin:2px 0}.nv{border-top:1px solid var(--line);padding:10px 0}.nv summary{cursor:pointer;display:flex;gap:8px;align-items:center;flex-wrap:wrap}.nv summary small{color:var(--muted);margin-left:auto}
 </style>
 </head>
 <body>
@@ -416,7 +417,8 @@ body.priv :is(.bkchips b){filter:blur(7px)}
   <symbol id="i-flow" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h14l-3-3M20 16H6l3 3"/></symbol>
   <symbol id="i-card" viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/></symbol>
   <symbol id="i-build" viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="5" y="3" width="14" height="18" rx="1"/><path d="M9 7h2M13 7h2M9 11h2M13 11h2M10 21v-4h4v4"/></symbol>
-  <symbol id="i-bank" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 4l9 5.5M5 10v8M9.7 10v8M14.3 10v8M19 10v8M3 20h18"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></symbol>
+<symbol id="i-bank" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 4l9 5.5M5 10v8M9.7 10v8M14.3 10v8M19 10v8M3 20h18"/></symbol>
 <symbol id="i-safe" viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="12" cy="12" r="3"/></symbol>
   <symbol id="i-cash" viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></symbol>
   <symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linejoin="round"><path d="M3 11l9-7 9 7v9H3z"/><path d="M10 20v-5h4v5"/></symbol>
@@ -465,6 +467,7 @@ body.priv :is(.bkchips b){filter:blur(7px)}
    <div class="hello"><div><h2 id="hiTxt"></h2><p id="hiDate"></p></div><form class="quick" id="quick"><input id="qk" placeholder="Lançamento rápido: mercado 85,90" title="Para entrada, comece com +: +freela 500. Para pagar com o vale, escreva vale: mercado 85 vale" aria-label="Lançamento rápido" autocomplete="off"><button class="btnp">Lançar</button></form></div>
    <section class="c box" id="hoje"></section>
    <section class="c box" id="bancos" hidden></section>
+   <div class="banner box" id="novid" hidden></div>
    <div class="banner box" id="resumo" hidden></div>
    <div class="kpis" id="kpis"></div>
    <div class="banner box warnban" id="aviso" hidden></div>
@@ -534,6 +537,7 @@ body.priv :is(.bkchips b){filter:blur(7px)}
   <div class="view" id="v-ajuda" hidden></div>
   <div class="view" id="v-cat" hidden></div>
   <div class="view" id="v-extratos" hidden></div>
+  <div class="view" id="v-sobre" hidden></div>
   <div class="demo" id="demo"></div>
  </main>
 </div>
@@ -796,9 +800,9 @@ const kpi=(l,v,s="",col="")=>`<section class="c box kpi"><div class="lbl" style=
 
 /* ===== navegação ===== */
 const MENU=[["grid","Visão geral","visao","Início"],["flow","Fluxo de caixa","fluxo","Fluxo"],["card","Cartões","cartoes","Cartões"],["build","Nossa casa","casa","Casa"],["safe","Nossa reserva","reserva","Reserva"]];
-const MENU2=[["cash","Nossa renda","renda","Renda"],["home","Contas da casa","contas","Contas"],["help","Ajuda","ajuda","Ajuda"]];
+const MENU2=[["cash","Nossa renda","renda","Renda"],["home","Contas da casa","contas","Contas"],["help","Ajuda","ajuda","Ajuda"],["info","Sobre","sobre","Sobre"]];
 const MENU3=[["bank","Meus extratos","extratos","Extratos"],["plan","Planejamento","plano","Plano"],["gem","Patrimônio","patrimonio","Patrimônio"],["list","Lista de compras","lista","Lista"]];
-const MAIS=[["extratos","Meus extratos","bank"],["reserva","Nossa reserva","money_bag"],["plano","Planejamento","compass"],["patrimonio","Patrimônio","gem_stone"],["lista","Lista de compras","shopping_cart"],["renda","Nossa renda","dollar_banknote"],["contas","Contas da casa","receipt"],["ajuda","Ajuda","open_book"]];
+const MAIS=[["extratos","Meus extratos","bank"],["reserva","Nossa reserva","money_bag"],["plano","Planejamento","compass"],["patrimonio","Patrimônio","gem_stone"],["lista","Lista de compras","shopping_cart"],["renda","Nossa renda","dollar_banknote"],["contas","Contas da casa","receipt"],["ajuda","Ajuda","open_book"],["sobre","Sobre e novidades","information"]];
 const navBtn=([ic,t,v,s],cls)=>`<button class="${cls}" data-v="${v}" title="${t}"><svg><use href="#i-${ic}"/></svg>${cls==="nav"?`<span class="nt">${t}</span>`:`<span>${s}</span>`}</button>`;
 $("menu").innerHTML=MENU.map(m=>navBtn(m,"nav")).join("");
 $("menu2").innerHTML=MENU2.map(m=>navBtn(m,"nav")).join("");
@@ -2152,6 +2156,46 @@ function renderHoje(){
  $("hjP").onclick=()=>{hojeOff--;renderHoje()};$("hjN").onclick=()=>{if(hojeOff<0){hojeOff++;renderHoje()}};if($("hjN0"))$("hjN0").onclick=()=>{hojeOff=0;renderHoje()};
 }
 
+/* ===== sobre e novidades ===== */
+const NOVID=[
+ ["2.7","11/11/2026","Sobre e novidades",["Nova tela Sobre, com informações do app, privacidade e a lista do que mudou em cada atualização.","Aviso na Visão geral quando sai uma versão nova."]],
+ ["2.6","11/11/2026","Empréstimos e consignados",["Cadastro pergunta como o empréstimo é pago: desconto no contracheque ou débito na conta do banco.","Parcela do consignado é abatida ao ler o holerite do mês, com aviso de quantas faltam.","Parcela do empréstimo do banco é reconhecida no extrato e entra como “Empréstimo Inter · parcela 8 de 12”.","Consignado aparece no Fluxo de caixa como linha informativa, sem somar de novo.","Tela do empréstimo pede parcelas que faltam e último desconto (um completa o outro) e ganhou o botão Editar.","Nova categoria Empréstimos."]],
+ ["2.5","11/11/2026","Categorias próprias",["Criar categorias com palavras para o app reconhecer sozinho, meta e essencial.","Renomear ou esconder as categorias do app.","Criar uma categoria direto no lançamento (+ Nova categoria…)."]],
+ ["2.4","11/11/2026","Conferência com os bancos",["Card que mostra se o mês bate com os extratos e o que explica a diferença.","O mês começa com o saldo real dos bancos no dia 1.","Extratos do Santander e do Inter com nomes limpos (Uber, 99, iFood, posto…).","Transferências entre as suas contas reconhecidas pelos dois extratos.","Crédito de salário no extrato vira salário recebido.","Leitura do holerite da Sonda melhorada: todas as linhas e os totais conferidos."]],
+ ["2.3","11/11/2026","Salário e sobra do mês",["Salário que cai a partir do dia 27 conta para o mês seguinte.","Cada mês começa com o que sobrou do anterior, com ajuste manual."]],
+ ["2.2","11/11/2026","Bancos e extratos",["Banco reconhecido no extrato importado e filtro por banco no Fluxo de caixa.","Importação marca contas como pagas e deixa de fora salário, fatura e Pix entre a família.","CSV com colunas de crédito e débito (Santander).","Meus bancos: saldo de cada banco e saldo total, visíveis só para você.","Meus extratos: as linhas do banco com o saldo linha a linha.","Valores aceitam “R$ 60.000” e “60 mil”."]],
+ ["2.1","11/11/2026","Hoje e modo de teste",["Card Hoje: o que saiu, o que entrou e o balanço do dia, logo abaixo do lançamento rápido.","Zerar tudo no modo de teste e levar o que foi preenchido para a conta nova."]],
+ ["2.0","11/11/2026","Categorias, carro, iFood e holerite",["Detalhe da categoria com os últimos 12 meses e linha de tendência.","Novas categorias Carro e Delivery; o app aprende quando você corrige uma categoria.","Onde foi o dinheiro, quanto ainda dá para gastar por dia, gasto fora do normal, resumo da semana e conquistas.","Carro: custo por km, consumo, comparação com o Uber e lembretes.","iFood: leitura do print de pedidos sem duplicar a fatura.","Leitura do holerite, salário em duas datas no dia útil anterior e consignados.","Essenciais × supérfluos e mesada."]],
+ ["1.5","11/11/2026","Ajuda, vales e foto",["Página de Ajuda com tutoriais passo a passo.","Vales alimentação e refeição (Pluxee, VR, Alelo…).","Lançar por foto ou print de comprovante e de fatura.","Cartão de débito e de crédito e débito."]],
+ ["1.4","10/11/2026","Visão geral 2.0",["Saudação, lançamento rápido, resumo do mês anterior e saúde financeira.","Planejamento, patrimônio e lista de compras.","Importar extrato em CSV ou OFX, ler boleto e Pix copia e cola.","Cópias de segurança e convite com código."]],
+ ["1.3","10/11/2026","Categorias e metas",["Gastos por categoria com comparação com o mês anterior.","Metas por categoria com aviso no sino.","Exportar o mês em planilha."]],
+ ["1.2","10/11/2026","Meses e várias pessoas",["Meses separados, editar e excluir lançamentos.","Até 6 pessoas na família, contas privadas e lembretes no Google Agenda."]],
+ ["1.1","10/11/2026","Família na nuvem",["Login com Google ou e-mail e senha.","Família por convite e sincronização em tempo real.","Layout para tablet e celular e logo nova."]],
+ ["1.0","10/11/2026","Primeira versão",["Visão geral, fluxo de caixa, cartões, casa, reserva, renda e contas da casa.","Visual com ícones 3D e tema claro e escuro."]]
+];
+const APPV=NOVID[0][0];
+function renderNovid(){
+ const el=$("novid"),seen=lsGet("mc-ver");if(!seen){lsSet("mc-ver",APPV);el.hidden=true;return}
+ if(seen===APPV){el.hidden=true;return}
+ const n=NOVID.filter(x=>parseFloat(x[0])>parseFloat(seen));el.hidden=false;
+ el.innerHTML=`<p><b>Novidades da versão ${APPV}:</b> ${esc(n.map(x=>x[2]).join(", "))}.</p><button class="btn" id="nvVer">Ver novidades</button><button class="btn" id="nvOk">Ok</button>`;
+ $("nvVer").onclick=()=>{lsSet("mc-ver",APPV);location.hash="sobre"};$("nvOk").onclick=()=>{lsSet("mc-ver",APPV);renderNovid()};
+}
+function pSobre(){
+ $("v-sobre").innerHTML=PH("information","Sobre","Minha Carteira · versão "+APPV)+
+ `<div class="pg g2"><section class="c box"><div class="h">O que é</div><div class="note" style="color:var(--fg);line-height:1.6">O Minha Carteira organiza as finanças da família num lugar só: salário, contas da casa, cartões, vales, bancos, empréstimos e metas. Todos da família veem e editam os mesmos dados, em tempo real, e cada um pode ter lançamentos e extratos só seus.</div>
+ <div class="minis"><div class="mini"><small>Versão</small><b>${APPV}</b></div><div class="mini"><small>Atualizado em</small><b>${NOVID[0][1]}</b></div><div class="mini"><small>Ajuda</small><b><button class="link" data-go="ajuda" style="font-size:15px">Tutoriais</button></b></div></div>
+ <div class="sub">Privacidade</div><ul class="ul">
+ <li>Os dados da família ficam no Firebase, e só quem foi convidado tem acesso.</li>
+ <li>Saldos e extratos dos bancos ficam só no seu perfil.</li>
+ <li>Fotos, prints e holerites são lidos no próprio aparelho e não são guardados: ficam só os valores.</li>
+ <li>O app nunca guarda número de cartão, agência, conta ou CPF.</li></ul>
+ <div class="sub">Feito por</div><div class="note" style="color:var(--fg)">Jamerson Rafael · <a href="https://github.com/Rafajames" target="_blank" rel="noopener">GitHub</a> · <a href="https://www.linkedin.com/in/jamerson-rafael-a7a480249/" target="_blank" rel="noopener">LinkedIn</a></div>
+ <div class="note">Feito com HTML, CSS e JavaScript, Firebase, Tesseract.js (leitura de imagens) e ícones Fluent Emoji da Microsoft.</div></section>
+ <section class="c box"><div class="h">Novidades</div>${NOVID.map((v,i)=>`<details class="nv"${i<2?" open":""}><summary><span class="tagp">${v[0]}</span> <b>${esc(v[2])}</b> <small>${v[1]}</small></summary><ul class="ul">${v[3].map(x=>`<li>${esc(x)}</li>`).join("")}</ul></details>`).join("")}</section></div>`;
+ on("#v-sobre [data-go]","click",b=>{location.hash=b.dataset.go});lsSet("mc-ver",APPV);$("novid").hidden=true;
+}
+
 /* ===== ajuda ===== */
 const HELP=[
  ["Primeiros passos","renda",["Entre com o Google ou com e-mail e senha.","Na primeira vez, escolha Criar com dados de exemplo para conhecer o app, ou Começar do zero.","Em Nossa renda, preencha nomes, salários e o dia em que cada pessoa recebe. Toque em Salvar.","Cadastre as contas fixas em Contas da casa e os cartões em Cartões."],"Os dados de exemplo podem ser trocados a qualquer momento em Nossa renda, no fim da página."],
@@ -2203,7 +2247,7 @@ function pAjuda(){
 }
 
 /* ===== rotas e render ===== */
-const V={visao:null,fluxo:pFluxo,cartoes:pCartoes,casa:pCasa,reserva:pReserva,renda:pRenda,contas:pContas,plano:pPlano,patrimonio:pPatr,lista:pLista,ajuda:pAjuda,cat:pCat,extratos:pExt};
+const V={visao:null,fluxo:pFluxo,cartoes:pCartoes,casa:pCasa,reserva:pReserva,renda:pRenda,contas:pContas,plano:pPlano,patrimonio:pPatr,lista:pLista,ajuda:pAjuda,cat:pCat,extratos:pExt,sobre:pSobre};
 function route(){
  cur=(location.hash||"#visao").slice(1);if(!(cur in V))cur="visao";
  document.querySelectorAll(".view").forEach(v=>v.hidden=v.id!=="v-"+cur);
@@ -2213,7 +2257,7 @@ function route(){
 }
 addEventListener("hashchange",route);
 function renderMonth(){$("month").innerHTML=`${MESES[mes]} <span>${ano}</span>`}
-function renderAll(){if(!D)return;syncCats();save();renderSide();renderMonth();renderHello();renderHoje();renderBancos();renderResumo();renderKpis();renderAviso();renderSemana();renderOnde();renderGastar();renderConq();renderSaldo();renderContas();renderDiv();renderCart();renderVline();renderMor();renderObra();renderSaude();renderBell();if(V[cur])V[cur]()}
+function renderAll(){if(!D)return;syncCats();save();renderSide();renderMonth();renderHello();renderHoje();renderBancos();renderNovid();renderResumo();renderKpis();renderAviso();renderSemana();renderOnde();renderGastar();renderConq();renderSaldo();renderContas();renderDiv();renderCart();renderVline();renderMor();renderObra();renderSaude();renderBell();if(V[cur])V[cur]()}
 const goM=n=>{[ano,mes]=mAdd(ano,mes,n);selDay=null;renderAll()};
 $("prev").onclick=()=>goM(-1);$("next").onclick=()=>goM(1);
 
