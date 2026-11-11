@@ -2209,7 +2209,7 @@ function pSobre(){
 }
 
 /* ===== administração (só o e-mail do administrador) ===== */
-const ADM_EMAILS=[]; // e-mail do administrador, em minúsculas
+const ADM_EMAILS=["jamersonrafael.sv@gmail.com"]; // e-mail do administrador, em minúsculas
 let CFG={},SUP=null,famSup=0,famSupCode="",statDone=false;
 const tms=x=>x&&x.toMillis?x.toMillis():(+x||0);
 const isAdmin=()=>MODE==="cloud"&&!!fbUser&&!!fbUser.email&&ADM_EMAILS.includes(fbUser.email.toLowerCase());

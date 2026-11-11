@@ -7,7 +7,7 @@ service cloud.firestore {
     function memberOf(fid) { return signedIn() && request.auth.uid in get(/databases/$(database)/documents/families/$(fid)).data.members; }
     // Administrador: e-mail confirmado e na lista abaixo
     function isAdm() { return signedIn() && request.auth.token.email_verified == true
-      && request.auth.token.email.lower() in ['EMAIL_DO_ADMIN']; }
+      && request.auth.token.email.lower() in ['jamersonrafael.sv@gmail.com']; }
     function suporteAtivo() { return isAdm() && resource.data.get('supportUntil', null) != null && resource.data.supportUntil > request.time; }
 
     // Cada pessoa só lê e altera o próprio perfil (família e lançamentos privados)
