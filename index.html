@@ -782,8 +782,8 @@ function renderSide(){
  $("me").innerHTML=`${av(me,"lg")}<div><b>${N(me)}</b><small><i class="dot" style="background:${MODE==="cloud"?"var(--green)":"var(--soft)"}"></i>${MODE==="cloud"?`Família · ${D.people.length} ${D.people.length===1?"pessoa":"pessoas"}`:"Modo local"}</small></div><button class="btn" id="outSide" style="margin-left:auto;padding:6px 10px">Sair</button>`;
  $("outSide").onclick=logout;
  const bn=$("banner");bn.hidden=MODE==="cloud";
- if(MODE!=="cloud"){bn.innerHTML=WV?`<p><b>Abra no navegador para entrar.</b> O Google não permite login dentro do navegador de outros apps. Copie o link e abra no Chrome ou no Brave.</p><button class="btn" id="bnCp">Copiar link</button>`:auth?`<p><b>Modo local.</b> Os dados ficam só neste aparelho. Entre com sua conta para salvar na nuvem e compartilhar com a família.</p><button class="btnp" id="bnIn">Entrar</button>`:`<p><b>O login não carregou.</b> O navegador bloqueou o Firebase. No Brave, toque no leão da barra de endereço, desative o Shields para este site e recarregue a página.</p><button class="btn" id="bnRe">Recarregar</button>`;
-  const a=$("bnIn"),r=$("bnRe"),c=$("bnCp");if(a)a.onclick=()=>gate("login");if(r)r.onclick=()=>location.reload();if(c)c.onclick=copyHere}
+ if(MODE!=="cloud"){bn.innerHTML=WV?`<p><b>Abra no navegador para entrar.</b> O Google não permite login dentro do navegador de outros apps. Copie o link e abra no Chrome ou no Brave.</p><button class="btn" id="bnCp">Copiar link</button>`:auth?`<p><b>Modo de teste, sem conta.</b> Os dados ficam só neste aparelho. Para testar com os seus valores, zere tudo e preencha. Depois, ao entrar com sua conta, você pode levar o que preencheu.</p><button class="btn danger" id="bnZero">Zerar tudo</button><button class="btnp" id="bnIn">Entrar</button>`:`<p><b>O login não carregou.</b> O navegador bloqueou o Firebase. No Brave, toque no leão da barra de endereço, desative o Shields para este site e recarregue a página.</p><button class="btn" id="bnRe">Recarregar</button>`;
+  const a=$("bnIn"),r=$("bnRe"),c=$("bnCp"),z=$("bnZero");if(a)a.onclick=()=>gate("login");if(z)z.onclick=zeroAll;if(r)r.onclick=()=>location.reload();if(c)c.onclick=copyHere}
  $("demo").textContent=MODE==="cloud"?"Sincronizado na nuvem":"Modo local · os dados ficam só neste aparelho";
 }
 const copyHere=()=>(navigator.clipboard?navigator.clipboard.writeText(location.href):Promise.reject()).then(()=>toast("Link copiado. Cole no Chrome ou no Brave.")).catch(()=>toast(location.href));
@@ -968,7 +968,7 @@ function pRenda(){
  <section class="c box"><div class="h">Pessoas e valores</div><form id="frd">${D.people.map((p,i)=>`<div class="prow">${f("pn"+i,"Nome",p.n,1)}${f("ps"+i,"Salário",+p.sal||0)}<label class="field">${+p.adD>0?"Restante do salário, dia":"Recebe dia"}<input id="py${i}" type="number" min="1" max="31" value="${p.pay||1}"></label>${f("pp"+i,"Outras contas pessoais",+p.pess||0)}${f("pd"+i,"Dia a dia",+p.dia||0)}${D.people.length>1&&!p.uid&&p.id!==me?`<button type="button" class="btn danger rm" data-rm="${p.id}" aria-label="Remover ${N(p.id)}">Remover</button>`:`<span></span>`}<label class="chk pfull"><input type="checkbox" id="pdp${i}"${p.dep?" checked":""}>Dependente: aparece na família, mas não entra na divisão das contas</label><div class="pfull adv"><label class="field">Adiantamento quinzenal, dia<input id="pad${i}" type="number" min="0" max="31" value="${+p.adD||0}" title="0 = não recebe adiantamento"></label><label class="field">Adiantamento previsto (R$)<input id="pav${i}" inputmode="decimal" value="${brl(+p.adV||0)}"></label></div></div>`).join("")}
  <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap"><button class="btnp">Salvar</button>${D.people.length<6?`<button type="button" class="btn" id="addP">+ Adicionar pessoa</button>`:""}</div></form><div class="note">Em "Outras contas pessoais", coloque só o que não está lançado no app. As contas marcadas como "Só eu vejo" já entram sozinhas no seu saldo.</div></section>
  ${bkHTML()}
- <section class="c box"><div class="h">Dados de exemplo</div><div class="note">${MODE==="cloud"?"Restaurar troca os dados da família inteira pelos valores de exemplo. Antes, o app guarda uma cópia de segurança.":"Tudo o que você muda fica salvo neste aparelho."}</div><button class="btn danger" id="reset" style="margin-top:12px">Restaurar dados de exemplo</button></section>`;
+ <section class="c box"><div class="h">Zerar ou recomeçar</div><div class="note">${MODE==="cloud"?"Zerar ou restaurar troca os dados da família inteira. Antes, o app guarda uma cópia de segurança.":"Tudo o que você muda fica salvo só neste aparelho. Zere para testar com os seus próprios valores."}</div><div class="gact"><button class="btn danger" id="zeroB">Zerar tudo</button><button class="btn" id="reset">Restaurar dados de exemplo</button></div></section>`;
  const read=()=>D.people.forEach((p,i)=>{if(!$("pn"+i))return;p.n=$("pn"+i).value.trim()||"Pessoa";p.sal=num($("ps"+i).value);p.pay=day($("py"+i).value);p.pess=num($("pp"+i).value);p.dia=num($("pd"+i).value);p.dep=$("pdp"+i).checked?1:0;p.adD=Math.min(Math.max(parseInt($("pad"+i).value,10)||0,0),31);p.adV=num($("pav"+i).value)});
  $("frd").onsubmit=e=>{e.preventDefault();read();addLog("atualizou a renda e as pessoas");toast("Valores salvos");renderAll()};
  if($("addP"))$("addP").onclick=()=>{read();D.people.push({id:"p"+uid(),n:"Pessoa "+(D.people.length+1),sal:0,pess:0,dia:0,pay:1,uid:null});renderAll()};
@@ -976,7 +976,15 @@ function pRenda(){
  $("reset").onclick=e=>{const b=e.currentTarget;if(!b.dataset.ok){b.dataset.ok=1;b.textContent="Toque de novo para confirmar";return}
   const und=snap();backupNow("manual");const old=D.people;D=seed();P=normP();old.forEach((p,i)=>{if(D.people[i]){D.people[i].uid=p.uid||null;D.people[i].n=p.n;if(p.id===me)me=D.people[i].id}else D.people.push(Object.assign({},p,{sal:0,pess:0,dia:0}))});
   selDay=null;cardI=cSel=0;toast("Dados de exemplo restaurados",und);renderAll()};
+ $("zeroB").onclick=zeroAll;
  bindFam();bindBk();bindHol();
+}
+function zeroAll(e){
+ const b=e&&e.currentTarget;if(b&&!b.dataset.ok){b.dataset.ok=1;b.textContent="Toque de novo para zerar";return}
+ const und=snap();backupNow("manual");const old=D.people,Z=empty();
+ if(MODE==="cloud"){Z.people=old.filter(p=>p.uid||p.id===me).map(p=>({id:p.id,n:p.n,sal:0,pess:0,dia:0,pay:p.pay||1,uid:p.uid||null}))}
+ D=norm(Z);P=normP();if(!D.people.some(p=>p.id===me))me=D.people[0].id;selDay=null;cardI=cSel=vSel=0;
+ addLog("zerou todos os dados");toast("Tudo zerado. Comece por Nossa renda: nome e salário.",und);location.hash="renda";renderAll();
 }
 
 /* ===== Contas da casa ===== */
@@ -1106,13 +1114,13 @@ function gate(st,msg=""){
    <form class="gform" id="gForm"><label class="field">E-mail<input id="gEm" type="email" autocomplete="email" required></label><label class="field">Senha<input id="gPw" type="password" autocomplete="current-password" minlength="6" required></label>
    <div class="grow"><button class="gbtn p" type="submit">Entrar</button><button class="gbtn" type="button" id="gNew">Criar conta</button></div><button class="link" type="button" id="gForgot">Esqueci a senha</button></form>
    ${INV?"":`<button class="link" id="gLocal" style="color:var(--muted)">Usar sem conta, só neste aparelho</button>`}`,
-  nofamily:`${head}<p>Olá, ${esc(first(fbUser))}! Crie a sua família para começar. Depois você envia o link de convite para quem divide as contas com você.</p><button class="gbtn p" id="gSeed">${hasLocal?"Criar com os dados deste aparelho":"Criar com dados de exemplo"}</button><button class="gbtn" id="gZero">Começar do zero</button><button class="link" id="gOut">Sair da conta</button>${err}`,
+  nofamily:`${head}<p>Olá, ${esc(first(fbUser))}! Crie a sua família para começar. Depois você envia o link de convite para quem divide as contas com você.</p>${hasLocal?`<button class="gbtn p" id="gSeed">Levar o que preenchi no teste</button><p style="font-size:12px;margin:-4px 0 4px;color:var(--muted)">Usa os dados que ficaram neste aparelho no modo sem conta.</p><button class="gbtn" id="gZero">Começar do zero</button><button class="link" id="gEx">Criar com dados de exemplo</button>`:`<button class="gbtn p" id="gSeed">Criar com dados de exemplo</button><button class="gbtn" id="gZero">Começar do zero</button>`}<button class="link" id="gOut">Sair da conta</button>${err}`,
   error:`${head}${err}<button class="gbtn p" id="gRetry">Tentar de novo</button><button class="gbtn" id="gLocal">Usar sem conta, só neste aparelho</button>${fbUser?`<button class="link" id="gOut">Sair da conta</button>`:""}`};
  if(st==="loading")gate.t=setTimeout(()=>gate("error",ERR.timeout+(msg?` (parou em: ${msg})`:"")),15000);
  g.innerHTML=`<div class="gcard box">${H[st]}</div>`;g.hidden=false;
  const b=(id,fn)=>{const el=$(id);if(el)el.onclick=fn};
  b("gLogin",login);b("gLocal",useLocal);b("gCopy",copyHere);b("gNew",()=>emailAuth(true));b("gForgot",forgot);if($("gForm"))$("gForm").onsubmit=e=>{e.preventDefault();emailAuth(false)};
- b("gSeed",()=>{loadLocal();createFam(D)});b("gZero",()=>createFam(empty()));b("gOut",logout);b("gRetry",()=>location.reload());
+ b("gSeed",()=>{loadLocal();createFam(D,hasLocal)});b("gEx",()=>createFam(seed()));b("gZero",()=>createFam(empty()));b("gOut",logout);b("gRetry",()=>location.reload());
 }
 function start(){renderAll();if(!started){started=true;route()}}
 function useLocal(){MODE="local";loadLocal();me=D.people[0].id;gate("off");start()}
@@ -1134,10 +1142,10 @@ async function forgot(){
  try{await auth.sendPasswordResetEmail(em);gate("login","Enviamos um link para "+em+" criar uma nova senha. Confira também o spam.")}catch(e){gate("login",errMsg(e))}
 }
 async function logout(){if(unsub)unsub();try{if(auth)await auth.signOut()}catch(e){}location.href=location.pathname}
-async function createFam(data){
+async function createFam(data,keep){
  gate("loading","Criando a família…");
  try{
-  const d=norm(clone(data));d.people.forEach(p=>p.uid=null);d.people[0].uid=fbUser.uid;d.people[0].n=first(fbUser);
+  const d=norm(clone(data));d.people.forEach(p=>p.uid=null);d.people[0].uid=fbUser.uid;if(!keep||!d.people[0].n||["Eu","James","Pessoa"].includes(d.people[0].n))d.people[0].n=first(fbUser);
   const ref=db.collection("families").doc();
   await ref.set({owner:fbUser.uid,members:[fbUser.uid],data:d,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
   await db.doc("users/"+fbUser.uid).set({familyId:ref.id},{merge:true});
@@ -1897,6 +1905,7 @@ function renderHoje(){
 /* ===== ajuda ===== */
 const HELP=[
  ["Primeiros passos","renda",["Entre com o Google ou com e-mail e senha.","Na primeira vez, escolha Criar com dados de exemplo para conhecer o app, ou Começar do zero.","Em Nossa renda, preencha nomes, salários e o dia em que cada pessoa recebe. Toque em Salvar.","Cadastre as contas fixas em Contas da casa e os cartões em Cartões."],"Os dados de exemplo podem ser trocados a qualquer momento em Nossa renda, no fim da página."],
+ ["Testar sem conta com os seus valores","renda",["Na tela de entrada, toque em Usar sem conta, só neste aparelho.","Na faixa do modo de teste, toque em Zerar tudo e toque de novo para confirmar.","Preencha nome, salário, contas e gastos para ver como fica.","Gostou? Toque em Entrar, crie a conta e escolha Levar o que preenchi no teste."],"Levar os dados vale para quem ainda não tem família criada. Também dá para zerar em Nossa renda, no card Zerar ou recomeçar."],
  ["Convidar alguém para a família","renda",["Abra Nossa renda.","No card Família, toque em Enviar convite e mande o link. No celular, abre o compartilhar do sistema.","A pessoa abre o link no Chrome ou no Brave (não dentro do WhatsApp) e entra com a conta dela.","Pronto: os dados passam a ser os mesmos para vocês."],"Se o link não funcionar, toque em Gerar novo link e envie de novo."],
  ["Remover alguém da família","renda",["Abra Nossa renda.","Se a pessoa já entrou com a conta dela, toque em Remover acesso ao lado do nome e toque de novo para confirmar.","Em Pessoas e valores, toque em Remover na linha da pessoa.","As contas da casa que eram dela passam para você."],"Só quem criou a família consegue remover o acesso de alguém. Removeu por engano? Toque em Desfazer no aviso."],
  ["Lançar um gasto rápido","visao",["Na Visão geral, use o campo Lançamento rápido.","Escreva o nome e o valor, por exemplo: mercado 85,90.","Toque em Lançar. A categoria é escolhida pelo nome.","O lançamento aparece na hora no card Hoje, logo abaixo, com o que saiu, o que entrou e o balanço do dia. Use as setas para ver outros dias.","Para lançar uma entrada, comece com +, por exemplo: +freela 500."],"Errou? Toque em Desfazer no aviso que aparece embaixo."],

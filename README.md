@@ -44,7 +44,7 @@ Tudo é recalculado na hora: trocar quem paga uma conta, mudar a regra de divis�
 - **Histórico de acertos** via Pix, mês a mês.
 - **Gastos por categoria** com comparação com o mês anterior, **metas** com aviso no sino e **exportação do mês** em planilha (CSV para Excel e Google Planilhas).
 - **Visão de cada pessoa:** o saldo previsto e a moradia usam o salário e a parte de quem está conectado.
-- **Modo local** sem conta, com botão para restaurar os dados de exemplo.
+- **Modo de teste** sem conta: botão **Zerar tudo** para testar com os próprios valores e, ao criar a conta, opção **Levar o que preenchi no teste**. Também dá para restaurar os dados de exemplo.
 - **Visão geral 2.0:** saudação, lançamento rápido ("mercado 85,90"), resumo do mês anterior, indicadores de entradas, despesas, balanço e parcelas que terminaram, e nota de **saúde financeira** de 0 a 100.
 - **Desfazer** depois de excluir, marcar como pago ou importar; **pagar todas do dia** de uma vez; **ocultar valores** com o ícone de olho.
 - **Quem fez o quê:** cada conta paga mostra quem pagou e quando, e o sino lista a atividade da família.
@@ -59,7 +59,7 @@ Tudo é recalculado na hora: trocar quem paga uma conta, mudar a regra de divis�
 - **Gráfico do ano** no Fluxo de caixa.
 - **Cópias de segurança:** uma por dia na nuvem, mais cópia em arquivo para baixar e restaurar.
 - **Convite com código:** "Gerar novo link" desativa o link anterior, e só quem criou a família remove pessoas.
-- **Ajuda:** 31 tutoriais passo a passo, com busca e atalho para a tela de cada assunto.
+- **Ajuda:** 32 tutoriais passo a passo, com busca e atalho para a tela de cada assunto.
 - **Vale alimentação e refeição** (Pluxee, VR, Alelo, Ticket e outros): saldo, recarga automática no dia certo e previsão de até quando o saldo dura. Os gastos entram nas categorias, mas não saem do saldo do salário.
 - **Lançar por foto ou print:** lê comprovantes e prints de fatura no próprio aparelho, com [Tesseract.js](https://github.com/naptha/tesseract.js), e mostra o resultado para conferir antes de lançar.
 - **Balanço do dia:** card Hoje logo abaixo do lançamento rápido, com o que saiu, o que entrou e o saldo do dia, a lista dos lançamentos (gastos, entradas, vale e contas pagas no dia) e setas para ver outros dias.
