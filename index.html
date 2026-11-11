@@ -1430,7 +1430,7 @@ function pPatr(){
  on("[data-bv]","change",el=>{const x=D.bens.find(b=>b.id===el.dataset.bv);if(x){x.v=num(el.value);renderAll()}});
  on("[data-dv]","change",el=>{const x=D.dividas.find(d=>d.id===el.dataset.dv);if(x){const f=el.dataset.f;x[f]=f==="rest"?Math.max(parseInt(el.value,10)||0,0):num(el.value);renderAll()}});
  const del=(sel,key,list)=>on(sel,"click",b=>{if(!b.dataset.ok){b.dataset.ok=1;b.textContent="Toque de novo";return}const und=snap(),x=D[list].find(y=>y.id===b.dataset[key]);D[list]=D[list].filter(y=>y!==x);toast(`${x.n} removido`,und);renderAll()});
- del("[data-bx]","bx","bens");del("[data-dx]","dx","dividas");$("empB").onclick=openEmp;
+ del("[data-bx]","bx","bens");del("[data-dx]","dx","dividas");$("empB").onclick=()=>openEmp();on("[data-emp]","click",b=>openEmp(b.dataset.emp));
  $("fbe").onsubmit=e=>{e.preventDefault();const n=$("ben").value.trim(),v=num($("bev").value);if(!n||!v){toast(!n?"Escreva o nome do bem":"Informe o valor, por exemplo: 60.000,00");return}D.bens.push({id:uid(),n,v});addLog(`cadastrou o bem ${n}`);toast(`${n} adicionado`);renderAll()};
  $("fdv").onsubmit=e=>{e.preventDefault();const n=$("dn").value.trim(),s=num($("ds").value);if(!n||!s){toast(!n?"Escreva o nome da dívida":"Informe o saldo devedor");return}D.dividas.push({id:uid(),n,saldo:s,parcela:num($("dp").value),rest:Math.max(parseInt($("dr").value,10)||0,0)});addLog(`cadastrou a dívida ${n}`);renderAll()};
 }
@@ -2001,7 +2001,7 @@ function consHTML(d){
  <small>R$ ${brl(d.parcela)} por mês · ${fin?"quitado":`faltam ${x.rest} (${AB[+kAdd(d.ini,x.pagas).slice(6)-1].toLowerCase()} a ${AB[+e.slice(6)-1].toLowerCase()}) · deve R$ ${brl(x.saldo)}`}</small>
  <small>${d.lib?`Recebeu R$ ${brl(d.lib)} · vai pagar R$ ${brl(x.tot)} · <b class="late-t">R$ ${brl(x.juros)} de juros</b>`:`Total R$ ${brl(x.tot)}`}${ok(kOff(-1))?` · parcela de ${AB[+kOff(-1).slice(6)-1].toLowerCase()} conferida no holerite`:""}</small>
  ${fin?"":`<small>Desconto de ${kLabel(d.ini).toLowerCase()} a ${kLabel(e).toLowerCase()}. Em <b>${kLabel(up).toLowerCase()}</b> o salário sobe R$ ${brl(d.parcela)}.</small>`}
- <div class="gact"><span style="flex:1"></span><button class="btn danger rm" data-dx="${d.id}" aria-label="Remover ${esc(d.n)}">Remover</button></div></div>`;
+ <div class="gact"><button class="btn" data-emp="${d.id}">✎ Editar</button><span style="flex:1"></span><button class="btn danger rm" data-dx="${d.id}" aria-label="Remover ${esc(d.n)}">Remover</button></div></div>`;
 }
 function parseEmp(t){
  const T=String(t||"").replace(/\s+/g," "),M="(\\d{1,3}(?:\\.\\d{3})*,\\d{2})",g=(re)=>{const m=re.exec(T);return m?m:null},o={};
@@ -2021,26 +2021,40 @@ function parseEmp(t){
  const bk=/\binter\b/i.test(T)?"Inter":(T.match(/\b(caixa|bradesco|ita[uú]|santander|banco do brasil|nubank|c6|pan|bmg|daycoval|safra|mercantil|sicoob|sicredi|banrisul)\b/i)||[])[1];if(bk)o.bk=titleC(bk);
  return o;
 }
-function openEmp(){
- tipo="emp";ED=null;$("addPop").hidden=true;const n=D.dividas.filter(d=>d.cons).length+1;
- $("addForm").innerHTML=`<div class="mhead"><h2>Novo consignado</h2><button type="button" class="circ" id="addX" aria-label="Fechar">×</button></div>
- <div class="note">Escolha o print da tela "Detalhes do empréstimo" do app do banco para preencher sozinho, ou preencha à mão. A imagem é lida no aparelho e não é guardada.</div>
- <div class="mgrid"><label class="field full">Print do empréstimo (opcional)<input type="file" id="emF" accept="image/*"></label><div class="note full" id="emS"></div>
- <label class="field full">Nome<input id="emN" required value="Consignado ${n}º"></label><label class="field">Parcela (R$)<input id="emP" inputmode="decimal" required placeholder="181,77"></label><label class="field">Nº de parcelas<input id="emQ" type="number" min="1" max="120" value="12"></label>
- <label class="field">Primeiro desconto<input id="emI" type="month" value="${NOWK.slice(1,5)}-${NOWK.slice(6)}"></label><label class="field">Valor liberado (R$)<input id="emL" inputmode="decimal" placeholder="1.500,00"></label><div class="note full" id="emX"></div></div>
- <div style="display:flex;gap:8px;margin-top:18px;justify-content:flex-end"><button type="button" class="btn" id="addCancel">Cancelar</button><button class="btnp">Cadastrar dívida</button></div>`;
+function empBase(pid){const p=person(pid||me),pd=diaUtil(HOJE.getFullYear(),HOJE.getMonth(),p.pay||30).getDate();return HOJE.getDate()>=pd?kAdd(NOWK,1):NOWK}
+let EMP_ED=null;
+function openEmp(id){
+ tipo="emp";ED=null;$("addPop").hidden=true;const d=typeof id==="string"?D.dividas.find(x=>x.id===id):null;EMP_ED=d||null;const n=D.dividas.filter(x=>x.cons).length+1,base=empBase(),x=d?dvInfo(d):null,fim=d?consEnd(d):"",mv=k=>k?`${k.slice(1,5)}-${k.slice(6)}`:"";
+ $("addForm").innerHTML=`<div class="mhead"><h2>${d?"Editar consignado":"Novo consignado"}</h2><button type="button" class="circ" id="addX" aria-label="Fechar">×</button></div>
+ ${d?"":`<div class="note">Escolha o print da tela "Detalhes do empréstimo" do app do banco para preencher sozinho, ou preencha à mão. A imagem é lida no aparelho e não é guardada.</div>`}
+ <div class="mgrid">${d?"":`<label class="field full">Print do empréstimo (opcional)<input type="file" id="emF" accept="image/*"></label><div class="note full" id="emS"></div>`}
+ <label class="field full">Nome<input id="emN" required value="${esc(d?d.n:`Consignado ${n}º`)}"></label>
+ <label class="field">Valor da parcela (R$)<input id="emP" inputmode="decimal" required placeholder="181,77" value="${d?brl(d.parcela):""}"></label>
+ <label class="field">Parcelas que faltam<input id="emR" type="number" min="1" max="120" placeholder="Ex.: 6" value="${x?x.rest||"":""}"></label>
+ <label class="field">Último desconto<input id="emU" type="month" value="${mv(fim)}"></label>
+ <label class="field">Total de parcelas do contrato <small class="hint" style="display:inline">(opcional)</small><input id="emQ" type="number" min="1" max="120" placeholder="Ex.: 12" value="${d?d.np:""}"></label>
+ <label class="field full">Valor liberado, o que caiu na conta (R$, opcional)<input id="emL" inputmode="decimal" placeholder="1.000,00" value="${d&&d.lib?brl(d.lib):""}"></label>
+ <div class="note full" id="emX"></div></div>
+ <div style="display:flex;gap:8px;margin-top:18px;justify-content:flex-end"><button type="button" class="btn" id="addCancel">Cancelar</button><button class="btnp">${d?"Salvar":"Cadastrar dívida"}</button></div>`;
  $("addOv").hidden=false;$("addX").onclick=$("addCancel").onclick=closeForm;
- const hint=()=>{const p=num($("emP").value),q=+$("emQ").value||0,l=num($("emL").value),mm=/^(\d{4})-(\d{2})/.exec($("emI").value||"");if(!p||!q||!mm){$("emX").textContent="";return}const e=kAdd(mk(+mm[1],+mm[2]-1),q-1);$("emX").innerHTML=`Desconto até ${kLabel(e).toLowerCase()} · total R$ ${brl(p*q)}${l?` · <b class="late-t">R$ ${brl(p*q-l)} de juros</b>`:""}`};
- ["emP","emQ","emL","emI"].forEach(id=>$(id).addEventListener("input",hint));
- $("emF").onchange=async()=>{const f=$("emF").files[0];if(!f)return;$("emS").textContent="Preparando a leitura…";
-  try{const d=await ocrData(f,"emS");if(tipo!=="emp")return;const o=parseEmp(d.text);
-   if(o.parcela)$("emP").value=brl(o.parcela);if(o.np)$("emQ").value=o.np;if(o.lib)$("emL").value=brl(o.lib);if(o.ini)$("emI").value=`${o.ini.slice(1,5)}-${o.ini.slice(6)}`;if(o.bk)$("emN").value=$("emN").value.replace(/ · .*$/,"")+" · "+o.bk;
-   $("emS").innerHTML=o.parcela?`<b>Lido:</b> ${o.np||"?"} × R$ ${o.parcela?brl(o.parcela):"?"}${o.ini?` · desconto a partir de ${kLabel(o.ini).toLowerCase()}`:""}${o.saldo?` · saldo devedor no banco R$ ${brl(o.saldo)}`:""}. Confira antes de cadastrar.`:"Não encontrei os dados do empréstimo. Preencha à mão.";hint()}
+ const mk_=v=>{const m=/^(\d{4})-(\d{2})/.exec(v||"");return m?mk(+m[1],+m[2]-1):""};
+ const fromR=()=>{const r=+$("emR").value||0;if(r>0)$("emU").value=mv(kAdd(base,r-1));hint()},fromU=()=>{const u=mk_($("emU").value);if(u){const r=mIdx(u)-mIdx(base)+1;$("emR").value=r>0?r:""}hint()};
+ const hint=()=>{const p=num($("emP").value),r=+$("emR").value||0,u=mk_($("emU").value),q=Math.max(+$("emQ").value||0,r),l=num($("emL").value);if(!p||!r||!u){$("emX").innerHTML="Preencha o valor da parcela e as parcelas que faltam (ou o último desconto): um completa o outro.";return}
+  const pg=q-r,tot=p*q,j=tot-l;$("emX").innerHTML=`Faltam <b>${r}</b> parcela${r>1?"s":""}: de ${kLabel(base).toLowerCase()} a ${kLabel(u).toLowerCase()} · ainda vai pagar <b>R$ ${brl(p*r)}</b>${q>r?` · ${pg} de ${q} já pagas`:""}${l&&q?(j>0?` · <b class="late-t">R$ ${brl(j)} de juros</b> no contrato todo`:` · <b class="late-t">confira: o valor liberado está maior que o total das parcelas</b>`):""}. Em ${kLabel(kAdd(u,1)).toLowerCase()} o salário sobe R$ ${brl(p)}.`};
+ $("emR").addEventListener("input",fromR);$("emU").addEventListener("input",fromU);["emP","emQ","emL"].forEach(i=>$(i).addEventListener("input",hint));hint();
+ if($("emF"))$("emF").onchange=async()=>{const f=$("emF").files[0];if(!f)return;$("emS").textContent="Preparando a leitura…";
+  try{const dd=await ocrData(f,"emS");if(tipo!=="emp")return;const o=parseEmp(dd.text);
+   if(o.parcela)$("emP").value=brl(o.parcela);if(o.np)$("emQ").value=o.np;if(o.lib)$("emL").value=brl(o.lib);if(o.bk)$("emN").value=$("emN").value.replace(/ · .*$/,"")+" · "+o.bk;
+   const u=o.fim||(o.ini&&o.np?kAdd(o.ini,o.np-1):"");if(u){$("emU").value=mv(u);fromU()}else if(o.np&&o.pagas!=null){$("emR").value=o.np-o.pagas;fromR()}
+   $("emS").innerHTML=o.parcela?`<b>Lido do print:</b> ${o.np||"?"} parcelas de R$ ${brl(o.parcela)}${u?`, a última em ${kLabel(u).toLowerCase()}`:""}${o.saldo?` · saldo devedor no banco R$ ${brl(o.saldo)}`:""}. Confira os campos abaixo.`:"Não encontrei os dados do empréstimo. Preencha à mão.";hint()}
   catch(e){$("emS").textContent="Não consegui ler a imagem. Preencha à mão."}};
 }
 function saveEmp(){
- const p=num($("emP").value),q=Math.max(+$("emQ").value||0,1),mm=/^(\d{4})-(\d{2})/.exec($("emI").value||""),n=$("emN").value.trim()||"Consignado";if(!p||!mm)return;
- const und=snap();D.dividas.push({id:uid(),n,cons:1,parcela:p,np:q,ini:mk(+mm[1],+mm[2]-1),lib:num($("emL").value),pid:me,saldo:0,rest:0});addLog(`cadastrou ${n}`);closeForm();toast(`${n} cadastrado`,und);renderAll();
+ const p=num($("emP").value),r=+$("emR").value||0,m=/^(\d{4})-(\d{2})/.exec($("emU").value||""),n=$("emN").value.trim()||"Consignado";
+ if(!p||!r||!m){toast("Preencha o valor da parcela e as parcelas que faltam");return}
+ const u=mk(+m[1],+m[2]-1),q=Math.max(+$("emQ").value||0,r),und=snap(),o={n,cons:1,parcela:p,np:q,ini:kAdd(u,1-q),lib:num($("emL").value),pid:me,saldo:0,rest:0};
+ if(EMP_ED){Object.assign(EMP_ED,o);toast(`${n} atualizado`,und)}else{D.dividas.push({id:uid(),...o});toast(`${n} cadastrado`,und)}
+ addLog(`${EMP_ED?"editou":"cadastrou"} ${n}`);EMP_ED=null;closeForm();renderAll();
 }
 
 /* ===== meus bancos e extratos (só a própria pessoa vê) ===== */
@@ -2163,7 +2177,7 @@ const HELP=[
  ["Lançar pedidos do iFood","visao",["Toque na setinha ao lado de + Adicionar e escolha Por foto ou print.","Em Lançar como, escolha Pedidos do iFood e escolha o print da lista de pedidos.","Confira e toque em Lançar. Os pedidos que já estão na fatura como IFD* só ganham o nome do restaurante, sem duplicar."],"Na categoria Delivery aparecem os pedidos, o valor médio e os dias em que vocês mais pedem."],
  ["Ler o holerite","renda",["Abra Nossa renda e toque em Ler holerite.","Escolha a foto ou o print do recibo de pagamento.","Confira proventos e descontos. O app mostra se os valores conferem com o líquido.","Toque em Salvar holerite. As parcelas dos consignados são conferidas sozinhas."],"Em mês de férias, o salário previsto não muda. O FGTS aparece só como informação."],
  ["Salário em duas datas (adiantamento)","renda",["Em Nossa renda, em Pessoas e valores, informe o dia do adiantamento (ex.: 15), o valor previsto e o dia do restante (ex.: 30). Toque em Salvar.","Se o dia cair em fim de semana ou feriado (nacional, de Roraima ou de Boa Vista), o app usa o dia útil anterior.","Quando o holerite do mês é lido, os valores previstos são trocados pelos reais."],""],
- ["Cadastrar um consignado","patrimonio",["Abra Patrimônio e toque em + Consignado.","Escolha o print da tela Detalhes do empréstimo do app do banco, ou preencha à mão.","Confira parcela, número de parcelas, primeiro desconto e valor liberado e toque em Cadastrar dívida."],"O app mostra quantas parcelas faltam, quanto é juro e em que mês o salário sobe."],
+ ["Cadastrar um consignado","patrimonio",["Abra Patrimônio e toque em + Consignado.","Escolha o print da tela Detalhes do empréstimo do app do banco, ou preencha à mão.","Informe o valor da parcela e quantas parcelas faltam: o último desconto é calculado sozinho (ou informe o último desconto e o app conta as que faltam). Total de parcelas e valor liberado são opcionais, para mostrar as já pagas e os juros.","Toque em Cadastrar dívida. Para corrigir depois, toque em ✎ Editar no card do consignado."],"O app mostra quantas parcelas faltam, quanto é juro e em que mês o salário sobe."],
  ["Mesada e essenciais","fluxo",["Em Fluxo de caixa, no card Mesada, informe o valor livre de cada pessoa por mês.","Lance os gastos livres na categoria Mesada: eles contam para quem lançou.","Em Essenciais e supérfluos, toque nas categorias para marcar o que é essencial."],""],
  ["Problemas para entrar","",["Abra o link no Chrome ou no Brave, não dentro do WhatsApp ou de outro app.","No Brave, toque no leão da barra de endereço e desative o Shields para este site.","Se o convite disser que não vale mais, peça um link novo para quem criou a família."],""]
 ];
