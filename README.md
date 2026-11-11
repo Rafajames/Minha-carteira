@@ -42,6 +42,7 @@ Tudo é recalculado na hora: trocar quem paga uma conta, mudar a regra de divis�
 - **Faturas calculadas pelas parcelas:** as próximas faturas e o limite livre saem das compras lançadas.
 - **Lembrete no Google Agenda:** cada conta a pagar gera um evento mensal no dia do vencimento.
 - **Histórico de acertos** via Pix, mês a mês.
+- **Gastos por categoria** com comparação com o mês anterior, **metas** com aviso no sino e **exportação do mês** em planilha (CSV para Excel e Google Planilhas).
 - **Visão de cada pessoa:** o saldo previsto e a moradia usam o salário e a parte de quem está conectado.
 - **Modo local** sem conta, com botão para restaurar os dados de exemplo.
 - Layout responsivo: no celular, o menu vira uma barra inferior com Início, Fluxo, Cartões, Casa e Mais.
