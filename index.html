@@ -403,6 +403,7 @@ body.priv :is(.hsum b){filter:blur(7px)}
 body.priv :is(.bkchips b){filter:blur(7px)}
 .g4f{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}.g4f>.c{min-width:0}
 @media (max-width:480px){.g4f{grid-template-columns:1fr 1fr;gap:10px}.g4f>.c{padding:14px}.g4f .money{font-size:19px}}
+.cfd{border-top:1px solid var(--line);margin-top:10px;padding-top:8px}.cfd summary{cursor:pointer;font-weight:600;font-size:13px;padding:4px 0}.cfd[open] summary{margin-bottom:6px}
 </style>
 </head>
 <body>
@@ -713,7 +714,7 @@ function find(id){
  return null;
 }
 const CATS=[["mercado","Mercado"],["casa","Casa e contas"],["carro","Carro"],["transporte","Transporte"],["delivery","Delivery"],["saude","Saúde"],["lazer","Lazer e restaurantes"],["educacao","Educação"],["assinaturas","Assinaturas"],["compras","Compras"],["familia","Família"],["mesada","Mesada"],["reserva","Reserva"],["outros","Outros"],["fatura","Fatura de cartão"]];
-const GUESS=[[/fatura|cart[aã]o/i,"fatura"],[/ifood|\bifd\b|ifd\*|rappi|aiqfome|delivery/i,"delivery"],[/mercado|padaria|feira|a[cç]ougue|hortifruti|atacad/i,"mercado"],[/combust|gasolina|etanol|diesel|\bposto\b|shell|ipiranga|petrobras|auto ?pe[cç]as|\bpe[cç]as?\b|mec[aâ]nic|oficina|borracharia|\bpneus?\b|ipva|licenciamento|detran|seguro (do )?(carro|auto|ve[ií]culo)|seguro auto|estaciona|lava.?jato|revis[aã]o|troca de [oó]leo|ped[aá]gio|\bcarro\b/i,"carro"],[/uber|\b99\b|99pop|t[aá]xi|transporte|passage|[oô]nibus|metr[oô]/i,"transporte"],[/aluguel|condom|\bluz\b|energia|[aá]gua|internet|\bg[aá]s\b|iptu|apartamento|casa|seguro|telefone/i,"casa"],[/farm[aá]cia|m[eé]dic|sa[uú]de|academia|dentist|exame|rem[eé]dio/i,"saude"],[/restaurante|lazer|cinema|\bbar\b|viagem|lanche|pizza|hamburg|ingresso/i,"lazer"],[/escola|curso|faculdade|livro|mensalidade/i,"educacao"],[/streaming|assinatura|netflix|spotify|youtube|prime/i,"assinaturas"],[/mesada/i,"mesada"],[/fam[ií]lia|presente/i,"familia"],[/reserva|poupan|invest/i,"reserva"],[/roupa|loja|notebook|\btv\b|t[eê]nis|pet|celular|eletro/i,"compras"]];
+const GUESS=[[/fatura|cart[aã]o/i,"fatura"],[/ifood|\bifd\b|ifd\*|rappi|aiqfome|delivery/i,"delivery"],[/mercado|padaria|feira|a[cç]ougue|hortifruti|atacad/i,"mercado"],[/combust|gasolina|etanol|diesel|\bposto\b|departamento estadual de|shell|ipiranga|petrobras|auto ?pe[cç]as|\bpe[cç]as?\b|mec[aâ]nic|oficina|borracharia|\bpneus?\b|ipva|licenciamento|detran|seguro (do )?(carro|auto|ve[ií]culo)|seguro auto|estaciona|lava.?jato|revis[aã]o|troca de [oó]leo|ped[aá]gio|\bcarro\b/i,"carro"],[/uber|\b99\b|99pop|t[aá]xi|transporte|passage|[oô]nibus|metr[oô]/i,"transporte"],[/aluguel|condom|\bluz\b|energia|[aá]gua|internet|\bg[aá]s\b|iptu|apartamento|casa|seguro|telefone/i,"casa"],[/farm[aá]cia|drogaria|m[eé]dic|sa[uú]de|academia|dentist|exame|rem[eé]dio|cl[ií]nica|psicolog/i,"saude"],[/restaurante|lazer|cinema|\bbar\b|viagem|lanche|pizza|hamburg|ingresso|churros|mousse|\bfood\b|bambu|a[cç]a[ií]|sorvet|doceria|lanchonete/i,"lazer"],[/escola|curso|faculdade|livro|mensalidade/i,"educacao"],[/streaming|assinatura|netflix|spotify|youtube|prime|google one|icloud|ebanx/i,"assinaturas"],[/mesada/i,"mesada"],[/fam[ií]lia|presente/i,"familia"],[/reserva|poupan|invest/i,"reserva"],[/roupa|loja|notebook|\btv\b|t[eê]nis|pet|celular|eletro|amazon|iphone/i,"compras"]];
 const guess0=n=>{for(const [r,c] of GUESS)if(r.test(n||""))return c;return "outros"};
 const guess=n=>{const L=D&&D.learn,k=nkey(n);return (L&&k&&L[k])||guess0(n)};
 const catOf=x=>x.cat||guess(x.n);
@@ -888,7 +889,7 @@ function renderObra(){
 /* ===== Fluxo de caixa ===== */
 function flowTx(k=K()){
  const t=[],p=ME(),ki=mIdx(k),nI=mIdx(NOWK),td=new Date().getDate(),got=d=>ki<nI||(ki===nI&&d<=td);
- salFor(p,k).forEach(s=>t.push({d:s.d,n:s.n+(s.prev&&+p.adD>0?" (previsto)":"")+(s.carried?` · recebido ${two(s.d0)}/${s.carried.slice(6)}`:""),cat:"Renda",v:s.v,done:s.carried?(mIdx(s.carried)<nI||(s.carried===NOWK&&s.d0<=td)):got(s.d),bco:p.bco||""}));
+ salFor(p,k).forEach(s=>t.push({d:s.d,n:s.n+(s.prev&&+p.adD>0?" (previsto)":"")+(s.carried?` · recebido ${two(s.d0)}/${s.carried.slice(6)}`:""),cat:"Renda",v:s.v,sal:1,carried:s.carried,done:s.carried?(mIdx(s.carried)<nI||(s.carried===NOWK&&s.d0<=td)):got(s.d),bco:p.bco||""}));
  onesOf("extra",k).forEach(x=>t.push({d:x.b.d,n:x.b.n,cat:x.b.rec?"Entrada fixa":"Entrada",v:x.b.v,id:x.b.id,x,done:got(x.b.d),bco:x.b.bco||""}));
  if(settled(k))casaCalc().tr.forEach(r=>{if(r.para===me)t.push({d:6,n:`Acerto recebido de ${person(r.de).n}`,cat:"Pix",v:r.v,done:1});if(r.de===me)t.push({d:6,n:`Acerto enviado para ${person(r.para).n}`,cat:"Pix",v:-r.v,done:1})});
  billsOf(k).forEach(x=>{const pd=isPaid(x.S,x.b.id,k),r=pd&&x.S.mes[k].paid[x.b.id];t.push({d:x.b.d,n:x.b.n,cat:pd?"Conta paga":"Conta a pagar",v:-x.b.v,id:x.b.id,x,done:pd,bco:(r&&r.bco)||""})});
@@ -906,13 +907,13 @@ function pFluxo(){
  const bks=[...new Set(tx.map(t=>t.bco).filter(Boolean))];if(fB&&!bks.includes(fB))fB="";
  const list=tx.filter(t=>(fF==="todas"||(fF==="ent"?t.v>0:t.v<0))&&(!fB||t.bco===fB));
  $("v-fluxo").innerHTML=PH("chart_increasing","Fluxo de caixa",`Entradas e saídas de ${MESES[mes].toLowerCase()} de ${ano}`,`<button class="btn" id="metasB">Metas</button><button class="btn" id="ocrB2">Lançar por foto</button><button class="btn" id="impB">Importar extrato</button><button class="btn" id="expB">Exportar planilha</button>`)+
- `<div class="pg g4f">${kpi("Começou com",st.v,`${st.anchor===K()?"valor ajustado por você":`sobra de ${MESES[(mes+11)%12].toLowerCase()}`} · <button class="link" id="iniB">ajustar</button>`)}${kpi("Entradas",E)}${kpi("Saídas",S)}${kpi("Termina com",st.v+E-S,`saldo do mês ${E-S>=0?"+":"−"} R$ ${brl(Math.abs(E-S))}`,st.v+E-S>=0?"var(--green)":"var(--pink)")}</div>
+ `<div class="pg g4f">${kpi("Começou com",st.v,`${st.anchor===K()?"valor ajustado por você":st.bank===K()?"saldo dos bancos no dia 1, sem o salário que já entra aqui":`sobra de ${MESES[(mes+11)%12].toLowerCase()}`} · <button class="link" id="iniB">ajustar</button>`)}${kpi("Entradas",E)}${kpi("Saídas",S)}${kpi("Termina com",st.v+E-S,`saldo do mês ${E-S>=0?"+":"−"} R$ ${brl(Math.abs(E-S))}`,st.v+E-S>=0?"var(--green)":"var(--pink)")}</div>
  <form class="c box" id="iniF" hidden><div class="h">Com quanto ${MESES[mes].toLowerCase()} começou?</div><div class="note">Use o dinheiro que você tinha no dia 1, sem contar o salário recebido no fim do mês anterior (ele já entra como entrada deste mês). Os meses seguintes partem desse valor.</div><div class="gact"><input class="gin" id="iniV" inputmode="decimal" value="${brl(st.v)}" aria-label="Valor no começo do mês"><button class="btnp">Salvar</button>${st.anchor===K()?`<button type="button" class="btn" id="iniA">Voltar ao cálculo automático</button>`:""}</div></form>
  <div class="pg g2"><section class="c box"><div class="h">Por semana</div><div class="leg2"><span><i class="dot" style="background:var(--green)"></i>Entradas</span><span><i class="dot" style="background:var(--blue)"></i>Saídas</span></div><svg class="chart" viewBox="0 0 600 212">${g}</svg></section>
  <section class="c box"><div class="h">Lançamentos</div><div class="seg" style="grid-template-columns:repeat(3,1fr)">${[["todas","Todos"],["ent","Entradas"],["sai","Saídas"]].map(([k,l])=>`<button data-f="${k}" class="${fF===k?"on":""}">${l}</button>`).join("")}</div>${bks.length?`<label class="field" style="margin-top:10px">Banco<select id="fBk"><option value="">Todos os bancos</option>${bks.map(b=>`<option${b===fB?" selected":""}>${esc(b)}</option>`).join("")}</select></label>${fB?`<div class="note">Em ${esc(fB)}: entrou R$ ${brl(sum(list.filter(t=>t.v>0)))} · saiu R$ ${brl(-sum(list.filter(t=>t.v<0)))}</div>`:""}`:""}
- <div class="list" style="max-height:440px;margin-top:8px">${list.length?list.map(t=>row(t.v>0?"+":"−",t.v>0?"in":"out",esc(t.n)+(t.x?tagp(t.x):""),`dia ${two(t.d)} · ${t.cat}${t.x&&t.v<0?" · "+CATN(catOf(t.x.b)):""}${t.bco?" · "+esc(t.bco):""}`,`${t.v>0?"+":"−"} R$ ${brl(Math.abs(t.v))}`,t.v>0?"pos":"",t.id)).join(""):`<div class="note">Nenhum lançamento neste mês.</div>`}</div></section></div>`+catSection()+essSection()+yearSection();
+ <div class="list" style="max-height:440px;margin-top:8px">${list.length?list.map(t=>row(t.v>0?"+":"−",t.v>0?"in":"out",esc(t.n)+(t.x?tagp(t.x):""),`dia ${two(t.d)} · ${t.cat}${t.x&&t.v<0?" · "+CATN(catOf(t.x.b)):""}${t.bco?" · "+esc(t.bco):""}`,`${t.v>0?"+":"−"} R$ ${brl(Math.abs(t.v))}`,t.v>0?"pos":"",t.id)).join(""):`<div class="note">Nenhum lançamento neste mês.</div>`}</div></section></div>`+confSection()+catSection()+essSection()+yearSection();
  on("#v-fluxo [data-f]","click",b=>{fF=b.dataset.f;pFluxo()});if($("fBk"))$("fBk").onchange=e=>{fB=e.target.value;pFluxo()};
- bindControle();$("metasB").onclick=openMetas;
+ bindControle();bindConf();$("metasB").onclick=openMetas;
  $("iniB").onclick=e=>{e.preventDefault();$("iniF").hidden=!$("iniF").hidden;if(!$("iniF").hidden)$("iniV").focus()};
  $("iniF").onsubmit=e=>{e.preventDefault();const und=snap();P.ini=P.ini||{};P.ini[K()]=num($("iniV").value);toast(`${MESES[mes]} começa com R$ ${brl(P.ini[K()])}`,und);renderAll()};
  if($("iniA"))$("iniA").onclick=()=>{const und=snap();delete P.ini[K()];toast("Voltou ao cálculo automático",und);renderAll()};$("expB").onclick=exportCSV;$("impB").onclick=openImport;$("ocrB2").onclick=openOCR;
@@ -1312,10 +1313,10 @@ function renderKpis(){
 function renderResumo(){
  const el=$("resumo"),pk=kOff(-1);
  if(!isNow()||!hasData(pk)||lsGet("mc-res-"+pk)){el.hidden=true;return}
- const tx=flowTx(pk),sob=sum(tx),ppk=kOff(-2),a=byCat(gastos(pk)),b=hasData(ppk)?byCat(gastos(ppk)):null;
+ const tx=flowTx(pk),sob=sum(tx),fim=startOf(pk).v+sob,ppk=kOff(-2),a=byCat(gastos(pk)),b=hasData(ppk)?byCat(gastos(ppk)):null;
  let up="";if(b){const t=Object.keys(a).filter(id=>id!=="fatura"&&b[id]>0).map(id=>({id,d:(a[id]-b[id])/b[id]})).sort((x,y)=>y.d-x.d)[0];if(t&&t.d>.05)up=`${CATN(t.id)} subiu ${Math.round(t.d*100)}%`}
  const M=D.metas||{},est=Object.keys(M).filter(id=>M[id]>0&&(a[id]||0)>M[id]).length;
- const bits=[`${sob>=0?"sobraram":"faltaram"} <b>R$ ${brl(Math.abs(sob))}</b>`,up,Object.keys(M).length?(est?`${est} meta${est>1?"s":""} estourada${est>1?"s":""}`:"nenhuma meta estourada"):""].filter(Boolean);
+ const bits=[`terminou com <b>R$ ${brl(fim)}</b> (${sob>=0?"sobraram":"faltaram"} R$ ${brl(Math.abs(sob))} no mês)`,up,Object.keys(M).length?(est?`${est} meta${est>1?"s":""} estourada${est>1?"s":""}`:"nenhuma meta estourada"):""].filter(Boolean);
  el.hidden=false;el.innerHTML=`<p><b>Resumo de ${MESES[+pk.slice(6)-1].toLowerCase()}:</b> ${bits.join(", ")}.</p><button class="btn" id="resOk">Entendi</button>`;
  $("resOk").onclick=()=>{lsSet("mc-res-"+pk,"1");renderResumo()};
 }
@@ -1425,19 +1426,33 @@ function parseOFX(t){
  t.split(/<STMTTRN>/i).slice(1).forEach(b=>{const dt=g(b,"DTPOSTED"),v=parseFloat(g(b,"TRNAMT").replace(",","."));if(!/^\d{8}/.test(dt)||isNaN(v))return;out.push({y:+dt.slice(0,4),m:+dt.slice(4,6)-1,d:+dt.slice(6,8),v,n:clean(g(b,"MEMO")||g(b,"NAME"))||"Lançamento"})});
  return out;
 }
+function prettyM(n){
+ n=String(n||"").replace(/^\d{2}\/\d{2}\s+/,"").replace(/\s{2,}/g," ").replace(/\s*(lt)?(boa vista|s[aã]o paulo|manaus|rio de janeiro|bras[ií]lia)\s+bra\.?$/i,"").replace(/\s+bra$/i,"").replace(/\s+\d{11,}$/,"").trim();
+ if(/^dl\s*[.*]\s*99\b|^99\s*(app|pop)?$/i.test(n))return "99 (corrida)";
+ if(/uber.*(trip|ride)|uberride/i.test(n))return "Uber";
+ if(/^ifd\.br$/i.test(n))return "iFood";
+ if(/^dl\s*\*\s*google\s*/i.test(n))return ("Google "+n.replace(/^dl\s*\*\s*google\s*/i,"")).replace(/^Google Google/i,"Google").trim();
+ if(/^mp\./i.test(n))return "Mercado Pago · "+titleC(n.slice(3));
+ return ifoodN(n);
+}
+function txName(parts){
+ let p=parts.map(x=>clean(x)).filter(Boolean);p=p.filter((x,i)=>p.findIndex(y=>y.toLowerCase()===x.toLowerCase())===i);
+ if(p.length>1&&/^(d[eé]bito visa electron.*|compra no d[eé]bito|compra (com |no )?cart[aã]o.*|d[eé]bito (em |no )?cart[aã]o.*|compra d[eé]bito.*|d[eé]bito|compra)$/i.test(p[0]))p=p.slice(1);
+ return clean(p.length>1?`${p[0]} · ${prettyM(p.slice(1).join(" "))}`:prettyM(p[0]||""))||"Lançamento";
+}
 function parseCSV(t){
  const lines=t.replace(/^﻿/,"").split(/\r?\n/).filter(l=>l.trim());if(lines.length<2)return [];
  const nrm=s=>s.normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase(),hi=lines.findIndex((l,i)=>i<15&&/data|date/.test(nrm(l))&&/valor|amount|quantia|credito|debito/.test(nrm(l)));if(hi<0)return [];
  const hl=lines[hi],sep=(hl.match(/;/g)||[]).length>(hl.match(/,/g)||[]).length?";":hl.includes("\t")?"\t":",";
  const split=l=>{const r=[];let c="",q=false;for(let i=0;i<l.length;i++){const ch=l[i];if(q){if(ch==='"'){if(l[i+1]==='"'){c+='"';i++}else q=false}else c+=ch}else if(ch==='"')q=true;else if(ch===sep){r.push(c);c=""}else c+=ch}r.push(c);return r.map(x=>x.trim())};
- const H=split(hl).map(nrm),fi=re=>H.findIndex(h=>re.test(h)),di=fi(/^(data|date|dt)/),vi=fi(/valor|amount|quantia|montante/),ni=H.findIndex((h,i)=>i!==di&&/descri|title|titulo|estabelec|memo|detalhe|nome/.test(h)),hi2=H.findIndex((h,i)=>i!==di&&/hist|lancamento/.test(h));
+ const H=split(hl).map(nrm),fi=re=>H.findIndex(h=>re.test(h)),di=fi(/^(data|date|dt)/),vi=fi(/valor|amount|quantia|montante/),ni=H.findIndex((h,i)=>i!==di&&/descri|title|titulo|estabelec|memo|nome/.test(h)),hi2=H.findIndex((h,i)=>i!==di&&/hist|lancamento/.test(h)),dt2=H.findIndex((h,i)=>i!==di&&/detalhe|complemento/.test(h));
  const ci=fi(/credito|entrada/),de=fi(/debito|saida/),si=H.findIndex(h=>/^saldo/.test(h));if(di<0||(vi<0&&ci<0&&de<0))return [];
  const pv=x=>{let s=(x||"").replace(/r\$|\s/gi,"");const ng=/^\(.*\)$/.test(s)||/-/.test(s);s=s.replace(/[()+-]/g,"");s=s.includes(",")?s.replace(/\./g,"").replace(",","."):s;const v=parseFloat(s);return isNaN(v)?0:(ng?-v:v)};
  const out=[];
  lines.slice(hi+1).forEach(l=>{const c=split(l),ds=c[di]||"";let y,m,d,mm;
   if(mm=ds.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/)){d=+mm[1];m=+mm[2]-1;y=+mm[3];if(y<100)y+=2000}else if(mm=ds.match(/^(\d{4})-(\d{2})-(\d{2})/)){y=+mm[1];m=+mm[2]-1;d=+mm[3]}else return;
   const sv=vi>=0?pv(c[vi]):Math.abs(pv(c[ci]))-Math.abs(pv(c[de])),v=Math.abs(sv),neg=sv<0;if(!v)return;
-  const a=hi2>=0?clean(c[hi2]):"",b_=ni>=0?clean(c[ni]):"";if(/^saldo\b/i.test(b_||a))return;out.push({y,m,d,v:neg?-v:v,s:si>=0&&(c[si]||"").trim()?pv(c[si]):null,n:clean(a&&b_&&a.toLowerCase()!==b_.toLowerCase()?`${a} · ${b_}`:(b_||a))||"Lançamento"})});
+  const parts=[hi2,ni,dt2].map(i=>i>=0?c[i]:"");if(/^saldo\b/i.test(parts.filter(Boolean)[0]||""))return;out.push({y,m,d,v:neg?-v:v,s:si>=0&&(c[si]||"").trim()?pv(c[si]):null,n:txName(parts)})});
  return out;
 }
 function openImport(){
@@ -1462,10 +1477,14 @@ function detBank(txt,fname){
 }
 const bkList=()=>[...new Set([...(D.bancos||[]),...D.people.map(p=>p.bco).filter(Boolean)])];
 function classify(r,v,bco){
- const k=mk(r.y,r.m),n=r.n,low=n.toLowerCase(),nk=nkey(n),mine=ME();
+ const k=mk(r.y,r.m),n=r.n,low=n.toLowerCase(),nk=nkey(n),mine=ME(),op=ownPair(rdt(r),v,n,bco);
+ if(op)return {kind:"own",lbl:`transferência entre as suas contas (${bco||"este banco"} ↔ ${op.b})`,on:false,pair:op};
  if(v>0){
   const sx=D.people.flatMap(p=>salTx(p,k).map(x=>({p,x}))).find(({p,x})=>(Math.abs(x.v-v)<=Math.max(x.v*.1,1)&&Math.abs(x.d-r.d)<=4)||(p.bco&&p.bco===bco&&/sal[aá]rio|folha|proventos|adiant|remunera|pagto sal|cred sal/i.test(n)));
-  if(sx||/sal[aá]rio|folha de pag|proventos|remunera[cç]/i.test(n))return {kind:"sal",lbl:`salário${sx?" de "+sx.p.n:""} · já contado em Nossa renda`,on:false};
+  if(sx||/cr[eé]dito de sal|sal[aá]rio|folha de pag|proventos|remunera[cç]/i.test(n)){const H=holOf(me,k),same=x=>x!=null&&Math.abs(+x-v)<.02;
+   if(H&&(same(H.liq)||same(H.adto)))return {kind:"sal",lbl:"salário · já registrado",on:false};
+   if(H&&H.src!=="extrato")return {kind:"sal",lbl:"salário · já contado pelo holerite deste mês",on:false};
+   return {kind:"salreg",lbl:`salário · registrar como recebido${r.d>=10&&r.d<=20?" (adiantamento)":""}`,on:true}}
  }
  const others=D.people.filter(p=>p.id!==me).map(p=>(p.n||"").split(" ")[0]).filter(x=>x.length>=3&&!/^(esposa|pessoa|marido)$/i.test(x));
  const fam=others.find(x=>nkey(n).split(" ").includes(nkey(x)));if(fam)return {kind:"fam",lbl:`Pix ou transferência com ${fam} · entre a família`,on:false};
@@ -1485,27 +1504,38 @@ async function readImport(){
  const f=$("imF").files[0];if(!f)return;let txt=await f.text();
  if(/�/.test(txt)){try{txt=new TextDecoder("windows-1252").decode(await f.arrayBuffer())}catch(e){}}
  const rows=/<STMTTRN>/i.test(txt)?parseOFX(txt):parseCSV(txt),dst=$("imD").value,card=dst==="conta"?null:D.cards[+dst];IMP_SIG=/<STMTTRN>/i.test(txt)?"":csvSig(txt);
+ {const ow=/^(?:cliente|titular|nome)\s*;\s*([^;\r\n]+)/im.exec(txt);if(ow&&!P.owner)P.owner=ow[1].trim().split(/\s+/)[0]}
  if(!card&&!$("imB").value.trim()){const b=detBank(txt,f.name);if(b){$("imB").value=b;$("imBh").textContent="Banco reconhecido pelo arquivo. Pode trocar se não for."}}
  if(!rows.length){IMP=[];$("imL").innerHTML=`<div class="gerr">Não encontrei lançamentos nesse arquivo. Confira se é o CSV ou o OFX do banco.</div>`;$("imGo").disabled=true;return}
  const sign=card?(rows.filter(r=>r.v>0).length>=rows.length/2?1:-1):1,fk=$("imM").value,bco=card?card.bk:$("imB").value.trim();
  IMP_EXT=card?null:extFrom(rows,txt);if(IMP_EXT&&$("imSw")){$("imSw").hidden=false;$("imS").value=IMP_EXT.saldo!=null?brl(IMP_EXT.saldo):"";$("imSh").textContent=IMP_EXT.saldo!=null?`Saldo que veio no arquivo${IMP_EXT.asOf?` (${dtBR(IMP_EXT.asOf)})`:""}. Corrija se o banco mostrar outro.`:"O arquivo não trouxe o saldo. Digite o saldo de hoje no banco (opcional)."}
- IMP=rows.map(r=>{const v=r.v*sign,kind=card?"cartao":v<0?"dia":"entrada",n=ifoodN(r.n),it={n,v:Math.abs(r.v),d:r.d,dt:`${two(r.d)}/${two(r.m+1)}`,k:card?fk:mk(r.y,r.m),kind};
-  const list=card?card.lanc:kind==="dia"?D.dia:D.extra,dup=list.some(x=>x.k===it.k&&Math.abs(x.v-it.v)<.005&&[n.toLowerCase(),r.n.toLowerCase()].includes((x.n||"").toLowerCase())&&(card||x.d===it.d)),neg=card&&v<=0,cl=card||dup?null:classify(r,v,bco);
-  return {...it,dup,neg,cl,on:cl?cl.on:!dup&&!neg}});
+ IMP=rows.map(r=>{const v=r.v*sign,kind=card?"cartao":v<0?"dia":"entrada",n=ifoodN(r.n),it={n,v:Math.abs(r.v),d:r.d,y:r.y,m:r.m,dt:`${two(r.d)}/${two(r.m+1)}`,k:card?fk:mk(r.y,r.m),kind};
+  const pool=card?card.lanc:[...D.dia,...D.extra,...P.dia,...P.extra],ent=x=>D.extra.includes(x)||P.extra.includes(x);
+  const dupIt=pool.find(x=>x.k===it.k&&Math.abs(x.v-it.v)<.005&&(card||(x.d===it.d&&ent(x)===(v>0)))&&((bco&&x.bco===bco)||[n.toLowerCase(),r.n.toLowerCase()].includes((x.n||"").toLowerCase())));
+  const neg=card&&v<=0,cl=card?null:classify(r,v,bco),fix=!!(dupIt&&cl&&["salreg","sal","own","pay","fat"].includes(cl.kind));
+  return {...it,dup:!!dupIt,dupIt,neg,cl,fix,on:cl?(cl.on||fix):(!dupIt&&!neg)}});
  const cnt=()=>IMP.filter(x=>x.on).length,upd=()=>{const n=cnt(),p=IMP.filter(x=>x.on&&x.cl&&x.cl.kind==="pay").length;$("imGo").disabled=!n&&!(IMP_EXT&&$("imB").value.trim());$("imGo").textContent=!n?"Só atualizar o saldo":p?`Importar ${n-p} e marcar ${p} paga${p>1?"s":""}`:`Importar ${n}`};
- const lab=x=>x.cl?`<b class="${x.cl.kind==="pay"?"pos":""}" style="font-weight:600">${esc(x.cl.lbl)}</b>`:`${x.kind==="entrada"?"Entrada":x.kind==="dia"?"Gasto":"Compra no cartão"} · ${CATN(guess(x.n))}${x.dup?" · já lançado":""}${x.neg?" · pagamento ou estorno":""}`;
+ const lab=x=>x.cl?`<b class="${x.cl.kind==="pay"||x.cl.kind==="salreg"?"pos":""}" style="font-weight:600">${esc(x.cl.lbl)}${x.fix?" · já estava no app como lançamento comum: será corrigido":""}</b>`:`${x.kind==="entrada"?"Entrada":x.kind==="dia"?"Gasto":"Compra no cartão"} · ${CATN(guess(x.n))}${x.dup?" · já lançado":""}${x.neg?" · pagamento ou estorno":""}`;
  const sk=IMP.filter(x=>x.cl&&!x.cl.on).length,pk=IMP.filter(x=>x.cl&&x.cl.kind==="pay").length;
  $("imL").innerHTML=`<div class="sub">${IMP.length} lançamentos no arquivo</div>${sk||pk?`<div class="note">${pk?`${pk} ${pk>1?"contas cadastradas serão marcadas":"conta cadastrada será marcada"} como paga${pk>1?"s":""}. `:""}${sk?`${sk} ${sk>1?"linhas ficaram desmarcadas":"linha ficou desmarcada"} (salário, fatura ou transferências), para não contar duas vezes.`:""}</div>`:""}<div class="list imlist">${IMP.map((x,i)=>`<label class="imr"><input type="checkbox" data-im="${i}"${x.on?" checked":""}><span class="nm">${esc(x.n)}<small>${x.dt} · ${lab(x)}</small></span><span class="val ${x.kind==="entrada"?"pos":""}">R$ ${brl(x.v)}</span></label>`).join("")}</div>`;
  upd();on("#imL [data-im]","change",c=>{IMP[+c.dataset.im].on=c.checked;upd()});
 }
+function regSal(k,d,v,dt){D.hol=D.hol||{};const key=k+"_"+me;let H=D.hol[key];if(H&&H.src!=="extrato")return;H=H||{k,pid:me,prov:[],desc:[],tp:0,td:0,liq:null,adto:null,src:"extrato"};if(d>=10&&d<=20){H.adto=v;H.adD=d}else{H.liq=v;H.cred=dt}D.hol[key]=H}
+const rmIt=it=>{for(const L of [D.dia,D.extra,P.dia,P.extra]){const i=L.indexOf(it);if(i>=0){L.splice(i,1);return true}}return false};
 function doImport(){
- const sel=IMP.filter(x=>x.on),und=snap(),dst=$("imD").value,card=dst==="conta"?null:D.cards[+dst],bco=card?"":$("imB").value.trim();let np=0;
- if(!sel.length&&!(bco&&IMP_EXT))return;
+ const sel=IMP.filter(x=>x.on),und=snap(),dst=$("imD").value,card=dst==="conta"?null:D.cards[+dst],bco=card?"":$("imB").value.trim();let np=0,ns=0,nf=0,nr=0,ni=0;
+ if(!sel.length&&!(bco&&IMP_EXT)&&!IMP.some(x=>x.dup))return;
  if(bco){D.bancos=D.bancos||[];if(!D.bancos.includes(bco))D.bancos.push(bco);const sg=IMP_SIG;if(sg){D.bkSig=D.bkSig||{};D.bkSig[sg]=bco}}
- sel.forEach(x=>{if(x.cl&&x.cl.kind==="pay"){setPaid({S:x.cl.bill.S,it:x.cl.bill.b},true,x.k);const pd=x.cl.bill.S.mes[x.k].paid[x.cl.bill.b.id];if(bco)pd.bco=bco;np++;return}
-  const it={id:uid(),n:x.n,v:x.v,k:x.k,by:me,at:now()};if(bco)it.bco=bco;if(card){it.p=1;card.lanc.push(it)}else{it.d=x.d;(x.kind==="dia"?D.dia:D.extra).push(it)}});
+ IMP.forEach(x=>{if(x.dupIt&&!x.fix&&bco&&x.dupIt.bco===bco&&x.dupIt.n!==x.n){x.dupIt.n=x.n;nr++}});
+ sel.forEach(x=>{if(x.fix&&x.dupIt&&rmIt(x.dupIt))nf++;const kd=x.cl&&x.cl.kind;
+  if(kd==="pay"){setPaid({S:x.cl.bill.S,it:x.cl.bill.b},true,x.k);const pd=x.cl.bill.S.mes[x.k].paid[x.cl.bill.b.id];if(bco)pd.bco=bco;np++;return}
+  if(kd==="salreg"){regSal(x.k,x.d,x.v,`${x.y}-${two(x.m+1)}-${two(x.d)}`);ns++;return}
+  if(["own","sal","fat"].includes(kd)||(x.dup&&!x.fix))return;
+  const it={id:uid(),n:x.n,v:x.v,k:x.k,by:me,at:now()};if(bco)it.bco=bco;if(card){it.p=1;card.lanc.push(it)}else{it.d=x.d;(x.kind==="dia"?D.dia:D.extra).push(it)}ni++});
+ IMP.filter(x=>x.cl&&x.cl.kind==="own"&&x.cl.pair).forEach(x=>{const pr=x.cl.pair,rv=pr.row.v,dd=+pr.row.dt.slice(8,10),kk=mk(+pr.row.dt.slice(0,4),+pr.row.dt.slice(5,7)-1),L=rv<0?D.dia:D.extra,it=L.find(y=>y.bco===pr.b&&y.k===kk&&y.d===dd&&Math.abs(y.v-Math.abs(rv))<.011);if(it&&rmIt(it))nf++});
  if(bco&&IMP_EXT){const sv=$("imS").value.trim();saveExt(bco,IMP_EXT,sv?num(sv):null)}
- const ni=sel.length-np;addLog(`importou ${ni} lançamentos${bco?" do "+bco:""}`);closeForm();toast(`${ni} importado${ni!==1?"s":""}${np?` · ${np} conta${np>1?"s":""} marcada${np>1?"s":""} como paga${np>1?"s":""}`:""}`,und);renderAll();
+ const msg=[ni?`${ni} importado${ni>1?"s":""}`:"",np?`${np} conta${np>1?"s":""} paga${np>1?"s":""}`:"",ns?`${ns} salário${ns>1?"s":""} registrado${ns>1?"s":""}`:"",nf?`${nf} corrigido${nf>1?"s":""}`:"",nr?`${nr} renomeado${nr>1?"s":""}`:""].filter(Boolean).join(" · ")||"Saldo atualizado";
+ addLog(`importou o extrato${bco?" do "+bco:""}`);closeForm();toast(msg,und);renderAll();
 }
 
 /* cópias de segurança */
@@ -1574,10 +1604,12 @@ function bindVale(){
 
 /* ===== lançar por foto (leitura no aparelho) ===== */
 function loadTess(){return tessP||(tessP=new Promise((res,rej)=>{if(window.Tesseract)return res(window.Tesseract);const s=document.createElement("script");s.src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js";s.onload=()=>res(window.Tesseract);s.onerror=()=>{tessP=null;rej(new Error("load"))};document.head.appendChild(s)}))}
-async function prepImg(file){
+async function prepImg(file,bin){
  const url=URL.createObjectURL(file),img=await new Promise((r,j)=>{const i=new Image();i.onload=()=>r(i);i.onerror=j;i.src=url});
- const sc=Math.min(1,2000/Math.max(img.width,img.height)),c=document.createElement("canvas");c.width=Math.round(img.width*sc);c.height=Math.round(img.height*sc);
- const x=c.getContext("2d");x.filter="grayscale(1) contrast(1.25)";x.drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);return c;
+ const mx=Math.max(img.width,img.height),sc=bin?Math.min(3,2600/mx):Math.min(1,2000/mx),c=document.createElement("canvas");c.width=Math.round(img.width*sc);c.height=Math.round(img.height*sc);
+ const x=c.getContext("2d");x.imageSmoothingQuality="high";x.filter="grayscale(1) contrast(1.25)";x.drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);
+ if(bin){const d=x.getImageData(0,0,c.width,c.height),a=d.data;for(let i=0;i<a.length;i+=4){const v=a[i]<150?0:255;a[i]=a[i+1]=a[i+2]=v}x.putImageData(d,0,0)}
+ return c;
 }
 function ocrRows(text){
  const lines=String(text||"").split(/\n/).map(l=>l.replace(/\s+/g," ").trim()).filter(Boolean);
@@ -1632,7 +1664,7 @@ function doOCR(){
 /* ===== categorias: aprender, detalhe e tendência ===== */
 const nkey=n=>String(n||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/^ifood · /,"").replace(/[^a-z ]+/g," ").replace(/\s+/g," ").trim();
 const titleC=s=>s.toLowerCase().replace(/(^|\s)\S/g,c=>c.toUpperCase());
-const ifoodN=n=>{const m=/IFD\*\s*(?:BR\s+)?(.*)$/i.exec(n||"");if(!m)return n;const r=m[1].replace(/ifood(\.com)?|agencia de restaurantes?/gi," ").replace(/\s+/g," ").trim();return r?"iFood · "+titleC(r):"iFood"};
+const ifoodN=n=>{const m=/IFD[*.]\s*(?:BR\s+)?(.*)$/i.exec(n||"");if(!m)return n;const r=m[1].replace(/ifood(\.com)?|agencia de restaurantes?/gi," ").replace(/\s+/g," ").trim();return r?"iFood · "+titleC(r):"iFood"};
 const kAdd=(k,n)=>{const [a,m]=mAdd(+k.slice(1,5),+k.slice(6)-1,n);return mk(a,m)};
 const DIAS=["domingo","segunda","terça","quarta","quinta","sexta","sábado"];
 let catId=lsGet("mc-cat")||"mercado";
@@ -1760,6 +1792,31 @@ function renderConq(){const c=conquistas();$("conq").innerHTML=`<div class="h">C
 /* ===== controle do mês (Fluxo de caixa) ===== */
 const ESS0={mercado:1,casa:1,carro:1,transporte:1,saude:1,educacao:1,familia:1};
 const isEss=id=>!!(D.ess||ESS0)[id];
+function confSection(){
+ const k=K(),a1=k01(k),kn=kAdd(k,1),n1=k01(kn),E=P.ext||{},B=Object.keys(E),bs=bankAt(a1);if(bs==null)return "";
+ const minTo=B.map(b=>E[b].to).sort()[0],past=n1<=minTo,be=past?bankAt(n1):Math.round(B.reduce((a,b)=>a+(+E[b].saldo||0),0)*100)/100;
+ const rows=B.flatMap(b=>E[b].rows.filter(r=>r.dt>=a1&&r.dt<n1).map(r=>({...r,b,d:+r.dt.slice(8,10)})));
+ rows.forEach(r=>{r.own=rows.some(x=>x!==r&&x.b!==r.b&&Math.abs(x.v+r.v)<.011&&Math.abs(x.d-r.d)<=3&&simName(x.n,r.n)&&(isOwnName(x.n)||isOwnName(r.n)))});
+ const td=isNow()?HOJE.getDate():31,st=startOf(k),cin=sum(salFor(ME(),k).filter(x=>x.carried).map(x=>({v:x.v})));
+ const app=flowTx(k).filter(t=>!(t.sal&&t.carried)&&(past||t.done)).map(t=>({n:t.n,v:t.v,d:t.d,bco:t.bco,id:t.id,sal:t.sal}));
+ const cout=salFor(ME(),kn).filter(x=>x.carried===k&&(past||x.d0<=td));cout.forEach(x=>app.push({n:x.n.replace(/ de [a-zç]+$/i,"")+` (conta para ${MESES[(mes+1)%12].toLowerCase()})`,v:x.v,d:x.d0,bco:ME().bco,sal:1}));
+ const free=rows.filter(r=>!r.own).map(r=>({...r,used:false})),miss=[];
+ app.forEach(t=>{const c=free.find(r=>!r.used&&Math.abs(r.v-t.v)<.011&&(!t.bco||r.b===t.bco)&&Math.abs(r.d-t.d)<=(t.sal?4:1))||free.find(r=>!r.used&&Math.abs(r.v-t.v)<.011&&(!t.bco||r.b===t.bco)&&Math.abs(r.d-t.d)<=5);if(c)c.used=true;else miss.push(t)});
+ const extra=free.filter(r=>!r.used),appEq=st.v+cin+sum(app),diff=Math.round((be-appEq)*100)/100,ok=Math.abs(diff)<.01,inn=sum(rows.filter(r=>!r.own&&r.v>0)),out=-sum(rows.filter(r=>!r.own&&r.v<0)),own=rows.filter(r=>r.own).length,mesN=MESES[mes].toLowerCase(),sg=v=>`${v<0?"−":"+"} R$ ${brl(Math.abs(v))}`;
+ CONF_X=extra;
+ return `<section class="c box"><div class="h">Conferência com os bancos <small>· ${mesN}${past?"":" até hoje"} · ${B.join(" + ")}</small></div>
+ <div class="minis"><div class="mini"><small>Começou nos bancos</small><b>R$ ${brl(bs)}</b></div><div class="mini"><small>Entrou</small><b class="pos">R$ ${brl(inn)}</b></div><div class="mini"><small>Saiu</small><b>R$ ${brl(out)}</b></div><div class="mini"><small>${past?"Terminou":"Hoje"} nos bancos</small><b>R$ ${brl(be)}</b></div></div>
+ ${ok?`<div class="okb">✓ O app bate com os extratos${cout.length?`. O salário de ${two(cout[0].d0)}/${two(mes+1)} (R$ ${brl(sum(cout))}) está nos bancos, mas conta para ${MESES[(mes+1)%12].toLowerCase()}`:""}.</div>`:`<div class="warnb"><b>Diferença de R$ ${brl(Math.abs(diff))}</b> entre o app e os bancos. ${diff>0?"Os bancos têm mais do que o app.":"O app tem mais do que os bancos."} Veja o que explica:</div>`}
+ ${Math.abs(bs-(st.v+cin))>.01?`<div class="note">O app começou ${mesN} com R$ ${brl(st.v+cin)} (contando o salário do fim do mês anterior) e os bancos com R$ ${brl(bs)}. ${st.anchor===k?`<button class="link" id="cfIni">Usar o saldo dos bancos</button>`:""}</div>`:""}
+ ${extra.length?`<details class="cfd"><summary>${extra.length} linha${extra.length>1?"s":""} dos extratos não ${extra.length>1?"estão":"está"} no app · ${sg(sum(extra))}</summary>${extra.map(r=>`<div class="row"><span class="nm">${esc(r.n)}<small>${two(r.d)}/${two(mes+1)} · ${esc(r.b)}</small></span><span class="val ${r.v>0?"pos":""}">${sg(r.v)}</span></div>`).join("")}<div class="gact"><button class="btnp" id="cfAdd">Lançar ${extra.length>1?`essas ${extra.length} linhas`:"essa linha"}</button></div></details>`:""}
+ ${miss.length?`<details class="cfd"><summary>${miss.length} lançamento${miss.length>1?"s":""} do app não ${miss.length>1?"aparecem":"aparece"} nos extratos · ${sg(sum(miss))}</summary>${miss.map(t=>`<div class="row"><span class="nm">${esc(t.n)}<small>dia ${two(t.d)}${t.bco?" · "+esc(t.bco):""}</small></span><span class="val ${t.v>0?"pos":""}">${sg(t.v)}</span>${t.id&&find(t.id)?edb(t.id,t.n):""}</div>`).join("")}<div class="note">Podem ser lançamentos feitos à mão, contas pagas por outra pessoa ou por outro banco, ou previsões. Se foram lançados em dobro, toque no ✎ e exclua.</div></details>`:""}
+ ${own?`<div class="note">${own} transferência${own>1?"s":""} entre as suas contas não ${own>1?"contam":"conta"} como entrada nem saída.</div>`:""}</section>`;
+}
+let CONF_X=[];
+function bindConf(){
+ if($("cfIni"))$("cfIni").onclick=()=>{const und=snap();delete P.ini[K()];toast("Agora o mês começa com o saldo dos bancos",und);renderAll()};
+ if($("cfAdd"))$("cfAdd").onclick=()=>{const und=snap();let n=0;CONF_X.forEach(r=>{if(r.v>0&&/cr[eé]dito de sal|sal[aá]rio/i.test(r.n)){regSal(K(),r.d,r.v,r.dt);n++;return}const it={id:uid(),n:r.n,v:Math.abs(r.v),d:r.d,k:K(),bco:r.b,by:me,at:now()};(r.v<0?D.dia:D.extra).push(it);n++});toast(`${n} lançamento${n>1?"s":""} dos extratos`,und);renderAll()};
+}
 function essSection(){
  const G=gastos().filter(x=>!["fatura","reserva"].includes(x.cat)),E=sum(G.filter(x=>isEss(x.cat))),S=sum(G)-E,T=E+S;
  return `<div class="pg g2"><section class="c box"><div class="h">Essenciais e supérfluos</div>${T?`<div class="split" style="margin-top:12px"><div class="sg" style="--pc:var(--navy);flex:${E||.001}">${E?`Essenciais ${pct(E,T)}%`:""}</div><div class="sg" style="--pc:var(--pink);flex:${S||.001}">${S?`Supérfluos ${pct(S,T)}%`:""}</div></div><div class="note">Essenciais: <b>R$ ${brl(E)}</b>. Supérfluos: <b>R$ ${brl(S)}</b>.</div>`:`<div class="note">Nenhum gasto neste mês.</div>`}
@@ -1784,21 +1841,24 @@ function feriado(dt){if(FER.includes(two(dt.getMonth()+1)+"-"+two(dt.getDate()))
 function diaUtil(a,m,d){const dt=new Date(a,m,Math.min(d,new Date(a,m+1,0).getDate()),12);while(dt.getDay()===0||dt.getDay()===6||feriado(dt))dt.setDate(dt.getDate()-1);return dt}
 const holOf=(pid,k)=>(D.hol||{})[k+"_"+pid];
 function salTx(p,k){
- const a=+k.slice(1,5),m=+k.slice(6)-1,H=holOf(p.id,k),sal=+p.sal||0,ad=+p.adD>0;
- if(!ad){if(H)return [{d:p.pay||1,nom:p.pay||1,n:"Salário",v:H.liq+(+H.adto||0),why:`pelo holerite`}];return sal?[{d:p.pay||1,nom:p.pay||1,n:"Salário",v:sal}]:[]}
- const av=H?(+H.adto||0):(+p.adV||0),lv=H?H.liq:sal-(+p.adV||0),d1=diaUtil(a,m,+p.adD),d2=diaUtil(a,m,p.pay||30),o=[];
- const why=(dt,d)=>dt.getDate()!==Math.min(d,new Date(a,m+1,0).getDate())?`dia ${d} não é dia útil`:"";
- if(av>0||!H)o.push({d:d1.getDate(),nom:+p.adD,n:"Adiantamento",v:av,prev:!H,why:why(d1,+p.adD)});
- o.push({d:d2.getDate(),nom:p.pay||30,n:"Restante do salário",v:lv,prev:!H,why:why(d2,p.pay||30)});return o;
+ const a=+k.slice(1,5),m=+k.slice(6)-1,H=holOf(p.id,k),sal=+p.sal||0,ad=+p.adD>0,pa=ad?(+p.adV||0):0,last=new Date(a,m+1,0).getDate(),o=[];
+ const why=(dt,d)=>dt.getDate()!==Math.min(d,last)?`dia ${d} não é dia útil`:"";
+ const hasA=!!H&&H.adto!=null&&(H.src!=="extrato"||+H.adto>0),hasL=!!H&&H.liq!=null&&(H.src!=="extrato"||+H.liq>0);
+ if(ad||(hasA&&+H.adto>0)){const nd=+p.adD||15,dt=hasA&&H.adD?new Date(a,m,H.adD,12):diaUtil(a,m,nd),v=hasA?+H.adto:pa;if(v>0||(!H&&ad))o.push({d:dt.getDate(),nom:nd,n:"Adiantamento",v,prev:!hasA,why:hasA&&H.adD?"":why(dt,nd)})}
+ const nd2=ad?(p.pay||30):(p.pay||1),cd=hasL&&H.cred?+H.cred.slice(8,10):0,dt2=cd?new Date(a,m,cd,12):ad?diaUtil(a,m,nd2):new Date(a,m,Math.min(nd2,last),12),v2=hasL?+H.liq:(ad?sal-pa:sal);
+ if(v2>0)o.push({d:dt2.getDate(),nom:cd||nd2,n:ad?"Restante do salário":"Salário",v:v2,prev:!hasL,why:cd||!ad?"":why(dt2,nd2)});
+ return o;
 }
 const corte=p=>p.prox==null?27:(+p.prox||0);
 function salFor(p,k){const c=corte(p),a=salTx(p,k);if(!c)return a;const pk=kAdd(k,-1),pm=MESES[+pk.slice(6)-1].toLowerCase();
  return [...salTx(p,pk).filter(s=>s.nom>=c).map(s=>({...s,n:`${s.n} de ${pm}`,carried:pk,d0:s.d,d:1})),...a.filter(s=>s.nom<c)]}
+function bankStart(k){const v=bankAt(k01(k));if(v==null)return null;return v-sum(salFor(ME(),k).filter(x=>x.carried).map(x=>({v:x.v})))}
 function startOf(k){
- const A=P.ini||{},ki=mIdx(k);let base=null,from=null;
- Object.keys(A).filter(x=>mIdx(x)<=ki).sort((a,b)=>mIdx(a)-mIdx(b)).forEach(x=>{base=+A[x]||0;from=x});
- if(from==null){for(let i=24;i>=1;i--){const m=kAdd(k,-i);if(hasData(m)){from=m;break}}if(from==null)return {v:0,anchor:null};base=0}
- let v=base;for(let m=from;mIdx(m)<ki;m=kAdd(m,1))v+=sum(flowTx(m));return {v,anchor:A[from]!=null?from:null};
+ const A=P.ini||{},ki=mIdx(k);
+ for(let i=0;i<=24;i++){const m=kAdd(k,-i);let base=null,src="";if(A[m]!=null){base=+A[m]||0;src="ini"}else{const b=bankStart(m);if(b!=null){base=b;src="bank"}}
+  if(base!=null){let v=base;for(let x=m;mIdx(x)<ki;x=kAdd(x,1))v+=sum(flowTx(x));return {v,anchor:src==="ini"?m:null,bank:src==="bank"?m:null}}}
+ let from=null;for(let i=24;i>=1;i--){const m=kAdd(k,-i);if(hasData(m)){from=m;break}}if(from==null)return {v:0,anchor:null};
+ let v=0;for(let m=from;mIdx(m)<ki;m=kAdd(m,1))v+=sum(flowTx(m));return {v,anchor:null};
 }
 function salCard(){
  const p=ME(),S=salTx(p,K()),H=holOf(p.id,K());if(!(+p.adD>0)&&!H)return "";
@@ -1809,8 +1869,8 @@ function salCard(){
 /* ===== holerite ===== */
 let HOLD=null;
 function holCard(){
- const L=Object.values(D.hol||{}).filter(h=>h.pid===me).sort((a,b)=>b.k.localeCompare(a.k)),n=L.find(h=>!h.ferias),cons=D.dividas.filter(d=>d.cons&&mIdx(consEnd(d))>=mIdx(NOWK)),xd=/adto|adiant|f[eé]r/i;
- return `<section class="c box"><div class="h">Holerites de ${N(me)}</div>${L.length?L.map(h=>`<div class="row"><span class="nm">${kLabel(h.k)}<small>${h.ferias?`mês com férias · líquido R$ ${brl(h.liq)}`:`bruto R$ ${brl(h.tp)} · descontos R$ ${brl(h.td)} · líquido R$ ${brl(h.liq)}`}</small></span><button class="btn" data-hol="${h.k}_${h.pid}">Ver</button></div>`).join(""):`<div class="note">Nenhum holerite lido ainda.</div>`}
+ const L=Object.values(D.hol||{}).filter(h=>h.pid===me).sort((a,b)=>b.k.localeCompare(a.k)),n=L.find(h=>!h.ferias&&h.src!=="extrato"),cons=D.dividas.filter(d=>d.cons&&mIdx(consEnd(d))>=mIdx(NOWK)),xd=/adto|adiant|f[eé]r/i;
+ return `<section class="c box"><div class="h">Holerites de ${N(me)}</div>${L.length?L.map(h=>h.src==="extrato"?`<div class="row"><span class="nm">${kLabel(h.k)}<small>recebido, pelo extrato: ${[h.adto?`adiantamento R$ ${brl(h.adto)}`:"",h.liq?`salário R$ ${brl(h.liq)}${h.cred?` em ${dtBR(h.cred)}`:""}`:""].filter(Boolean).join(" · ")}</small></span><span class="tagp">sem holerite</span></div>`:`<div class="row"><span class="nm">${kLabel(h.k)}<small>${h.ferias?`mês com férias · líquido R$ ${brl(h.liq)}`:`bruto R$ ${brl(h.tp)} · descontos R$ ${brl(h.td)} · líquido R$ ${brl(h.liq)}`}</small></span><button class="btn" data-hol="${h.k}_${h.pid}">Ver</button></div>`).join(""):`<div class="note">Nenhum holerite lido ainda.</div>`}
  ${n||cons.length?`<div class="minis">${n?`<div class="mini"><small>Descontos em ${AB[+n.k.slice(6)-1].toLowerCase()}</small><b>R$ ${brl(sum(n.desc.filter(x=>!xd.test(x.n))))}</b><small>sem adiantamentos</small></div>`:""}${cons.length?`<div class="mini"><small>Consignados</small><b>R$ ${brl(sum(cons.map(d=>({v:d.parcela}))))}</b><small>por mês</small></div>`:""}${n&&n.fgts?`<div class="mini"><small>FGTS do mês</small><b>R$ ${brl(n.fgts)}</b><small>não sai do salário</small></div>`:""}</div>`:""}
  <div class="gact"><button class="btnp" id="holB">Ler holerite (foto ou print)</button></div><div class="note">A leitura é feita no seu aparelho e a imagem não é guardada. Só ficam os valores.</div></section>`;
 }
@@ -1825,21 +1885,23 @@ function openHol(key){
  if($("hoDel"))$("hoDel").onclick=e=>{const b=e.currentTarget;if(!b.dataset.ok){b.dataset.ok=1;b.textContent="Toque de novo para excluir";return}const und=snap();delete D.hol[key];closeForm();toast("Holerite excluído",und);renderAll()};
  if(HOLD)drawHol();
 }
-async function ocrData(f,st){
- const [T,cv]=await Promise.all([loadTess(),prepImg(f)]);
- const r=await T.recognize(cv,"por",{logger:m=>{const s=$(st);if(!s)return;s.textContent=m.status==="recognizing text"?`Lendo a imagem… ${Math.round(m.progress*100)}%`:"Preparando o leitor (na primeira vez, ele é baixado)…"}});
+async function ocrData(f,st,bin){
+ const [T,cv]=await Promise.all([loadTess(),prepImg(f,bin)]);
+ const lg=m=>{const s=$(st);if(!s)return;s.textContent=m.status==="recognizing text"?`Lendo a imagem… ${Math.round(m.progress*100)}%`:"Preparando o leitor (na primeira vez, ele é baixado)…"};
+ if(bin){const w=await T.createWorker("por",1,{logger:lg});try{await w.setParameters({tessedit_pageseg_mode:"6",preserve_interword_spaces:"1"});return (await w.recognize(cv)).data}finally{w.terminate()}}
+ const r=await T.recognize(cv,"por",{logger:lg});
  return r.data;
 }
 async function runHol(){
  const f=$("hoF").files[0];if(!f)return;$("hoGo").disabled=true;$("hoP").innerHTML=`<div class="note" id="hoS">Preparando a leitura…</div>`;
- try{const d=await ocrData(f,"hoS");if(tipo!=="hol"||!$("hoP"))return;HOLD=parseHol(d)}catch(e){if($("hoP"))$("hoP").innerHTML=`<div class="gerr">Não consegui ler a imagem. Na primeira vez é preciso internet para baixar o leitor.</div>`;return}
+ try{const d=await ocrData(f,"hoS",true);if(tipo!=="hol"||!$("hoP"))return;HOLD=parseHol(d)}catch(e){if($("hoP"))$("hoP").innerHTML=`<div class="gerr">Não consegui ler a imagem. Na primeira vez é preciso internet para baixar o leitor.</div>`;return}
  if(!HOLD.prov.length&&!HOLD.desc.length){$("hoP").innerHTML=`<div class="gerr">Não encontrei as verbas do holerite. Tente uma foto mais nítida, reta e com boa luz.</div>`;return}
  drawHol();
 }
-const MONR=/^-?\d{1,3}(?:\.\d{3})*,\d{2}$/,DESCR=/inss|irrf|imposto|consig|adto|adiant|contrib|odonto|plano|sa[uú]de|vale|falta|desconto|pens[aã]o|sindic|empr[eé]st|seguro|coparticip|mensalidade|atraso/i;
+const MONR=/^-?\d{1,3}(?:[.,]?\d{3})*[.,]\d{2}$/,DESCR=/inss|irrf|imposto|consig|adto|adiant|contrib|odonto|plano|sa[uú]de|vale|falta|desconto|pens[aã]o|sindic|empr[eé]st|seguro|coparticip|mensalidade|atraso/i;
 function parseHol(data){
- const cx=b=>(b.x0+b.x1)/2,mv=s=>num(String(s).replace(/^-/,""));
- const lines=(data.lines||[]).map(l=>({t:(l.text||"").replace(/\s+/g," ").trim(),w:(l.words||[]).map(w=>({t:(w.text||"").trim(),b:w.bbox})).filter(w=>w.t)})).filter(l=>l.t);
+ const cx=b=>(b.x0+b.x1)/2,mv=s=>{const t=String(s).replace(/[^\d.,]/g,""),m=/^(.*?)[.,](\d{2})$/.exec(t);return m?parseFloat((m[1].replace(/[.,]/g,"")||"0")+"."+m[2]):num(t)};
+ const lines=(data.lines||[]).map(l=>({t:(l.text||"").replace(/[|]/g," ").replace(/\s+/g," ").trim(),w:(l.words||[]).map(w=>({t:(w.text||"").replace(/[|\[\]]/g,"").trim(),b:w.bbox})).filter(w=>w.t)})).filter(l=>l.t);
  let hy=lines.findIndex(l=>/proventos?/i.test(l.t)&&/descontos?/i.test(l.t)),xP=null,xD=null,xQ=null;
  if(hy>=0)lines[hy].w.forEach(w=>{if(/^proventos?$/i.test(w.t))xP=cx(w.b);if(/^descontos?$/i.test(w.t))xD=cx(w.b);if(/^(quantidade|qtde?\.?|refer[eê]ncia|ref\.?)$/i.test(w.t))xQ=cx(w.b)});
  const side=(w,name)=>xP!=null&&xD!=null?(Math.abs(cx(w.b)-xP)<=Math.abs(cx(w.b)-xD)?"p":"d"):(DESCR.test(name)?"d":"p");
@@ -1847,25 +1909,29 @@ function parseHol(data){
  const prov=[],desc=[];let tp=0,td=0,liq=0,fgts=0,base=0,end=false;
  lines.forEach((l,i)=>{if(i<=hy)return;const ms=l.w.filter(w=>MONR.test(w.t));
   if(/l[ií]quido/i.test(l.t)){if(ms.length)liq=mv(ms[ms.length-1].t);end=true;return}
-  if(/^totais|\btotais\b|^total\b/i.test(l.t)){ms.filter(w=>!isQ(w)).forEach(w=>{if(side(w,"")==="p"&&xP!=null)tp=mv(w.t);else td=mv(w.t)});if(xP==null&&ms.length>=2){tp=mv(ms[ms.length-2].t);td=mv(ms[ms.length-1].t)}end=true;return}
+  if(/totais|^total\b/i.test(l.t)){ms.filter(w=>!isQ(w)).forEach(w=>{if(side(w,"")==="p"&&xP!=null)tp=mv(w.t);else td=mv(w.t)});if((xP==null||!tp)&&ms.length>=2){tp=mv(ms[ms.length-2].t);td=mv(ms[ms.length-1].t)}end=true;return}
   if(end||!ms.length)return;
   const vals=ms.filter(w=>!isQ(w));if(!vals.length)return;const vw=vals[vals.length-1],fi=l.w.indexOf(ms[0]);
-  const name=l.w.slice(0,fi).map(w=>w.t).join(" ").replace(/^\d{1,6}\s+/,"").replace(/\s+[\d.]*,\d+%?$|\s+\d+%$/,"").replace(/[|_]/g," ").replace(/\s+/g," ").trim();
+  let name=l.w.slice(0,fi).map(w=>w.t).join(" ").replace(/[|_\[\]—–]/g," ").replace(/\s+/g," ").trim();
+  name=name.replace(/^([^\p{L}\d]+|(?!\d\/\d\b)\S{4,}\s+(?=\S)|\S*\d\S*\d\S*\d\S*\s+)+/u,m=>m.replace(/(\S*[\p{L}]{3,}\S*\s*)$/u,"$1")).replace(/^(?:[^\p{L}\d]+|[\dOo]{4,}\s+)+/u,"").replace(/(\s+[\d.,%\]\[|]+)+$/,"").replace(/\s+[\d.]*,\d+%?$|\s+\d+%$/,"").trim();
   if(name.replace(/[^\p{L}]/gu,"").length<3)return;
   (side(vw,name)==="p"?prov:desc).push({n:name,v:mv(vw.t)})});
  // rodapé: FGTS e salário base (rótulos numa linha, valores na seguinte)
- lines.forEach((l,i)=>{const fw=l.w.findIndex((w,j)=>/^fgts$/i.test(w.t)&&l.w[j+1]&&/^(do|mes|m[eê]s)$/i.test(l.w[j+1].t)),bw=l.w.findIndex((w,j)=>/^(sal[aá]rio|sal\.?)$/i.test(w.t)&&l.w[j+1]&&/^base$/i.test(l.w[j+1].t));if(fw<0&&bw<0)return;
-  const nx=lines.slice(i+1,i+3).find(x=>x.w.filter(w=>MONR.test(w.t)).length>=2);if(!nx)return;const ms=nx.w.filter(w=>MONR.test(w.t)),near=c=>ms.reduce((b,w)=>Math.abs(cx(w.b)-c)<Math.abs(cx(b.b)-c)?w:b);
-  if(fw>=0){const g=l.w.slice(fw,fw+3);fgts=mv(near((g[0].b.x0+g[g.length-1].b.x1)/2).t)}if(bw>=0){const g=l.w.slice(bw,bw+2);base=mv(near((g[0].b.x0+g[1].b.x1)/2).t)}});
+ const FG=/^f\.?g\.?t\.?s\.?$/i;
+ lines.forEach((l,i)=>{let fw=l.w.findIndex((w,j)=>FG.test(w.t)&&((l.w[j+1]&&/^(do|mes|m[eê]s)$/i.test(l.w[j+1].t))||(j>0&&/^valor$/i.test(l.w[j-1].t))));if(fw>0&&/^valor$/i.test(l.w[fw-1].t))fw--;
+  const bw=l.w.findIndex((w,j)=>/^(sal[aá]rio|sal\.?)$/i.test(w.t)&&((l.w[j+1]&&/^base$/i.test(l.w[j+1].t))||(!l.w[j+1]&&i<hy)));if(fw<0&&bw<0)return;
+  const nx=lines.slice(i+1,i+3).find(x=>x.w.filter(w=>MONR.test(w.t)).length>=(fw>=0?2:1));if(!nx)return;const ms=nx.w.filter(w=>MONR.test(w.t)),near=c=>ms.reduce((b,w)=>Math.abs(cx(w.b)-c)<Math.abs(cx(b.b)-c)?w:b);
+  if(fw>=0){const g=l.w.slice(fw,fw+3);fgts=mv(near((g[0].b.x0+g[g.length-1].b.x1)/2).t)}if(bw>=0){const g=l.w.slice(bw,bw+2);base=mv(near((g[0].b.x0+g[g.length-1].b.x1)/2).t)}});
+ lines.forEach((l,i)=>{if(!/valor\W*f\W*g\W*t\W*s/i.test(l.t))return;const nx=lines.slice(i+1,i+3).find(x=>x.w.some(w=>MONR.test(w.t)));if(nx){const ms=nx.w.filter(w=>MONR.test(w.t)).sort((a,b)=>a.b.x0-b.b.x0);fgts=mv(ms[ms.length-1].t)}});
  const T=(data.text||"").replace(/[ \t]+/g," ");
  if(!fgts){const m=/fgts (?:do )?m[eê]s\D{0,20}(\d{1,3}(?:\.\d{3})*,\d{2})/i.exec(T);if(m)fgts=mv(m[1])}
  if(!liq){const m=/l[ií]quido\D{0,30}(\d{1,3}(?:\.\d{3})*,\d{2})/i.exec(T);if(m)liq=mv(m[1])}
- if(!tp)tp=sum(prov);if(!td)td=sum(desc);if(!liq)liq=Math.round((tp-td)*100)/100;
+ const tpR=tp,tdR=td;if(tpR&&tdR&&Math.abs(liq-(tpR-tdR))>.05)liq=Math.round((tpR-tdR)*100)/100;if(!tp)tp=sum(prov);if(!td)td=sum(desc);if(!liq)liq=Math.round((tp-td)*100)/100;
  let cred="";const cm=/cr[eé]dito\D{0,30}(\d{2})\/(\d{2})\/(20\d{2})/i.exec(T)||[...T.matchAll(/\b(\d{2})\/(\d{2})\/(20\d{2})\b/g)].pop();if(cm)cred=`${cm[3]}-${cm[2]}-${cm[1]}`;
  let k="";const mm=/(janeiro|fevereiro|mar[cç]o|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)\s*(?:de\s*|\/\s*)?(20\d{2})/i.exec(T),m2=/(?<![\d\/])(0[1-9]|1[0-2])\/(20\d{2})\b/.exec(T);
  if(mm)k=mk(+mm[2],MESES.findIndex(x=>x.slice(0,3).toLowerCase()===mm[1].slice(0,3).toLowerCase().replace("ç","c")));else if(m2)k=mk(+m2[2],+m2[1]-1);else if(cred)k=mk(+cred.slice(0,4),+cred.slice(5,7)-1);else k=K();
  const ad=desc.find(x=>/adiant|adto/i.test(x.n)&&!/f[eé]r/i.test(x.n));
- return {k,pid:me,prov,desc,tp,td,liq,adto:ad?ad.v:0,fgts,base,cred,ferias:prov.some(x=>/f[eé]r/i.test(x.n))};
+ return {k,pid:me,prov,desc,tp,td,tpR,tdR,liq,adto:ad?ad.v:0,fgts,base,cred,ferias:prov.some(x=>/f[eé]r/i.test(x.n))};
 }
 const consMatch=(x,k)=>/consig/i.test(x.n)?D.dividas.find(d=>d.cons&&Math.abs(d.parcela-x.v)<.02&&mIdx(d.ini)<=mIdx(k)&&mIdx(k)<=mIdx(consEnd(d))):null;
 function drawHol(){
@@ -1877,7 +1943,8 @@ function drawHol(){
  <label class="chk full"><input type="checkbox" id="hoU"${H.ferias?"":" checked"}>Usar este holerite como base do salário previsto dos próximos meses</label></div>
  <div class="note">O FGTS é só informativo: é depositado pela empresa e não sai do salário. Confira e corrija o que estiver errado antes de salvar.</div>`;
  const read=()=>{document.querySelectorAll("[data-hn]").forEach(el=>{const t=el.dataset.hn,L=t[0]==="p"?H.prov:H.desc;L[+t.slice(1)].n=el.value});document.querySelectorAll("[data-hv]").forEach(el=>{const t=el.dataset.hv,L=t[0]==="p"?H.prov:H.desc;L[+t.slice(1)].v=num(el.value)});H.liq=num($("hoL").value);H.tp=sum(H.prov);H.td=sum(H.desc)};
- const chk=()=>{read();const ok=Math.abs(H.tp-H.td-H.liq)<.05;$("hck").innerHTML=ok?`<div class="okb">✓ Valores conferem: R$ ${brl(H.tp)} − R$ ${brl(H.td)} = R$ ${brl(H.liq)}</div>`:`<div class="warnb"><b>Os valores não fecham:</b> proventos R$ ${brl(H.tp)} − descontos R$ ${brl(H.td)} = R$ ${brl(H.tp-H.td)}, mas o líquido lido é R$ ${brl(H.liq)}. Confira as linhas.</div>`};
+ const chk=()=>{read();const e=(a,b)=>Math.abs(a-b)<.05,okT=!H.tpR||(e(H.tp,H.tpR)&&e(H.td,H.tdR)),ok=e(H.tp-H.td,H.liq)&&okT&&!!H.tpR;
+  $("hck").innerHTML=ok?`<div class="okb">✓ Valores conferem com os totais do holerite: R$ ${brl(H.tp)} − R$ ${brl(H.td)} = R$ ${brl(H.liq)}</div>`:`<div class="warnb"><b>Confira antes de salvar:</b> ${H.tpR?`o holerite diz proventos R$ ${brl(H.tpR)} e descontos R$ ${brl(H.tdR)}; as linhas somam R$ ${brl(H.tp)} e R$ ${brl(H.td)}.`:"não encontrei a linha de totais."} Líquido lido: R$ ${brl(H.liq)}. Corrija as linhas que vieram erradas${H.tpR&&!e(H.tp,H.tpR)?" (falta ou sobra provento)":""}${H.tdR&&!e(H.td,H.tdR)?" (falta ou sobra desconto)":""}.</div>`};
  $("hoP").addEventListener("input",chk);chk();$("hoGo").disabled=false;
 }
 function saveHol(){
@@ -1952,17 +2019,28 @@ const rdt=r=>`${r.y}-${two(r.m+1)}-${two(r.d)}`;
 function extFrom(rows,txt){
  const R=rows.map((r,i)=>({dt:rdt(r),n:r.n,v:r.v,s:r.s,i}));if(!R.length)return null;
  let asc=0,desc=0;for(let i=1;i<R.length;i++){if(R[i].s!=null&&R[i-1].s!=null){if(Math.abs(R[i].s-(R[i-1].s+R[i].v))<.011)asc++;if(Math.abs(R[i-1].s-(R[i].s+R[i-1].v))<.011)desc++}}
- const ord=desc>asc?[...R].reverse():[...R].sort((a,b)=>a.dt<b.dt?-1:a.dt>b.dt?1:a.i-b.i),last=ord[ord.length-1];
- let saldo=null,asOf=last.dt;const ob=/<STMTTRN>/i.test(txt)?ofxBal(txt):null;
- if(ob){saldo=ob.saldo;asOf=ob.asOf}else if(last.s!=null)saldo=last.s;else{const h=/^\s*saldo[^\d-]*(-?[\d.]+,\d{2})/im.exec(txt.split(/\r?\n/).slice(0,12).join("\n"));if(h)saldo=num(h[1])}
- if(saldo!=null&&ord.some(r=>r.s==null)){let c=saldo;for(let i=ord.length-1;i>=0;i--){if(ord[i].s==null)ord[i].s=Math.round(c*100)/100;c=ord[i].s-ord[i].v}}
- return {saldo,asOf,rows:ord.map(({dt,n,v,s})=>({dt,n,v,s:s==null?null:s}))};
+ const byDt=(a,b)=>a.dt<b.dt?-1:a.dt>b.dt?1:0,ord=desc>asc?[...R].reverse().sort(byDt):[...R].sort((a,b)=>byDt(a,b)||a.i-b.i),last=ord[ord.length-1];
+ let saldo=null,from=ord[0].dt,to=last.dt;const ofx=/<STMTTRN>/i.test(txt),ob=ofx?ofxBal(txt):null;
+ const per=/per[ií]odo[^\d\n]*(\d{2})\/(\d{2})\/(\d{4})\s*(?:a|at[eé]|-)\s*(\d{2})\/(\d{2})\/(\d{4})/i.exec(txt),ds=/<DTSTART>\s*(\d{8})/i.exec(txt),de=/<DTEND>\s*(\d{8})/i.exec(txt),iso=x=>`${x.slice(0,4)}-${x.slice(4,6)}-${x.slice(6,8)}`;
+ if(per){from=`${per[3]}-${per[2]}-${per[1]}`;to=`${per[6]}-${per[5]}-${per[4]}`}else if(ds&&de){from=iso(ds[1]);to=iso(de[1])}
+ const hs=ofx?null:/^\s*saldo[^\d\n-]*(-?[\d.]+,\d{2})/im.exec(txt.split(/\r?\n/).slice(0,12).join("\n"));
+ if(ob)saldo=ob.saldo;else if(hs)saldo=num(hs[1]);else if(last.s!=null)saldo=last.s;
+ if(saldo!=null){let c=saldo;for(let i=ord.length-1;i>=0;i--){ord[i].s=Math.round(c*100)/100;c=ord[i].s-ord[i].v}}
+ return {saldo,asOf:to,from,to,rows:ord.map(({dt,n,v,s})=>({dt,n,v,s:s==null?null:s}))};
 }
 function saveExt(bco,x,saldo){
- P.ext=P.ext||{};const o=P.ext[bco]||{rows:[]},seen=new Set(),all=[...(x?x.rows:[]),...o.rows].filter(r=>{const k=r.dt+"|"+r.v+"|"+r.n;if(seen.has(k))return false;seen.add(k);return true});
- all.sort((a,b)=>a.dt<b.dt?1:a.dt>b.dt?-1:0);
- P.ext[bco]={saldo:saldo!=null?saldo:(x&&x.saldo!=null?x.saldo:o.saldo),asOf:x?x.asOf:o.asOf,at:now()+1,rows:all.slice(0,400)};
+ P.ext=P.ext||{};const o=P.ext[bco]||{rows:[]},newer=!x||!o.to||x.to>=o.to;
+ const keep=o.rows.filter(r=>!x||!x.from||r.dt<x.from||r.dt>x.to),all=[...(x?x.rows:[]),...keep].sort((a,b)=>a.dt<b.dt?1:a.dt>b.dt?-1:0);
+ const sd=saldo!=null?saldo:(x&&newer&&x.saldo!=null?x.saldo:o.saldo);
+ P.ext[bco]={saldo:sd,asOf:x&&newer?x.asOf:o.asOf,from:[o.from,x&&x.from].filter(Boolean).sort()[0]||"",to:[o.to,x&&x.to].filter(Boolean).sort().pop()||"",at:now()+1,rows:all.slice(0,800)};
+ if(saldo!=null&&!x){let c=sd;P.ext[bco].rows.forEach(r=>{r.s=Math.round(c*100)/100;c-=r.v})}
 }
+const k01=k=>`${k.slice(1,5)}-${k.slice(6)}-01`;
+function bankAt(dt){const E=P.ext||{},B=Object.keys(E);if(!B.length)return null;let t=0;for(const b of B){const e=E[b];if(!e.from||e.saldo==null||dt<e.from||dt>e.to)return null;t+=e.saldo-e.rows.filter(r=>r.dt>=dt).reduce((a,r)=>a+r.v,0)}return Math.round(t*100)/100}
+const simName=(a,b)=>{const A=nkey(a).split(" ").filter(t=>t.length>=4),B=new Set(nkey(b).split(" ").filter(t=>t.length>=4));return A.filter(t=>B.has(t)).length>=2};
+const ownerToks=()=>[ME().n,fbUser&&fbUser.displayName,P.owner].filter(Boolean).map(x=>nkey(x).split(" ")[0]).filter(t=>t&&t.length>=4);
+const isOwnName=n=>{const T=ownerToks(),w=nkey(n).split(" ");return T.some(t=>w.includes(t))};
+function ownPair(dt,v,n,bco){const E=P.ext||{};for(const b of Object.keys(E)){if(b===bco)continue;const m=E[b].rows.find(x=>Math.abs(x.v+v)<.011&&Math.abs((new Date(x.dt)-new Date(dt))/864e5)<=3&&((simName(x.n,n)&&(isOwnName(x.n)||isOwnName(n)))||bkList().some(k=>k!==b&&new RegExp("\\b"+nkey(k)+"\\b").test(nkey(x.n)))));if(m)return {b,row:m}}return null}
 function extEst(bco){
  const e=(P.ext||{})[bco];if(!e)return null;const af=x=>x.bco===bco&&(x.at||0)>e.at;
  const adj=-sum([...D.dia,...P.dia].filter(af))+sum([...D.extra,...P.extra].filter(x=>!x.rec&&af(x)));
@@ -2035,6 +2113,7 @@ const HELP=[
  ["Vale alimentação e refeição","cartoes",["Em Cartões, desça até Vales alimentação e refeição.","Escolha a empresa (Pluxee, VR, Alelo, Ticket…), o tipo, de quem é, o dia e o valor da recarga e o saldo atual. Toque em Adicionar.","Para lançar uma compra no vale, use Adicionar → No vale, ou escreva vale no lançamento rápido: mercado 85 vale.","O saldo cai a cada compra, e a recarga entra sozinha no dia certo."],"Os gastos com o vale aparecem nas categorias, mas não saem do saldo do salário. Se o saldo ficar diferente do app do vale, toque em Corrigir saldo."],
  ["Lançar por foto ou print","cartoes",["Toque na setinha ao lado de + Adicionar e escolha Por foto ou print.","Tire uma foto do comprovante ou escolha um print da fatura no app do banco.","Escolha onde lançar: gasto do dia, cartão ou vale.","Confira o que foi lido, corrija se precisar e toque em Lançar."],"Na primeira vez, o leitor é baixado (uns 10 MB). Prints e comprovantes nítidos dão os melhores resultados."],
  ["Salário do fim do mês e sobra do mês anterior","fluxo",["O salário que cai a partir do dia 27 conta para o mês seguinte, porque é com ele que vocês pagam o próximo mês. O adiantamento do dia 15 continua no mês em que cai.","Para mudar o dia, abra Nossa renda → Pessoas e valores e altere o campo Salário que cai a partir do dia… (0 desliga).","Cada mês começa com o que sobrou do anterior. No Fluxo de caixa aparecem Começou com, Entradas, Saídas e Termina com.","Se o valor de começo não bater, toque em ajustar e informe quanto você tinha no dia 1. Os meses seguintes partem desse valor."],"O Ainda dá para gastar também conta a sobra do mês anterior."],
+ ["Conferir o mês com os bancos","fluxo",["Importe os extratos de todas as suas contas (CSV ou OFX) cobrindo o mês inteiro.","No Fluxo de caixa, o card Conferência com os bancos mostra quanto havia no dia 1, o que entrou, o que saiu e quanto havia no fim, exatamente como nos bancos.","Se aparecer diferença, abra as listas: linhas do extrato que não estão no app (toque em Lançar) e lançamentos do app que não estão no extrato (toque no ✎ para corrigir ou excluir).","Transferências entre as suas contas e o salário do fim do mês são tratados sozinhos."],"Quando o extrato cobre o dia 1, o mês começa com o saldo real dos bancos."],
  ["Ver o saldo dos bancos e o extrato","extratos",["Importe o extrato da conta em CSV ou OFX (Fluxo de caixa → Importar extrato). O app pega o saldo que vem no arquivo; confira ou corrija no campo Saldo hoje no banco.","Na Visão geral, o card Meus bancos mostra o saldo de cada banco e o total.","Lançou um gasto depois? Escolha o banco no lançamento (ou escreva o nome do banco no lançamento rápido: padaria 12 inter) e o saldo vira estimado até o próximo extrato.","Em Meus extratos, veja as linhas iguais às do banco, com o saldo linha a linha, e corrija o saldo se não bater."],"Os saldos e extratos ficam só no seu perfil: a família não vê. Agência e número da conta não são guardados."],
  ["Importar extrato ou fatura do banco","fluxo",["No app ou no site do banco, baixe o extrato ou a fatura em CSV ou OFX. PDF não é lido.","Em Fluxo de caixa, toque em Importar extrato e escolha o arquivo.","Diga se é extrato da conta ou fatura de um cartão. No extrato, confira o Banco: no OFX ele é reconhecido sozinho, e no CSV o app lembra depois da primeira vez.","Contas já cadastradas que aparecem no extrato são marcadas como pagas. Salário, pagamento de fatura e Pix entre vocês ou entre as suas contas ficam desmarcados, para não contar duas vezes.","Confira a lista e toque em Importar."],"Só o nome do banco é guardado, nunca agência ou número da conta. Em Nossa renda, informe o Banco do salário. No Fluxo de caixa, filtre os lançamentos por banco."],
  ["Dividir as contas da casa","casa",["Em Nossa casa, escolha a regra: Partes iguais ou Proporcional à renda.","Toque no nome ao lado de cada conta para trocar quem paga.","Para uma conta ter regra própria, toque no ✎ dela e escolha em Divisão desta conta."],"Dependentes, marcados em Nossa renda, não entram na divisão."],
