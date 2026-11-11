@@ -820,7 +820,7 @@ $("bnav").innerHTML=MENU.slice(0,4).map(m=>navBtn(m,"")).join("")+`<button id="m
 on("[data-v]","click",b=>{location.hash=b.dataset.v});
 function openSheet(){
  $("sheet").innerHTML=`<div class="grab"></div>${[...MAIS,...(isAdmin()?[["adm","Administração","information"]]:[])].map(([v,t,ic])=>`<button class="opt" data-go="${v}"><img src="${ICON(ic)}" alt=""><div><b>${t}</b></div></button>`).join("")}
- <button class="opt" id="perfSheet"><span class="tic in">${I(me)}</span><div><b>Meu perfil</b><small>Conta e segurança</small></div></button>
+ <button class="opt" id="perfSheet">${av(me,"lg")}<div><b>Meu perfil</b><small>Conta e segurança</small></div></button>
  <button class="opt" id="outSheet"><span class="tic warn">⏻</span><div><b>Sair</b><small>${MODE==="cloud"?esc((fbUser&&fbUser.email)||""):"Voltar para a tela de login"}</small></div></button>
  <div class="theme" style="padding:12px 8px 4px"><span>Tema</span><div class="seg2"><button class="tl" aria-label="Tema claro">☼</button><button class="td" aria-label="Tema escuro">☾</button></div></div>`;
  $("sheet").hidden=$("sheetOv").hidden=false;syncTheme();bindTheme();$("outSheet").onclick=logout;if($("perfSheet"))$("perfSheet").onclick=()=>{closeSheet();openPerfil()};
