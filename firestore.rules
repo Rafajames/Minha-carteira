@@ -5,31 +5,44 @@ service cloud.firestore {
     function signedIn() { return request.auth != null; }
     function isMember() { return signedIn() && request.auth.uid in resource.data.members; }
 
-    // Cada pessoa só lê e altera o próprio perfil (que guarda a família dela)
+    // Cada pessoa só lê e altera o próprio perfil (família e lançamentos privados)
     match /users/{uid} {
       allow read, write: if signedIn() && request.auth.uid == uid;
     }
 
-    // Dados da família
     match /families/{familyId} {
+      // Criar família: quem cria vira dono e único membro
       allow create: if signedIn()
         && request.resource.data.owner == request.auth.uid
         && request.resource.data.members == [request.auth.uid];
 
+      // Ler: só membros
       allow read: if isMember();
 
+      // Alterar dados: membros. Só o dono remove outras pessoas; cada um pode sair sozinho
       allow update: if isMember()
         && request.resource.data.owner == resource.data.owner
-        && request.resource.data.members.hasAll([resource.data.owner]);
+        && request.resource.data.members.hasAll([resource.data.owner])
+        && ( request.resource.data.members.hasAll(resource.data.members)
+             || request.auth.uid == resource.data.owner
+             || request.resource.data.members == resource.data.members.removeAll([request.auth.uid]) );
 
-      // Entrar pelo link de convite: a pessoa só pode se adicionar à lista
+      // Entrar pelo convite: precisa do código atual do link (gerar um link novo desativa o anterior)
       allow update: if signedIn()
         && !(request.auth.uid in resource.data.members)
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members'])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members', 'joinCode'])
         && request.resource.data.members == resource.data.members.concat([request.auth.uid])
+        && request.resource.data.joinCode == resource.data.invite
         && resource.data.members.size() < 6;
 
+      // Excluir: só o dono
       allow delete: if signedIn() && request.auth.uid == resource.data.owner;
+
+      // Cópias de segurança: só membros da família
+      match /backups/{backupId} {
+        allow read, write: if signedIn()
+          && request.auth.uid in get(/databases/$(database)/documents/families/$(familyId)).data.members;
+      }
     }
   }
 }

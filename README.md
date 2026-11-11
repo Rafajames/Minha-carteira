@@ -45,6 +45,20 @@ Tudo é recalculado na hora: trocar quem paga uma conta, mudar a regra de divis�
 - **Gastos por categoria** com comparação com o mês anterior, **metas** com aviso no sino e **exportação do mês** em planilha (CSV para Excel e Google Planilhas).
 - **Visão de cada pessoa:** o saldo previsto e a moradia usam o salário e a parte de quem está conectado.
 - **Modo local** sem conta, com botão para restaurar os dados de exemplo.
+- **Visão geral 2.0:** saudação, lançamento rápido ("mercado 85,90"), resumo do mês anterior, indicadores de entradas, despesas, balanço e parcelas que terminaram, e nota de **saúde financeira** de 0 a 100.
+- **Desfazer** depois de excluir, marcar como pago ou importar; **pagar todas do dia** de uma vez; **ocultar valores** com o ícone de olho.
+- **Quem fez o quê:** cada conta paga mostra quem pagou e quando, e o sino lista a atividade da família.
+- **Divisão por conta** (partes iguais, proporcional ou uma pessoa só) e **dependentes** que não entram na divisão.
+- **Cartão com data de fechamento:** cada compra vai para a fatura certa, que aparece como aberta ou fechada.
+- **Reserva ligada:** marcar "Guardar na reserva" como paga soma no saldo da reserva.
+- **Ler boleto e Pix copia e cola:** colar o código preenche valor e vencimento, e o código fica guardado para copiar na hora de pagar.
+- **Importar extrato e fatura** em CSV ou OFX, sem repetir o que já foi lançado.
+- **Planejamento:** previsão dos próximos 6 meses, simulador de compra parcelada, objetivos com prazo e lista de assinaturas.
+- **Patrimônio:** bens, reserva, dívidas e financiamentos com o juro embutido.
+- **Lista de compras** compartilhada que vira gasto em Mercado ao fechar a compra.
+- **Gráfico do ano** no Fluxo de caixa.
+- **Cópias de segurança:** uma por dia na nuvem, mais cópia em arquivo para baixar e restaurar.
+- **Convite com código:** "Gerar novo link" desativa o link anterior, e só quem criou a família remove pessoas.
 - Layout responsivo: no celular, o menu vira uma barra inferior com Início, Fluxo, Cartões, Casa e Mais.
 - Tema claro e escuro, que respeita o sistema e lembra a sua escolha.
 - Navegação por link direto para cada tela (`#fluxo`, `#cartoes`, `#casa`, `#reserva`, `#renda`, `#contas`).
