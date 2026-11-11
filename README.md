@@ -35,7 +35,13 @@ Tudo é recalculado na hora: trocar quem paga uma conta, mudar a regra de divis�
 - **Sino de vencimentos:** mostra as contas vencidas ou que vencem nos próximos 7 dias.
 - **Mês atual automático**, com "venceu há X dias" e "em X dias" calculados pela data de hoje.
 - **Nomes configuráveis** para as duas pessoas, usados em todas as telas.
-- **Login com Google e família compartilhada** (Firebase): link de convite, sincronização em tempo real e até 6 pessoas por família.
+- **Login com Google ou e-mail e senha, e família compartilhada** (Firebase): link de convite, sincronização em tempo real e até 6 pessoas, todas entrando na divisão das contas.
+- **Meses separados:** contas que se repetem voltam "a pagar" a cada mês, e gastos avulsos ficam só no mês em que foram lançados.
+- **Editar e excluir** qualquer lançamento, conta da casa ou cartão (botão ✎).
+- **Lançamentos privados:** marque "Só eu vejo" e a conta fica guardada só no seu perfil.
+- **Faturas calculadas pelas parcelas:** as próximas faturas e o limite livre saem das compras lançadas.
+- **Lembrete no Google Agenda:** cada conta a pagar gera um evento mensal no dia do vencimento.
+- **Histórico de acertos** via Pix, mês a mês.
 - **Visão de cada pessoa:** o saldo previsto e a moradia usam o salário e a parte de quem está conectado.
 - **Modo local** sem conta, com botão para restaurar os dados de exemplo.
 - Layout responsivo: no celular, o menu vira uma barra inferior com Início, Fluxo, Cartões, Casa e Mais.
@@ -70,10 +76,12 @@ cd Minha-carteira
 - [x] Login com Google (Firebase)
 - [x] Família com convite por link
 - [x] Sincronização em tempo real entre os membros
-- [ ] Contas pessoais privadas (visíveis só para o dono)
+- [x] Meses separados, edição de lançamentos e várias pessoas na divisão
+- [x] Lançamentos privados (visíveis só para o dono)
 - [x] Sistema visual único, ícones 3D, botões funcionando e salvamento local
 - [ ] Instalação como app no celular (PWA)
-- [ ] Lembretes de vencimento
+- [x] Lembretes de vencimento pelo Google Agenda
+- [ ] Notificações do próprio app (dependem da versão instalável)
 
 ## 🔐 Configurando o Firebase (se for criar o seu)
 
