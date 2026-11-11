@@ -76,6 +76,7 @@ Tudo é recalculado na hora: trocar quem paga uma conta, mudar a regra de divis�
 - **iFood:** nomes "iFood · Restaurante" a partir de IFD*, leitura do print de pedidos sem duplicar o que já está na fatura, valor médio e dias em que mais pedem.
 - **Holerite:** leitura do recibo de pagamento com as colunas de proventos e descontos, conferência com o líquido, FGTS informativo e mês de férias sem trocar o salário.
 - **Salário em duas datas:** adiantamento e restante, no dia útil anterior quando cair em fim de semana ou feriado (nacionais, de Roraima e de Boa Vista). O previsto é corrigido pelo holerite.
+- **Empréstimos pela origem:** consignado (desconto no contracheque, abatido pelo holerite e mostrado no Fluxo como informativo) ou débito na conta do banco (reconhecido no extrato como "Empréstimo Inter · parcela X de N").
 - **Consignados:** parcelas pagas e restantes, juros, mês em que o salário sobe, conferência pelo holerite e leitura do print "Detalhes do empréstimo".
 - **Tendência** das saídas no gráfico do ano.
 - Layout responsivo: no celular, o menu vira uma barra inferior com Início, Fluxo, Cartões, Casa e Mais.
