@@ -399,6 +399,8 @@ body.priv :is(.mini b,.ondr b,.okb,.hrow input){filter:blur(7px)}
 .hlist2{max-height:260px;margin-top:6px}.flash{animation:flash 2.4s ease-out}@keyframes flash{0%,40%{background:var(--tint-b)}100%{background:transparent}}
 @media (max-width:480px){.hsum{gap:6px}.hsum>div{padding:8px}.hsum b{font-size:13.5px}}
 body.priv :is(.hsum b){filter:blur(7px)}
+.bkchips{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.bkchips span{background:var(--chip);border-radius:10px;padding:7px 12px;min-width:0}.bkchips small{display:block;color:var(--muted);font-size:11px}.bkchips b{font-size:14.5px}
+body.priv :is(.bkchips b){filter:blur(7px)}
 </style>
 </head>
 <body>
@@ -1956,8 +1958,9 @@ const whenExt=e=>{const d=new Date(e.at),t=new Date(),same=d.toDateString()===t.
 function renderBancos(){
  const el=$("bancos"),B=Object.keys(P.ext||{});if(!B.length){el.hidden=true;return}
  const L=B.map(b=>({b,...extEst(b)})),T=sum(L.map(x=>({v:x.saldo})));
- el.hidden=false;el.innerHTML=`<div class="hhead"><div class="h">Meus bancos <small>· só você vê</small></div><span class="sp"></span><b>${money(T)}</b></div>
- ${L.map(x=>`<div class="row"><span class="nm">${esc(x.b)}<small>${x.adj?`estimado · ${whenExt(x.e)} · ${x.adj<0?"−":"+"} R$ ${brl(Math.abs(x.adj))} lançado depois`:whenExt(x.e)}</small></span><span class="val${x.saldo<0?" late-t":""}">R$ ${brl(x.saldo)}</span></div>`).join("")}
+ el.hidden=false;el.innerHTML=`<div class="h">Meus bancos <small>· só você vê</small></div>
+ <div class="lbl" style="margin-top:10px">Saldo total${L.length>1?` dos ${L.length} bancos`:""}${L.some(x=>x.adj)?" (estimado)":""}</div><div class="money" style="color:${T<0?"var(--pink)":"var(--fg)"}">${money(T)}</div>
+ ${L.map(x=>`<div class="row"><span class="nm">Saldo ${esc(x.b)}<small>${x.adj?`estimado · ${whenExt(x.e)} · ${x.adj<0?"−":"+"} R$ ${brl(Math.abs(x.adj))} lançado depois`:whenExt(x.e)}</small></span><span class="val${x.saldo<0?" late-t":""}">R$ ${brl(x.saldo)}</span></div>`).join("")}
  <div class="gact"><button class="btn" data-go="extratos">Ver extratos</button><button class="btn" id="bkImp">Importar extrato</button></div>`;
  on("#bancos [data-go]","click",b=>{location.hash=b.dataset.go});$("bkImp").onclick=openImport;
 }
@@ -1966,7 +1969,8 @@ function pExt(){
  if(!B.length){$("v-extratos").innerHTML=PH("bank","Meus extratos","Saldos e extratos dos seus bancos · só você vê")+`<section class="c box"><div class="note">Importe o extrato da conta em CSV ou OFX (Fluxo de caixa → Importar extrato). O saldo e as linhas do extrato aparecem aqui, iguais às do banco, para você conferir.</div><div class="gact"><button class="btnp" id="exImp">Importar extrato</button></div></section>`;$("exImp").onclick=openImport;return}
  const x=extEst(extSel),e=x.e,G={};e.rows.forEach(r=>{(G[r.dt]=G[r.dt]||[]).push(r)});
  $("v-extratos").innerHTML=PH("bank","Meus extratos","Saldos e extratos dos seus bancos · só você vê",`<button class="btn" id="exImp">Importar extrato</button>`)+
- `<section class="c box">${B.length>1?`<div class="seg" style="grid-template-columns:repeat(${B.length},1fr);margin-top:0">${B.map(b=>`<button data-xb="${esc(b)}" class="${b===extSel?"on":""}">${esc(b)}</button>`).join("")}</div>`:""}
+ `<section class="c box"><div class="lbl" style="margin:0">Saldo total${B.length>1?` dos ${B.length} bancos`:""}</div><div class="money">${money(sum(B.map(b=>({v:extEst(b).saldo}))))}</div><div class="bkchips">${B.map(b=>`<span><small>${esc(b)}</small><b>R$ ${brl(extEst(b).saldo)}</b></span>`).join("")}</div></section>
+ <section class="c box">${B.length>1?`<div class="seg" style="grid-template-columns:repeat(${B.length},1fr);margin-top:0">${B.map(b=>`<button data-xb="${esc(b)}" class="${b===extSel?"on":""}">${esc(b)}</button>`).join("")}</div>`:""}
  <div class="lbl" style="margin-top:14px">Saldo ${esc(extSel)}${x.adj?" (estimado)":""}</div><div class="money">${money(x.saldo)}</div>
  <div class="note">${e.saldo!=null?`R$ ${brl(e.saldo)} no ${whenExt(e)}${e.asOf?` (saldo de ${dtBR(e.asOf)})`:""}`:"O arquivo não trouxe o saldo. Informe abaixo."}${x.adj?` · ${x.adj<0?"−":"+"} R$ ${brl(Math.abs(x.adj))} que você lançou depois neste banco`:""}. Compare com o app do banco: se não bater, corrija.</div>
  <form id="fxs" class="gact"><input class="gin" id="xsV" inputmode="decimal" placeholder="${brl(x.saldo)}" aria-label="Saldo atual no banco"><button class="btn">Corrigir saldo</button><span style="flex:1"></span><button type="button" class="btn danger" id="xDel">Apagar extrato</button></form></section>
