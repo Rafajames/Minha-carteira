@@ -394,6 +394,11 @@ body.priv :is(.money,.val,.legend b,.who b,.cfoot b,.iv .v,.it b,.pr b,.tbl td,.
 .adv{display:flex;gap:10px;flex-wrap:wrap}.adv .field{flex:1;min-width:140px}
 .trend{font-size:12.5px;color:var(--muted);margin-top:8px}
 body.priv :is(.mini b,.ondr b,.okb,.hrow input){filter:blur(7px)}
+#hoje{padding:16px 18px}.hhead{display:flex;align-items:center;gap:8px}.hhead .sp{flex:1}.hhead .circ:disabled{opacity:.35;cursor:default}
+.hsum{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}.hsum>div{background:var(--chip);border-radius:10px;padding:8px 12px;min-width:0}.hsum .lbl{margin:0;font-size:11.5px}.hsum b{display:block;font-size:16px;margin-top:2px;white-space:nowrap}
+.hlist2{max-height:260px;margin-top:6px}.flash{animation:flash 2.4s ease-out}@keyframes flash{0%,40%{background:var(--tint-b)}100%{background:transparent}}
+@media (max-width:480px){.hsum{gap:6px}.hsum>div{padding:8px}.hsum b{font-size:13.5px}}
+body.priv :is(.hsum b){filter:blur(7px)}
 </style>
 </head>
 <body>
@@ -450,6 +455,7 @@ body.priv :is(.mini b,.ondr b,.okb,.hrow input){filter:blur(7px)}
   <div class="banner box" id="banner" hidden></div>
   <div class="view" id="v-visao">
    <div class="hello"><div><h2 id="hiTxt"></h2><p id="hiDate"></p></div><form class="quick" id="quick"><input id="qk" placeholder="Lançamento rápido: mercado 85,90" title="Para entrada, comece com +: +freela 500. Para pagar com o vale, escreva vale: mercado 85 vale" aria-label="Lançamento rápido" autocomplete="off"><button class="btnp">Lançar</button></form></div>
+   <section class="c box" id="hoje"></section>
    <div class="banner box" id="resumo" hidden></div>
    <div class="kpis" id="kpis"></div>
    <div class="banner box warnban" id="aviso" hidden></div>
@@ -1866,12 +1872,34 @@ function saveEmp(){
  const und=snap();D.dividas.push({id:uid(),n,cons:1,parcela:p,np:q,ini:mk(+mm[1],+mm[2]-1),lib:num($("emL").value),pid:me,saldo:0,rest:0});addLog(`cadastrou ${n}`);closeForm();toast(`${n} cadastrado`,und);renderAll();
 }
 
+/* ===== balanço do dia ===== */
+let hojeOff=0;
+function diaItens(dt){
+ const k=mk(dt.getFullYear(),dt.getMonth()),d=dt.getDate(),same=t=>{if(!t)return false;const x=new Date(t);return x.getFullYear()===dt.getFullYear()&&x.getMonth()===dt.getMonth()&&x.getDate()===d},o=[];
+ const push=(x,v,src,id,t)=>o.push({n:x.n||"?",v,src,id,t:t||x.at||0,by:x.by,priv:x.priv});
+ [[D,0],[P,1]].forEach(([S,pv])=>{
+  S.dia.filter(x=>x.k===k&&x.d===d).forEach(x=>push(Object.assign({priv:pv},x),-x.v,x.cid?`débito ${(D.cards.find(c=>c.id===x.cid)||{bk:""}).bk}`:"gasto do dia",x.id));
+  S.extra.filter(x=>vis(x,k)&&x.d===d).forEach(x=>push(Object.assign({priv:pv},x),+x.v,x.rec?"entrada fixa":"entrada",x.id));
+  Object.entries(S.mes||{}).forEach(([mk_,m])=>Object.entries((m&&m.paid)||{}).forEach(([id,r])=>{if(!r||typeof r!=="object"||!same(r.t))return;const b=S.bills.find(x=>x.id===id);if(b)push({n:b.n,by:r.b,priv:pv},-b.v,`conta paga${mk_!==k?` (${AB[+mk_.slice(6)-1].toLowerCase()})`:""}`,b.id,r.t)}))});
+ (D.vales||[]).forEach(v=>v.lanc.filter(x=>x.k===k&&x.d===d).forEach(x=>push(x,-x.v,"vale "+v.emp,x.id)));
+ salTx(ME(),k).filter(s=>s.d===d).forEach(s=>o.push({n:s.n+(s.prev?" (previsto)":""),v:s.v,src:"salário",id:"",t:0}));
+ return o.sort((a,b)=>(b.t||0)-(a.t||0));
+}
+function renderHoje(){
+ const t=new Date(),dt=new Date(t.getFullYear(),t.getMonth(),t.getDate()+hojeOff),L=diaItens(dt),E=sum(L.filter(x=>x.v>0)),S=-sum(L.filter(x=>x.v<0)),B=E-S;
+ const nm=hojeOff===0?"Hoje":hojeOff===-1?"Ontem":DIAS[dt.getDay()][0].toUpperCase()+DIAS[dt.getDay()].slice(1),hh=x=>{const d=new Date(x);return `${two(d.getHours())}h${two(d.getMinutes())}`};
+ $("hoje").innerHTML=`<div class="hhead"><div class="h">${nm} <small>· ${hojeOff>-2?DIAS[dt.getDay()]+", ":""}${two(dt.getDate())}/${two(dt.getMonth()+1)}</small></div><span class="sp"></span>${hojeOff?`<button class="link" id="hjN0">voltar para hoje</button>`:""}<button class="circ" id="hjP" aria-label="Dia anterior">‹</button><button class="circ" id="hjN" aria-label="Próximo dia"${hojeOff>=0?" disabled":""}>›</button></div>
+ <div class="hsum"><div><span class="lbl">Saiu</span><b>R$ ${brl(S)}</b></div><div><span class="lbl">Entrou</span><b class="pos">R$ ${brl(E)}</b></div><div><span class="lbl">Balanço do dia</span><b style="color:${B>=0?"var(--green)":"var(--pink)"}">${B<0?"− ":B>0?"+ ":""}R$ ${brl(Math.abs(B))}</b></div></div>
+ ${L.length?`<div class="list hlist2">${L.map(x=>`<div class="txr${x.t&&now()-x.t<5000?" flash":""}"><span class="tic ${x.v>0?"in":"out"}">${x.v>0?"+":"−"}</span><div class="nm"><b>${esc(x.n)}${x.priv?` <span class="tagp">só você</span>`:""}</b><small>${[x.src,x.t?hh(x.t):"",x.by&&D.people.some(p=>p.id===x.by)?person(x.by).n:""].filter(Boolean).join(" · ")}</small></div><span class="val ${x.v>0?"pos":""}">${x.v>0?"+":"−"} R$ ${brl(Math.abs(x.v))}</span>${x.id&&find(x.id)?edb(x.id,x.n):""}</div>`).join("")}</div>`:`<div class="note">${hojeOff?"Nada lançado neste dia.":"Nada lançado hoje ainda. Use o campo acima, por exemplo: mercado 85,90."}</div>`}`;
+ $("hjP").onclick=()=>{hojeOff--;renderHoje()};$("hjN").onclick=()=>{if(hojeOff<0){hojeOff++;renderHoje()}};if($("hjN0"))$("hjN0").onclick=()=>{hojeOff=0;renderHoje()};
+}
+
 /* ===== ajuda ===== */
 const HELP=[
  ["Primeiros passos","renda",["Entre com o Google ou com e-mail e senha.","Na primeira vez, escolha Criar com dados de exemplo para conhecer o app, ou Começar do zero.","Em Nossa renda, preencha nomes, salários e o dia em que cada pessoa recebe. Toque em Salvar.","Cadastre as contas fixas em Contas da casa e os cartões em Cartões."],"Os dados de exemplo podem ser trocados a qualquer momento em Nossa renda, no fim da página."],
  ["Convidar alguém para a família","renda",["Abra Nossa renda.","No card Família, toque em Enviar convite e mande o link. No celular, abre o compartilhar do sistema.","A pessoa abre o link no Chrome ou no Brave (não dentro do WhatsApp) e entra com a conta dela.","Pronto: os dados passam a ser os mesmos para vocês."],"Se o link não funcionar, toque em Gerar novo link e envie de novo."],
  ["Remover alguém da família","renda",["Abra Nossa renda.","Se a pessoa já entrou com a conta dela, toque em Remover acesso ao lado do nome e toque de novo para confirmar.","Em Pessoas e valores, toque em Remover na linha da pessoa.","As contas da casa que eram dela passam para você."],"Só quem criou a família consegue remover o acesso de alguém. Removeu por engano? Toque em Desfazer no aviso."],
- ["Lançar um gasto rápido","visao",["Na Visão geral, use o campo Lançamento rápido.","Escreva o nome e o valor, por exemplo: mercado 85,90.","Toque em Lançar. A categoria é escolhida pelo nome.","Para lançar uma entrada, comece com +, por exemplo: +freela 500."],"Errou? Toque em Desfazer no aviso que aparece embaixo."],
+ ["Lançar um gasto rápido","visao",["Na Visão geral, use o campo Lançamento rápido.","Escreva o nome e o valor, por exemplo: mercado 85,90.","Toque em Lançar. A categoria é escolhida pelo nome.","O lançamento aparece na hora no card Hoje, logo abaixo, com o que saiu, o que entrou e o balanço do dia. Use as setas para ver outros dias.","Para lançar uma entrada, comece com +, por exemplo: +freela 500."],"Errou? Toque em Desfazer no aviso que aparece embaixo."],
  ["Adicionar uma conta a pagar","visao",["Toque em + Adicionar, no topo.","Escolha Conta a pagar e preencha descrição, valor e dia do vencimento.","Tem boleto ou Pix copia e cola? Cole o código no campo próprio: valor e vencimento são preenchidos sozinhos.","Deixe Repete todo mês marcado para contas fixas e toque em Adicionar."],"Com o código guardado, o botão ⧉ ao lado da conta copia o código na hora de pagar."],
  ["Marcar uma conta como paga","visao",["Em Contas a pagar, toque no círculo da conta.","Para pagar todas de um dia de uma vez, toque em pagar as contas do dia, ao lado do total.","A conta passa a mostrar quem pagou e quando."],"Marcou errado? Toque de novo no círculo ou em Desfazer."],
  ["Editar ou excluir um lançamento","fluxo",["Toque no lápis ✎ ao lado do lançamento. Ele aparece em Contas a pagar, Fluxo de caixa, Cartões, Nossa casa e Contas da casa.","Mude o que quiser e toque em Salvar.","Para apagar, toque em Excluir e toque de novo para confirmar."],"Excluir uma conta que se repete a partir de um mês mantém os meses anteriores como estão."],
@@ -1922,7 +1950,7 @@ function route(){
 }
 addEventListener("hashchange",route);
 function renderMonth(){$("month").innerHTML=`${MESES[mes]} <span>${ano}</span>`}
-function renderAll(){if(!D)return;save();renderSide();renderMonth();renderHello();renderResumo();renderKpis();renderAviso();renderSemana();renderOnde();renderGastar();renderConq();renderSaldo();renderContas();renderDiv();renderCart();renderVline();renderMor();renderObra();renderSaude();renderBell();if(V[cur])V[cur]()}
+function renderAll(){if(!D)return;save();renderSide();renderMonth();renderHello();renderHoje();renderResumo();renderKpis();renderAviso();renderSemana();renderOnde();renderGastar();renderConq();renderSaldo();renderContas();renderDiv();renderCart();renderVline();renderMor();renderObra();renderSaude();renderBell();if(V[cur])V[cur]()}
 const goM=n=>{[ano,mes]=mAdd(ano,mes,n);selDay=null;renderAll()};
 $("prev").onclick=()=>goM(-1);$("next").onclick=()=>goM(1);
 

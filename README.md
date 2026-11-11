@@ -62,6 +62,7 @@ Tudo é recalculado na hora: trocar quem paga uma conta, mudar a regra de divis�
 - **Ajuda:** 31 tutoriais passo a passo, com busca e atalho para a tela de cada assunto.
 - **Vale alimentação e refeição** (Pluxee, VR, Alelo, Ticket e outros): saldo, recarga automática no dia certo e previsão de até quando o saldo dura. Os gastos entram nas categorias, mas não saem do saldo do salário.
 - **Lançar por foto ou print:** lê comprovantes e prints de fatura no próprio aparelho, com [Tesseract.js](https://github.com/naptha/tesseract.js), e mostra o resultado para conferir antes de lançar.
+- **Balanço do dia:** card Hoje logo abaixo do lançamento rápido, com o que saiu, o que entrou e o saldo do dia, a lista dos lançamentos (gastos, entradas, vale e contas pagas no dia) e setas para ver outros dias.
 - **Detalhe da categoria:** total, comparação com a média, quem gastou, últimos 12 meses com linha de tendência e lista do que entrou. Ao corrigir a categoria de um lançamento, o app aprende pelo nome.
 - **Novas categorias** Carro e Delivery, e reconhecimento de posto, Shell, Ipiranga, autopeças, oficina, borracharia, iFood e IFD*.
 - **Visão geral:** onde foi o dinheiro (3 categorias que mais pesaram), quanto ainda dá para gastar por dia, aviso de gasto fora do normal, resumo da semana e conquistas.
