@@ -629,7 +629,8 @@ let D=null,P=normP();
 const lsGet=k=>{try{return localStorage.getItem(k)}catch(e){return null}},lsSet=(k,v)=>{try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}};
 function loadLocal(){
  let d=null,p=null;try{d=JSON.parse(lsGet(KEY)||lsGet(OLDKEY));p=JSON.parse(lsGet(KEY+"-p"))}catch(e){}
- D=norm(d&&d.casa?d:seed());P=normP(p);
+ const velho=d&&d.people&&d.people.some(x=>x.n==="James"&&+x.sal===28000);
+ D=norm(d&&d.casa&&!velho?d:seed());P=normP(velho?null:p);if(velho)save();
 }
 
 /* ===== salvar ===== */
