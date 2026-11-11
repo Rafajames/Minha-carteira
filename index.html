@@ -1966,7 +1966,7 @@ function parseHol(data){
 }
 const consMatch=(x,k)=>/consig/i.test(x.n)?D.dividas.find(d=>d.cons&&Math.abs(d.parcela-x.v)<.02&&mIdx(d.ini)<=mIdx(k)&&mIdx(k)<=mIdx(consEnd(d))):null;
 function drawHol(){
- const H=HOLD,k=H.k,rows=(L,t)=>L.map((x,i)=>`<div class="hrow"><input class="oin" data-hn="${t}${i}" value="${esc(x.n)}" aria-label="Verba"><input class="oin" data-hv="${t}${i}" inputmode="decimal" value="${brl(x.v)}" aria-label="Valor"></div>${t==="d"&&/consig/i.test(x.n)?`<small class="hint">${consMatch(x,k)?`✓ parcela de ${esc(consMatch(x,k).n)} marcada como paga`:"Consignado sem cadastro: cadastre em Patrimônio → Dívidas"}</small>`:""}`).join("");
+ const H=HOLD,k=H.k,rows=(L,t)=>L.map((x,i)=>`<div class="hrow"><input class="oin" data-hn="${t}${i}" value="${esc(x.n)}" aria-label="Verba"><input class="oin" data-hv="${t}${i}" inputmode="decimal" value="${brl(x.v)}" aria-label="Valor"></div>${t==="d"&&/consig/i.test(x.n)?`<small class="hint">${consMatch(x,k)?(()=>{const d=consMatch(x,k),i=dvInfo(d),r=Math.max(i.rest-(d.conf&&d.conf[k]||mIdx(k)<mIdx(NOWK)?0:mIdx(k)===mIdx(NOWK)?1:0),0);return `✓ abate a parcela de ${MESES[+k.slice(6)-1].toLowerCase()} de ${esc(d.n)}${mIdx(k)===mIdx(NOWK)?` · ${r?`ficam faltando ${r}`:"quitado!"}`:""}`})():"Consignado sem cadastro: cadastre em Patrimônio → Dívidas"}</small>`:""}`).join("");
  $("hoP").innerHTML=`<div id="hck"></div>${H.ferias?`<div class="warnb"><b>Mês com férias.</b> O líquido não representa um mês normal, então o salário previsto não muda. O resumo fica guardado.</div>`:""}
  <div class="mgrid"><label class="field">Mês do holerite<input id="hoK" type="month" value="${k.slice(1,5)}-${k.slice(6)}"></label><label class="field">Crédito em<input id="hoC" type="date" value="${H.cred||""}"></label></div>
  <div class="sub">Proventos</div>${rows(H.prov,"p")}<div class="sub">Descontos</div>${rows(H.desc,"d")}
@@ -1983,16 +1983,16 @@ function saveHol(){
  const mm=/^(\d{4})-(\d{2})/.exec($("hoK").value||""),old=H.k+"_"+H.pid;if(mm)H.k=mk(+mm[1],+mm[2]-1);
  Object.assign(H,{liq:num($("hoL").value),adto:num($("hoA").value),fgts:num($("hoG").value),base:num($("hoB").value),cred:$("hoC").value||"",tp:sum(H.prov),td:sum(H.desc),at:now()});
  const und=snap(),p=person(H.pid);D.hol=D.hol||{};if(D.hol[old]&&old!==H.k+"_"+H.pid)delete D.hol[old];D.hol[H.k+"_"+H.pid]=H;
- let nc=0;H.desc.forEach(x=>{const d=consMatch(x,H.k);if(d){d.conf=d.conf||{};d.conf[H.k]=1;nc++}});
+ let nc=0;const cm=[];H.desc.forEach(x=>{const d=consMatch(x,H.k);if(d){d.conf=d.conf||{};d.conf[H.k]=1;nc++;cm.push(d)}});
  if($("hoU").checked){p.sal=Math.round((H.liq+(+H.adto||0))*100)/100;if(H.adto>0){if(!(+p.adD>0))p.adD=15;if(!p.pay||p.pay<20)p.pay=30;p.adV=H.adto}}
- addLog(`leu o holerite de ${kLabel(H.k).toLowerCase()}`);closeForm();toast(`Holerite de ${kLabel(H.k).toLowerCase()} salvo${nc?` · ${nc} parcela${nc>1?"s":""} de consignado conferida${nc>1?"s":""}`:""}`,und);renderAll();
+ addLog(`leu o holerite de ${kLabel(H.k).toLowerCase()}`);closeForm();toast(`Holerite de ${kLabel(H.k).toLowerCase()} salvo${cm.length?" · "+cm.map(d=>{const r=dvInfo(d).rest;return `${d.n}: ${r?`faltam ${r}`:"quitado"}`}).join(" · "):""}`,und);renderAll();
 }
 
 /* ===== consignados ===== */
 const consEnd=d=>kAdd(d.ini,(+d.np||1)-1);
 function dvInfo(d){
  if(!d.cons)return {saldo:+d.saldo||0,rest:+d.rest||0};
- const p=person(d.pid||me),np=+d.np||1,el=mIdx(NOWK)-mIdx(d.ini),pd=diaUtil(HOJE.getFullYear(),HOJE.getMonth(),p.pay||30).getDate(),now_=el>=0&&((d.conf&&d.conf[NOWK])||HOJE.getDate()>=pd)?1:0;
+ const np=+d.np||1,el=mIdx(NOWK)-mIdx(d.ini),now_=el>=0&&d.conf&&d.conf[NOWK]?1:0;
  const pagas=Math.max(Math.min(el+now_,np),0),rest=np-pagas;return {saldo:rest*d.parcela,rest,pagas,np,tot:np*d.parcela,juros:np*d.parcela-(+d.lib||0)};
 }
 function consHTML(d){
@@ -2000,6 +2000,7 @@ function consHTML(d){
  return `<div class="debt"><div class="ctop"><b>${esc(d.n)}</b><span class="tagp">${x.pagas} de ${x.np} pagas</span></div><div class="bar"><div style="width:${x.pagas/x.np*100}%;background:var(--green)"></div></div>
  <small>R$ ${brl(d.parcela)} por mês · ${fin?"quitado":`faltam ${x.rest} (${AB[+kAdd(d.ini,x.pagas).slice(6)-1].toLowerCase()} a ${AB[+e.slice(6)-1].toLowerCase()}) · deve R$ ${brl(x.saldo)}`}</small>
  <small>${d.lib?`Recebeu R$ ${brl(d.lib)} · vai pagar R$ ${brl(x.tot)} · <b class="late-t">R$ ${brl(x.juros)} de juros</b>`:`Total R$ ${brl(x.tot)}`}${ok(kOff(-1))?` · parcela de ${AB[+kOff(-1).slice(6)-1].toLowerCase()} conferida no holerite`:""}</small>
+ ${!fin&&mIdx(d.ini)<=mIdx(NOWK)&&mIdx(NOWK)<=mIdx(e)?`<small class="${ok(NOWK)?"pos":""}">${ok(NOWK)?`✓ Parcela de ${MESES[HOJE.getMonth()].toLowerCase()} abatida pelo holerite.`:`Parcela de ${MESES[HOJE.getMonth()].toLowerCase()}: é abatida quando você ler o holerite de ${MESES[HOJE.getMonth()].toLowerCase()} (ou no fim do mês).`}</small>`:""}
  ${fin?"":`<small>Desconto de ${kLabel(d.ini).toLowerCase()} a ${kLabel(e).toLowerCase()}. Em <b>${kLabel(up).toLowerCase()}</b> o salário sobe R$ ${brl(d.parcela)}.</small>`}
  <div class="gact"><button class="btn" data-emp="${d.id}">✎ Editar</button><span style="flex:1"></span><button class="btn danger rm" data-dx="${d.id}" aria-label="Remover ${esc(d.n)}">Remover</button></div></div>`;
 }
@@ -2021,10 +2022,10 @@ function parseEmp(t){
  const bk=/\binter\b/i.test(T)?"Inter":(T.match(/\b(caixa|bradesco|ita[uú]|santander|banco do brasil|nubank|c6|pan|bmg|daycoval|safra|mercantil|sicoob|sicredi|banrisul)\b/i)||[])[1];if(bk)o.bk=titleC(bk);
  return o;
 }
-function empBase(pid){const p=person(pid||me),pd=diaUtil(HOJE.getFullYear(),HOJE.getMonth(),p.pay||30).getDate();return HOJE.getDate()>=pd?kAdd(NOWK,1):NOWK}
+function empBase(d){return d&&d.conf&&d.conf[NOWK]?kAdd(NOWK,1):NOWK}
 let EMP_ED=null;
 function openEmp(id){
- tipo="emp";ED=null;$("addPop").hidden=true;const d=typeof id==="string"?D.dividas.find(x=>x.id===id):null;EMP_ED=d||null;const n=D.dividas.filter(x=>x.cons).length+1,base=empBase(),x=d?dvInfo(d):null,fim=d?consEnd(d):"",mv=k=>k?`${k.slice(1,5)}-${k.slice(6)}`:"";
+ tipo="emp";ED=null;$("addPop").hidden=true;const d=typeof id==="string"?D.dividas.find(x=>x.id===id):null;EMP_ED=d||null;const n=D.dividas.filter(x=>x.cons).length+1,base=empBase(d),x=d?dvInfo(d):null,fim=d?consEnd(d):"",mv=k=>k?`${k.slice(1,5)}-${k.slice(6)}`:"";
  $("addForm").innerHTML=`<div class="mhead"><h2>${d?"Editar consignado":"Novo consignado"}</h2><button type="button" class="circ" id="addX" aria-label="Fechar">×</button></div>
  ${d?"":`<div class="note">Escolha o print da tela "Detalhes do empréstimo" do app do banco para preencher sozinho, ou preencha à mão. A imagem é lida no aparelho e não é guardada.</div>`}
  <div class="mgrid">${d?"":`<label class="field full">Print do empréstimo (opcional)<input type="file" id="emF" accept="image/*"></label><div class="note full" id="emS"></div>`}
