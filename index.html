@@ -407,6 +407,7 @@ body.priv :is(.bkchips b){filter:blur(7px)}
 .catr{display:grid;grid-template-columns:1fr 1.4fr auto;gap:8px;align-items:center;padding:5px 0}.catr.b{grid-template-columns:1fr auto}@media (max-width:480px){.catr{grid-template-columns:1fr auto}.catr [data-ck]{grid-column:1/-1;grid-row:2}}
 .txr.info{opacity:.75}.txr.info .tic{background:var(--chip);color:var(--muted)}
 .ul{margin:8px 0 0;padding-left:20px;line-height:1.6;font-size:13px}.ul li{margin:2px 0}.nv{border-top:1px solid var(--line);padding:10px 0}.nv summary{cursor:pointer;display:flex;gap:8px;align-items:center;flex-wrap:wrap}.nv summary small{color:var(--muted);margin-left:auto}
+.nav[hidden],button[hidden]{display:none!important}
 </style>
 </head>
 <body>
@@ -538,6 +539,7 @@ body.priv :is(.bkchips b){filter:blur(7px)}
   <div class="view" id="v-cat" hidden></div>
   <div class="view" id="v-extratos" hidden></div>
   <div class="view" id="v-sobre" hidden></div>
+  <div class="view" id="v-adm" hidden></div>
   <div class="demo" id="demo"></div>
  </main>
 </div>
@@ -652,7 +654,7 @@ function flushD(){
  db.doc("families/"+famId).update(up).then(()=>{dirty=false;if(skipped){const f=skipped;skipped=null;applySnap(f)}})
   .catch(e=>{dirty=false;toast("Não foi possível salvar: "+errMsg(e))});
 }
-function flushP(){const p=clone(P);baseP=JSON.stringify(P);db.doc("users/"+fbUser.uid).update({priv:p}).catch(e=>toast("Não foi possível salvar: "+errMsg(e)))}
+function flushP(){if(SUP)return;const p=clone(P);baseP=JSON.stringify(P);db.doc("users/"+fbUser.uid).update({priv:p}).catch(e=>toast("Não foi possível salvar: "+errMsg(e)))}
 
 /* ===== utilidades ===== */
 let mes=HOJE.getMonth(),ano=HOJE.getFullYear(),selDay=null,cardI=0,morMode=1,cur="visao",fF="todas",fB="",cSel=0;
@@ -726,11 +728,11 @@ const GUESS=[[/fatura|cart[aã]o/i,"fatura"],[/ifood|\bifd\b|ifd\*|rappi|aiqfome
 const guess0=n=>{for(const [r,c] of GUESS)if(r.test(n||""))return c;return "outros"};
 let CATS=CATS0.slice();
 const CT=()=>(D&&D.cats)||{custom:[],ren:{},hide:{}};
-function syncCats(){const C=CT(),base=CATS0.filter(c=>!["outros","fatura"].includes(c[0])&&!C.hide[c[0]]).map(([id,l])=>[id,C.ren[id]||l]);CATS=[...base,...C.custom.map(c=>[c.id,c.n]),["outros",C.ren.outros||"Outros"],["fatura","Fatura de cartão"]]}
-function kwCat(n){const t=nkey(n);if(!t)return "";for(const c of CT().custom){const ks=String(c.kw||"").split(/[,;]/).map(x=>nkey(x)).filter(Boolean);if(ks.some(k=>(" "+t+" ").includes(" "+k+" ")||(k.length>=4&&t.includes(k))))return c.id}return ""}
+function syncCats(){const C=CT(),base=CATS0.filter(c=>!["outros","fatura"].includes(c[0])&&!C.hide[c[0]]).map(([id,l])=>[id,C.ren[id]||l]),dc=((typeof CFG!=="undefined"&&CFG.cats)||[]).filter(c=>!C.hide[c.id]).map(c=>[c.id,C.ren[c.id]||c.n]);CATS=[...base,...dc,...C.custom.map(c=>[c.id,c.n]),["outros",C.ren.outros||"Outros"],["fatura","Fatura de cartão"]]}
+function kwCat(n){const t=nkey(n);if(!t)return "";const G=typeof CFG!=="undefined"?CFG:{};for(const c of [...CT().custom,...(G.cats||[]),...Object.entries(G.kw||{}).map(([id,kw])=>({id,kw}))]){const ks=String(c.kw||"").split(/[,;]/).map(x=>nkey(x)).filter(Boolean);if(ks.some(k=>(" "+t+" ").includes(" "+k+" ")||(k.length>=4&&t.includes(k))))return c.id}return ""}
 const guess=n=>{const L=D&&D.learn,k=nkey(n),r=(L&&k&&L[k])||kwCat(n)||guess0(n);return CT().hide[r]?"outros":r};
 const catOf=x=>x.cat||guess(x.n);
-const CATN=id=>{const C=CT(),c=C.custom.find(x=>x.id===id);if(c)return c.n;const b=CATS0.find(x=>x[0]===id);return b?(C.ren[id]||b[1]):(C.ren.outros||"Outros")};
+const CATN=id=>{const C=CT(),c=C.custom.find(x=>x.id===id)||((typeof CFG!=="undefined"&&CFG.cats)||[]).find(x=>x.id===id);if(c)return C.ren[id]||c.n;const b=CATS0.find(x=>x[0]===id);return b?(C.ren[id]||b[1]):(C.ren.outros||"Outros")};
 function gastos(k=K()){
  const out=[],ki=mIdx(k),A=(x,cat,src,d)=>out.push({v:+x.v||0,cat,n:x.n,d:d===undefined?x.d||0:d,by:x.by,id:x.id,src:src+(x.bco?" · "+x.bco:""),km:x.km,l:x.l});
  billsOf(k).forEach(x=>{if(!isCardBill(x.b))A(x.b,catOf(x.b),"conta")});
@@ -802,7 +804,7 @@ const kpi=(l,v,s="",col="")=>`<section class="c box kpi"><div class="lbl" style=
 
 /* ===== navegação ===== */
 const MENU=[["grid","Visão geral","visao","Início"],["flow","Fluxo de caixa","fluxo","Fluxo"],["card","Cartões","cartoes","Cartões"],["build","Nossa casa","casa","Casa"],["safe","Nossa reserva","reserva","Reserva"]];
-const MENU2=[["cash","Nossa renda","renda","Renda"],["home","Contas da casa","contas","Contas"],["help","Ajuda","ajuda","Ajuda"],["info","Sobre","sobre","Sobre"]];
+const MENU2=[["cash","Nossa renda","renda","Renda"],["home","Contas da casa","contas","Contas"],["help","Ajuda","ajuda","Ajuda"],["info","Sobre","sobre","Sobre"],["gem","Administração","adm","Adm"]];
 const MENU3=[["bank","Meus extratos","extratos","Extratos"],["plan","Planejamento","plano","Plano"],["gem","Patrimônio","patrimonio","Patrimônio"],["list","Lista de compras","lista","Lista"]];
 const MAIS=[["extratos","Meus extratos","bank"],["reserva","Nossa reserva","money_bag"],["plano","Planejamento","compass"],["patrimonio","Patrimônio","gem_stone"],["lista","Lista de compras","shopping_cart"],["renda","Nossa renda","dollar_banknote"],["contas","Contas da casa","receipt"],["ajuda","Ajuda","open_book"],["sobre","Sobre e novidades","information"]];
 const navBtn=([ic,t,v,s],cls)=>`<button class="${cls}" data-v="${v}" title="${t}"><svg><use href="#i-${ic}"/></svg>${cls==="nav"?`<span class="nt">${t}</span>`:`<span>${s}</span>`}</button>`;
@@ -812,7 +814,7 @@ $("menu3").innerHTML=MENU3.map(m=>navBtn(m,"nav")).join("");
 $("bnav").innerHTML=MENU.slice(0,4).map(m=>navBtn(m,"")).join("")+`<button id="maisBtn"><svg><use href="#i-more"/></svg><span>Mais</span></button>`;
 on("[data-v]","click",b=>{location.hash=b.dataset.v});
 function openSheet(){
- $("sheet").innerHTML=`<div class="grab"></div>${MAIS.map(([v,t,ic])=>`<button class="opt" data-go="${v}"><img src="${ICON(ic)}" alt=""><div><b>${t}</b></div></button>`).join("")}
+ $("sheet").innerHTML=`<div class="grab"></div>${[...MAIS,...(isAdmin()?[["adm","Administração","information"]]:[])].map(([v,t,ic])=>`<button class="opt" data-go="${v}"><img src="${ICON(ic)}" alt=""><div><b>${t}</b></div></button>`).join("")}
  <button class="opt" id="outSheet"><span class="tic warn">⏻</span><div><b>Sair</b><small>${MODE==="cloud"?esc((fbUser&&fbUser.email)||""):"Voltar para a tela de login"}</small></div></button>
  <div class="theme" style="padding:12px 8px 4px"><span>Tema</span><div class="seg2"><button class="tl" aria-label="Tema claro">☼</button><button class="td" aria-label="Tema escuro">☾</button></div></div>`;
  $("sheet").hidden=$("sheetOv").hidden=false;syncTheme();bindTheme();$("outSheet").onclick=logout;
@@ -825,8 +827,10 @@ $("maisBtn").onclick=openSheet;$("sheetOv").onclick=closeSheet;
 function renderSide(){
  $("me").innerHTML=`${av(me,"lg")}<div><b>${N(me)}</b><small><i class="dot" style="background:${MODE==="cloud"?"var(--green)":"var(--soft)"}"></i>${MODE==="cloud"?`Família · ${D.people.length} ${D.people.length===1?"pessoa":"pessoas"}`:"Modo local"}</small></div><button class="btn" id="outSide" style="margin-left:auto;padding:6px 10px">Sair</button>`;
  $("outSide").onclick=logout;
- const bn=$("banner");bn.hidden=MODE==="cloud";
- if(MODE!=="cloud"){bn.innerHTML=WV?`<p><b>Abra no navegador para entrar.</b> O Google não permite login dentro do navegador de outros apps. Copie o link e abra no Chrome ou no Brave.</p><button class="btn" id="bnCp">Copiar link</button>`:auth?`<p><b>Modo de teste, sem conta.</b> Os dados ficam só neste aparelho. Para testar com os seus valores, zere tudo e preencha. Depois, ao entrar com sua conta, você pode levar o que preencheu.</p><button class="btn danger" id="bnZero">Zerar tudo</button><button class="btnp" id="bnIn">Entrar</button>`:`<p><b>O login não carregou.</b> O navegador bloqueou o Firebase. No Brave, toque no leão da barra de endereço, desative o Shields para este site e recarregue a página.</p><button class="btn" id="bnRe">Recarregar</button>`;
+ const bn=$("banner");bn.hidden=MODE==="cloud"&&!SUP;
+ document.querySelectorAll('[data-v="adm"]').forEach(b=>b.hidden=!isAdmin());
+ if(SUP){bn.className="banner box warnban";bn.innerHTML=`<p><b>Modo suporte:</b> você está vendo a família de ${esc(SUP.name||"usuário")}. O que você mudar fica salvo na família dela.</p><button class="btnp" id="supOut">Sair do suporte</button>`;$("supOut").onclick=endSup;}
+ else if(MODE!=="cloud"){bn.className="banner box";bn.innerHTML=WV?`<p><b>Abra no navegador para entrar.</b> O Google não permite login dentro do navegador de outros apps. Copie o link e abra no Chrome ou no Brave.</p><button class="btn" id="bnCp">Copiar link</button>`:auth?`<p><b>Modo de teste, sem conta.</b> Os dados ficam só neste aparelho. Para testar com os seus valores, zere tudo e preencha. Depois, ao entrar com sua conta, você pode levar o que preencheu.</p><button class="btn danger" id="bnZero">Zerar tudo</button><button class="btnp" id="bnIn">Entrar</button>`:`<p><b>O login não carregou.</b> O navegador bloqueou o Firebase. No Brave, toque no leão da barra de endereço, desative o Shields para este site e recarregue a página.</p><button class="btn" id="bnRe">Recarregar</button>`;
   const a=$("bnIn"),r=$("bnRe"),c=$("bnCp"),z=$("bnZero");if(a)a.onclick=()=>gate("login");if(z)z.onclick=zeroAll;if(r)r.onclick=()=>location.reload();if(c)c.onclick=copyHere}
  $("demo").textContent=MODE==="cloud"?"Sincronizado na nuvem":"Modo local · os dados ficam só neste aparelho";
 }
@@ -1168,13 +1172,13 @@ function gate(st,msg=""){
    <form class="gform" id="gForm"><label class="field">E-mail<input id="gEm" type="email" autocomplete="email" required></label><label class="field">Senha<input id="gPw" type="password" autocomplete="current-password" minlength="6" required></label>
    <div class="grow"><button class="gbtn p" type="submit">Entrar</button><button class="gbtn" type="button" id="gNew">Criar conta</button></div><button class="link" type="button" id="gForgot">Esqueci a senha</button></form>
    ${INV?"":`<button class="link" id="gLocal" style="color:var(--muted)">Usar sem conta, só neste aparelho</button>`}`,
-  nofamily:`${head}<p>Olá, ${esc(first(fbUser))}! Crie a sua família para começar. Depois você envia o link de convite para quem divide as contas com você.</p>${hasLocal?`<button class="gbtn p" id="gSeed">Levar o que preenchi no teste</button><p style="font-size:12px;margin:-4px 0 4px;color:var(--muted)">Usa os dados que ficaram neste aparelho no modo sem conta.</p><button class="gbtn" id="gZero">Começar do zero</button><button class="link" id="gEx">Criar com dados de exemplo</button>`:`<button class="gbtn p" id="gSeed">Criar com dados de exemplo</button><button class="gbtn" id="gZero">Começar do zero</button>`}<button class="link" id="gOut">Sair da conta</button>${err}`,
+  nofamily:`${head}<p>Olá, ${esc(first(fbUser))}! Crie a sua família para começar. Depois você envia o link de convite para quem divide as contas com você.</p>${hasLocal?`<button class="gbtn p" id="gSeed">Levar o que preenchi no teste</button><p style="font-size:12px;margin:-4px 0 4px;color:var(--muted)">Usa os dados que ficaram neste aparelho no modo sem conta.</p><button class="gbtn" id="gZero">Começar do zero</button><button class="link" id="gEx">Criar com dados de exemplo</button>`:`<button class="gbtn p" id="gSeed">Criar com dados de exemplo</button><button class="gbtn" id="gZero">Começar do zero</button>`}${isAdmin()?`<button class="gbtn" id="gAdm">Abrir só a administração</button>`:""}<button class="link" id="gOut">Sair da conta</button>${err}`,
   error:`${head}${err}<button class="gbtn p" id="gRetry">Tentar de novo</button><button class="gbtn" id="gLocal">Usar sem conta, só neste aparelho</button>${fbUser?`<button class="link" id="gOut">Sair da conta</button>`:""}`};
  if(st==="loading")gate.t=setTimeout(()=>gate("error",ERR.timeout+(msg?` (parou em: ${msg})`:"")),15000);
  g.innerHTML=`<div class="gcard box">${H[st]}</div>`;g.hidden=false;
  const b=(id,fn)=>{const el=$(id);if(el)el.onclick=fn};
  b("gLogin",login);b("gLocal",useLocal);b("gCopy",copyHere);b("gNew",()=>emailAuth(true));b("gForgot",forgot);if($("gForm"))$("gForm").onsubmit=e=>{e.preventDefault();emailAuth(false)};
- b("gSeed",()=>{loadLocal();createFam(D,hasLocal)});b("gEx",()=>createFam(seed()));b("gZero",()=>createFam(empty()));b("gOut",logout);b("gRetry",()=>location.reload());
+ b("gSeed",()=>{loadLocal();createFam(D,hasLocal)});b("gEx",()=>createFam(seed()));b("gZero",()=>createFam(empty()));b("gOut",logout);b("gRetry",()=>location.reload());b("gAdm",()=>{D=norm(empty());P=normP();me=D.people[0].id;famId=null;gate("off");start();location.hash="adm";pAdm()});
 }
 function start(){renderAll();if(!started){started=true;route()}}
 function useLocal(){MODE="local";loadLocal();me=D.people[0].id;gate("off");start()}
@@ -1211,7 +1215,8 @@ async function join(fid,code){
  await db.doc("users/"+fbUser.uid).set({familyId:fid},{merge:true});
 }
 function applySnap(f){
- famOwner=f.owner;famInv=f.invite||"";baseD=clone(f.data||{});D=norm(clone(f.data||{}));
+ famOwner=f.owner;famInv=f.invite||"";baseD=clone(f.data||{});D=norm(clone(f.data||{}));famSup=tms(f.supportUntil);famSupCode=f.supportCode||"";
+ if(SUP){me=(D.people.find(p=>p.uid===f.owner)||D.people[0]).id;start();gate("off");return}
  let p=D.people.find(x=>x.uid===fbUser.uid);
  if(!p){
   p=(f.owner===fbUser.uid&&!D.people[0].uid?D.people[0]:null)||D.people.find(x=>!x.uid&&!x.dep);
@@ -1224,6 +1229,7 @@ function applySnap(f){
  lastLogT=Math.max(lastLogT,0,...logList().map(l=>l.t));
  start();gate("off");
  if(!f.invite)db.doc("families/"+famId).update({invite:rnd()}).catch(()=>{});
+ pingStats(f);
  if(!bkDone){bkDone=true;const dk=new Date().toISOString().slice(0,10);if(lsGet("mc-bk-"+famId)!==dk)db.collection(`families/${famId}/backups`).doc("d"+new Date().getDay()).set({at:now(),by:fbUser.uid,data:clone(D)}).then(()=>lsSet("mc-bk-"+famId,dk)).catch(()=>{})}
 }
 function listen(){
@@ -1234,6 +1240,7 @@ function listen(){
   if(dirty){skipped=s.data();return}
   applySnap(s.data());
  },e=>{
+  if(e&&e.code==="permission-denied"&&SUP){toast("O suporte terminou ou expirou.");endSup();return}
   if(e&&e.code==="permission-denied"){if(unsub)unsub();famId=null;db.doc("users/"+fbUser.uid).update({familyId:firebase.firestore.FieldValue.delete()}).catch(()=>{});gate("nofamily","Você não faz mais parte daquela família.")}
   else gate("error",errMsg(e));
  });
@@ -1264,6 +1271,7 @@ function bindFam(){
 function boot(){
  if(typeof firebase==="undefined"){gate("error","O login não carregou porque o navegador bloqueou o Firebase. No Brave, toque no leão da barra de endereço, desative o Shields para este site e toque em Tentar de novo.");return}
  firebase.initializeApp(FB_CFG);auth=firebase.auth();db=firebase.firestore();try{db.enablePersistence({synchronizeTabs:true}).catch(()=>{})}catch(e){}
+ loadCfg();
  auth.getRedirectResult().catch(e=>{const m=errMsg(e);if(m)gate("login",m)});
  gate("loading","Conectando à sua conta…");
  auth.onAuthStateChanged(async u=>{
@@ -1288,7 +1296,7 @@ const rnd=()=>Array.from(crypto.getRandomValues(new Uint8Array(10)),b=>(b%36).to
 const whenTxt=t=>{if(!t)return "";const d=new Date(t),n=new Date(),y=new Date(n.getTime()-864e5),same=(a,b)=>a.toDateString()===b.toDateString();return `${same(d,n)?"hoje":same(d,y)?"ontem":`${two(d.getDate())}/${two(d.getMonth()+1)}`} às ${two(d.getHours())}h${two(d.getMinutes())}`};
 const snap=()=>{const a=clone(D),b=clone(P);return ()=>{D=norm(a);P=normP(b);selDay=null;renderAll();toast("Desfeito")}};
 const logList=()=>Object.values(D.log||{}).filter(l=>l&&l.t).sort((a,b)=>b.t-a.t);
-function addLog(x){if(!D.log||Array.isArray(D.log))D.log={};D.log[uid()]={t:now(),by:me,x};Object.keys(D.log).sort((a,b)=>D.log[b].t-D.log[a].t).slice(40).forEach(k=>delete D.log[k])}
+function addLog(x){if(SUP)x="(suporte) "+x;if(!D.log||Array.isArray(D.log))D.log={};D.log[uid()]={t:now(),by:me,x};Object.keys(D.log).sort((a,b)=>D.log[b].t-D.log[a].t).slice(40).forEach(k=>delete D.log[k])}
 function fairOf(c,id){const r=c.regra;if(!r)return share(id);if(r!=="50"&&r!=="prop")return D.people.some(p=>p.id===r)?(r===id?1:0):share(id);const ds=divisores();if(!ds.some(p=>p.id===id))return 0;if(r==="50")return 1/ds.length;const t=ds.reduce((s,p)=>s+(+p.sal||0),0);return t?(+person(id).sal||0)/t:1/ds.length}
 const myCasa=()=>D.casa.reduce((s,c)=>s+c.v*fairOf(c,me),0);
 const regraTxt=c=>c.regra==="50"?"partes iguais":c.regra==="prop"?"proporcional à renda":c.regra?"só "+(person(c.regra).n||""):"";
@@ -2160,6 +2168,7 @@ function renderHoje(){
 
 /* ===== sobre e novidades ===== */
 const NOVID=[
+ ["2.9","11/11/2026","Administração e suporte",["Área de administração para o dono do app: famílias e usuários (sem ver os valores de ninguém) e padrões de categorias para todos.","Precisa de ajuda? Em Sobre, gere um código de suporte: com ele o administrador consegue ver e corrigir os dados da sua família por 24 horas, e você encerra quando quiser."]],
  ["2.8","11/11/2026","Textos revisados",["O app fala com você: “Sua renda”, “Seus holerites”, “Você paga”, “Quanto você gasta para morar”, no lugar de “Renda de Eu”.","Com uma pessoa só, aparece “Renda total” em vez de “Renda do casal”, e a tela Nossa casa explica como adicionar quem divide as contas.","Saudação sem o nome quando ele ainda não foi preenchido."]],
  ["2.7","11/11/2026","Sobre e novidades",["Nova tela Sobre, com informações do app, privacidade e a lista do que mudou em cada atualização.","Aviso na Visão geral quando sai uma versão nova."]],
  ["2.6","11/11/2026","Empréstimos e consignados",["Cadastro pergunta como o empréstimo é pago: desconto no contracheque ou débito na conta do banco.","Parcela do consignado é abatida ao ler o holerite do mês, com aviso de quantas faltam.","Parcela do empréstimo do banco é reconhecida no extrato e entra como “Empréstimo Inter · parcela 8 de 12”.","Consignado aparece no Fluxo de caixa como linha informativa, sem somar de novo.","Tela do empréstimo pede parcelas que faltam e último desconto (um completa o outro) e ganhou o botão Editar.","Nova categoria Empréstimos."]],
@@ -2195,8 +2204,68 @@ function pSobre(){
  <li>O app nunca guarda número de cartão, agência, conta ou CPF.</li></ul>
  <div class="sub">Feito por</div><div class="note" style="color:var(--fg)">Jamerson Rafael · <a href="https://github.com/Rafajames" target="_blank" rel="noopener">GitHub</a> · <a href="https://www.linkedin.com/in/jamerson-rafael-a7a480249/" target="_blank" rel="noopener">LinkedIn</a></div>
  <div class="note">Feito com HTML, CSS e JavaScript, Firebase, Tesseract.js (leitura de imagens) e ícones Fluent Emoji da Microsoft.</div></section>
- <section class="c box"><div class="h">Novidades</div>${NOVID.map((v,i)=>`<details class="nv"${i<2?" open":""}><summary><span class="tagp">${v[0]}</span> <b>${esc(v[2])}</b> <small>${v[1]}</small></summary><ul class="ul">${v[3].map(x=>`<li>${esc(x)}</li>`).join("")}</ul></details>`).join("")}</section></div>`;
- on("#v-sobre [data-go]","click",b=>{location.hash=b.dataset.go});lsSet("mc-ver",APPV);$("novid").hidden=true;
+ ${supHTML()}<section class="c box"><div class="h">Novidades</div>${NOVID.map((v,i)=>`<details class="nv"${i<2?" open":""}><summary><span class="tagp">${v[0]}</span> <b>${esc(v[2])}</b> <small>${v[1]}</small></summary><ul class="ul">${v[3].map(x=>`<li>${esc(x)}</li>`).join("")}</ul></details>`).join("")}</section></div>`;
+ on("#v-sobre [data-go]","click",b=>{location.hash=b.dataset.go});bindSup();lsSet("mc-ver",APPV);$("novid").hidden=true;
+}
+
+/* ===== administração (só o e-mail do administrador) ===== */
+const ADM_EMAILS=[]; // e-mail do administrador, em minúsculas
+let CFG={},SUP=null,famSup=0,famSupCode="",statDone=false;
+const tms=x=>x&&x.toMillis?x.toMillis():(+x||0);
+const isAdmin=()=>MODE==="cloud"&&!!fbUser&&!!fbUser.email&&ADM_EMAILS.includes(fbUser.email.toLowerCase());
+const tsOf=ms=>firebase.firestore.Timestamp&&firebase.firestore.Timestamp.fromMillis?firebase.firestore.Timestamp.fromMillis(ms):ms;
+const dtTxt=x=>{const t=tms(x);return t?new Date(t).toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"}):"—"};
+function loadCfg(){if(!db)return;db.doc("config/app").get().then(s=>{CFG=(s.exists&&s.data())||{};if(D)renderAll()}).catch(()=>{})}
+function pingStats(f){
+ if(statDone||SUP||!famId||!fbUser)return;statDone=true;const ow=D.people.find(p=>p.uid===f.owner),sv=firebase.firestore.FieldValue.serverTimestamp();
+ db.doc("stats/"+famId).set({owner:ow?ow.n:"",members:(f.members||[]).length,people:D.people.length,created:f.createdAt||null,lastSeen:sv,ver:APPV},{merge:true}).catch(()=>{});
+ db.doc("profiles/"+fbUser.uid).set({email:fbUser.email||"",name:first(fbUser),famId,lastSeen:sv,ver:APPV},{merge:true}).catch(()=>{});
+}
+/* suporte: a família libera com um código por 24 horas */
+function supHTML(){
+ if(MODE!=="cloud"||SUP||!famId)return "";const on=famSup>Date.now();
+ return `<section class="c box"><div class="h">Precisa de ajuda?</div><div class="note">Gere um código de suporte e envie para o administrador do app. Com ele, o administrador consegue ver e corrigir os dados da sua família por 24 horas. Sem o código, ninguém de fora vê nada. Seus extratos e os lançamentos "só eu vejo" continuam só seus.</div>
+ ${on?`<div class="okb">Suporte liberado até ${dtTxt(famSup)}${famSupCode?` · código <b>${esc(famSupCode)}</b>`:""}</div><div class="gact">${famSupCode?`<button class="btn" id="supCp">Copiar código</button>`:""}<button class="btn danger" id="supEnd">Encerrar suporte</button></div>`:`<div class="gact"><button class="btnp" id="supGo">Gerar código de suporte</button></div>`}</section>`;
+}
+function bindSup(){
+ if($("supGo"))$("supGo").onclick=async()=>{const code=Array.from(crypto.getRandomValues(new Uint8Array(6)),b=>"ABCDEFGHJKLMNPQRSTUVWXYZ23456789"[b%32]).join(""),until=Date.now()+864e5,ts=tsOf(until);
+  try{await db.doc("support/"+code).set({famId,until:ts,by:fbUser.uid,name:ME().n||first(fbUser)});await db.doc("families/"+famId).update({supportUntil:ts,supportCode:code});famSup=until;famSupCode=code;pSobre();copyTxt(code,`Código ${code} copiado. Envie para o administrador.`)}catch(e){toast(errMsg(e))}};
+ if($("supCp"))$("supCp").onclick=()=>copyTxt(famSupCode,"Código copiado");
+ if($("supEnd"))$("supEnd").onclick=async()=>{const c=famSupCode;try{await db.doc("families/"+famId).update({supportUntil:firebase.firestore.FieldValue.delete(),supportCode:firebase.firestore.FieldValue.delete()});if(c)db.doc("support/"+c).delete().catch(()=>{});famSup=0;famSupCode="";toast("Suporte encerrado");pSobre()}catch(e){toast(errMsg(e))}};
+}
+async function openSup(code){
+ code=String(code||"").trim().toUpperCase();if(!code)return;
+ try{const s=await db.doc("support/"+code).get();if(!s.exists)throw 0;const x=s.data();if(tms(x.until)<Date.now()){toast("Esse código expirou. Peça um novo.");return}
+  SUP={famId:x.famId,code,name:x.name||"",myFam:famId,P};P=normP();baseP=JSON.stringify(P);if(unsub)unsub();famId=x.famId;listen();location.hash="visao";toast(`Suporte: família de ${x.name||"usuário"}`)}
+ catch(e){toast("Código não encontrado")}
+}
+function endSup(){if(!SUP)return;if(unsub)unsub();clearTimeout(tD);const s=SUP;SUP=null;famId=s.myFam;P=s.P;baseP=JSON.stringify(P);if(famId)listen();else gate("nofamily");location.hash="adm"}
+/* tela de administração */
+async function pAdm(){
+ const el=$("v-adm"),H=PH("information","Administração","Usuários, famílias, padrões do app e suporte");
+ if(!isAdmin()){el.innerHTML=H+`<section class="c box"><div class="note">Esta área é só do administrador.</div></section>`;return}
+ if(!fbUser.emailVerified){el.innerHTML=H+`<section class="c box"><div class="h">Confirme o seu e-mail</div><div class="note">Para liberar a administração, confirme que o e-mail ${esc(fbUser.email)} é seu.</div><div class="gact"><button class="btnp" id="admVer">Enviar e-mail de confirmação</button></div></section>`;$("admVer").onclick=()=>fbUser.sendEmailVerification().then(()=>toast("Link enviado. Depois de confirmar, saia e entre de novo.")).catch(e=>toast(errMsg(e)));return}
+ el.innerHTML=H+`<section class="c box"><div class="note">Carregando…</div></section>`;
+ let F=[],U=[];try{const [a,b]=await Promise.all([db.collection("stats").get(),db.collection("profiles").get()]);F=a.docs.map(x=>({id:x.id,...x.data()}));U=b.docs.map(x=>({id:x.id,...x.data()}))}
+ catch(e){el.innerHTML=H+`<section class="c box"><div class="gerr">Não consegui ler os dados. Publique as regras novas do Firestore (arquivo firestore.rules do projeto) no console do Firebase.</div></section>`;return}
+ if(cur!=="adm")return;
+ F.sort((a,b)=>tms(b.lastSeen)-tms(a.lastSeen));U.sort((a,b)=>tms(b.lastSeen)-tms(a.lastSeen));
+ const d7=Date.now()-7*864e5,K_=CFG.kw||{},CC=CFG.cats||[];
+ el.innerHTML=H+`<div class="minis" style="margin:0"><div class="mini"><small>Famílias</small><b>${F.length}</b></div><div class="mini"><small>Pessoas cadastradas</small><b>${F.reduce((s,f)=>s+(+f.people||0),0)}</b></div><div class="mini"><small>Usuários com conta</small><b>${U.length}</b></div><div class="mini"><small>Ativas nos últimos 7 dias</small><b>${F.filter(f=>tms(f.lastSeen)>d7).length}</b></div></div>
+ <section class="c box"><div class="h">Suporte</div><div class="note">Peça para a pessoa abrir Sobre → Precisa de ajuda? → Gerar código de suporte, e digite o código aqui. O acesso vale por 24 horas ou até ela encerrar.</div><form id="supF" class="gact"><input class="gin" id="supC" placeholder="Código" autocomplete="off" style="text-transform:uppercase"><button class="btnp">Abrir família</button></form></section>
+ <section class="c box"><div class="h">Famílias <small>· sem valores, só o uso</small></div>${F.length?`<div class="tw"><table class="tbl"><thead><tr><th>Dono</th><th>Pessoas</th><th>Com conta</th><th>Último uso</th><th>Versão</th><th>Criada</th></tr></thead><tbody>${F.map(f=>`<tr><td>${esc(f.owner||"—")}</td><td>${+f.people||0}</td><td>${+f.members||0}</td><td>${dtTxt(f.lastSeen)}</td><td>${esc(f.ver||"")}</td><td>${dtTxt(f.created)}</td></tr>`).join("")}</tbody></table></div>`:`<div class="note">Nenhuma família registrou uso ainda. Os dados aparecem quando cada família abre o app nesta versão.</div>`}</section>
+ <section class="c box"><div class="h">Usuários</div>${U.length?`<div class="tw"><table class="tbl"><thead><tr><th>Nome</th><th>E-mail</th><th>Último acesso</th><th>Versão</th></tr></thead><tbody>${U.map(u=>`<tr><td>${esc(u.name||"—")}</td><td>${esc(u.email||"")}</td><td>${dtTxt(u.lastSeen)}</td><td>${esc(u.ver||"")}</td></tr>`).join("")}</tbody></table></div>`:`<div class="note">Nenhum usuário registrado ainda.</div>`}</section>
+ <section class="c box"><div class="h">Padrões do app <small>· valem para todos os usuários</small></div><div class="note">Palavras extras que cada categoria reconhece sozinha (separe com vírgula). Elas somam às que o app já conhece. Cada usuário ainda pode criar as próprias.</div>
+ <div class="mgrid">${CATS0.filter(c=>!["fatura","outros"].includes(c[0])).map(([id,l])=>`<label class="field">${esc(l)}<input data-kwc="${id}" value="${esc(K_[id]||"")}" placeholder="Ex.: palavra, outra"></label>`).join("")}</div>
+ <div class="sub">Categorias padrão novas</div>${CC.map((c,i)=>`<div class="catr"><input class="oin" data-dcn="${i}" value="${esc(c.n)}" aria-label="Nome"><input class="oin" data-dck="${i}" value="${esc(c.kw||"")}" placeholder="palavras" aria-label="Palavras"><button type="button" class="btn danger" data-dcx="${i}">Excluir</button></div>`).join("")||`<div class="note">Nenhuma ainda.</div>`}
+ <div class="catr"><input class="oin" id="dcN" placeholder="Nova categoria (ex.: Pets)"><input class="oin" id="dcK" placeholder="palavras (ex.: petz, cobasi)"><span></span></div>
+ <div class="gact"><button class="btnp" id="cfgSave">Salvar padrões</button></div></section>`;
+ $("supF").onsubmit=e=>{e.preventDefault();openSup($("supC").value)};
+ on("[data-dcx]","click",b=>{if(!b.dataset.ok){b.dataset.ok=1;b.textContent="Toque de novo";return}b.closest(".catr").remove()});
+ $("cfgSave").onclick=async()=>{const kw={};document.querySelectorAll("[data-kwc]").forEach(i=>{const v=i.value.trim();if(v)kw[i.dataset.kwc]=v});
+  const cats=[...document.querySelectorAll("[data-dcn]")].map(i=>{const j=+i.dataset.dcn,o=CC[j]||{};return {id:o.id||"d"+uid().slice(1),n:i.value.trim(),kw:(document.querySelector(`[data-dck="${j}"]`)||{value:""}).value.trim()}}).filter(c=>c.n);
+  const nn=$("dcN").value.trim();if(nn)cats.push({id:"d"+uid().slice(1),n:nn,kw:$("dcK").value.trim()});
+  try{await db.doc("config/app").set({kw,cats,at:now(),by:fbUser.email||""});CFG={kw,cats};toast("Padrões salvos para todos");renderAll()}catch(e){toast(errMsg(e))}};
 }
 
 /* ===== ajuda ===== */
@@ -2236,6 +2305,7 @@ const HELP=[
  ["Salário em duas datas (adiantamento)","renda",["Em Nossa renda, em Pessoas e valores, informe o dia do adiantamento (ex.: 15), o valor previsto e o dia do restante (ex.: 30). Toque em Salvar.","Se o dia cair em fim de semana ou feriado (nacional, de Roraima ou de Boa Vista), o app usa o dia útil anterior.","Quando o holerite do mês é lido, os valores previstos são trocados pelos reais."],""],
  ["Cadastrar um empréstimo ou consignado","patrimonio",["Abra Patrimônio e toque em + Empréstimo ou consignado. Em Como é pago, escolha Desconto no contracheque (consignado) ou Débito na conta do banco (ex.: Inter).","Escolha o print da tela Detalhes do empréstimo do app do banco, ou preencha à mão.","Informe o valor da parcela e quantas parcelas faltam: o último desconto é calculado sozinho (ou informe o último desconto e o app conta as que faltam). Total de parcelas e valor liberado são opcionais, para mostrar as já pagas e os juros.","Toque em Cadastrar dívida. Para corrigir depois, toque em ✎ Editar no card.","A parcela do consignado é abatida ao ler o holerite do mês. A do banco é abatida ao importar o extrato com o débito, que entra como Empréstimo Inter · parcela 8 de 12. No Fluxo de caixa, o consignado aparece como linha informativa, sem somar de novo."],"O app mostra quantas parcelas faltam, quanto é juro e em que mês o salário sobe."],
  ["Mesada e essenciais","fluxo",["Em Fluxo de caixa, no card Mesada, informe o valor livre de cada pessoa por mês.","Lance os gastos livres na categoria Mesada: eles contam para quem lançou.","Em Essenciais e supérfluos, toque nas categorias para marcar o que é essencial."],""],
+ ["Pedir ajuda ao suporte","sobre",["Abra Sobre e, em Precisa de ajuda?, toque em Gerar código de suporte.","O código é copiado: envie para o administrador do app.","Com ele, o administrador vê e corrige os dados da sua família por 24 horas. Toque em Encerrar suporte quando terminar."],"Seus extratos e lançamentos “só eu vejo” não ficam visíveis no suporte."],
  ["Problemas para entrar","",["Abra o link no Chrome ou no Brave, não dentro do WhatsApp ou de outro app.","No Brave, toque no leão da barra de endereço e desative o Shields para este site.","Se o convite disser que não vale mais, peça um link novo para quem criou a família."],""]
 ];
 const screenName=v=>([...MENU,...MENU2,...MENU3].find(m=>m[2]===v)||[])[1]||"";
@@ -2250,7 +2320,7 @@ function pAjuda(){
 }
 
 /* ===== rotas e render ===== */
-const V={visao:null,fluxo:pFluxo,cartoes:pCartoes,casa:pCasa,reserva:pReserva,renda:pRenda,contas:pContas,plano:pPlano,patrimonio:pPatr,lista:pLista,ajuda:pAjuda,cat:pCat,extratos:pExt,sobre:pSobre};
+const V={visao:null,fluxo:pFluxo,cartoes:pCartoes,casa:pCasa,reserva:pReserva,renda:pRenda,contas:pContas,plano:pPlano,patrimonio:pPatr,lista:pLista,ajuda:pAjuda,cat:pCat,extratos:pExt,sobre:pSobre,adm:pAdm};
 function route(){
  cur=(location.hash||"#visao").slice(1);if(!(cur in V))cur="visao";
  document.querySelectorAll(".view").forEach(v=>v.hidden=v.id!=="v-"+cur);

@@ -63,6 +63,7 @@ Tudo é recalculado na hora: trocar quem paga uma conta, mudar a regra de divis�
 - **Gráfico do ano** no Fluxo de caixa.
 - **Cópias de segurança:** uma por dia na nuvem, mais cópia em arquivo para baixar e restaurar.
 - **Convite com código:** "Gerar novo link" desativa o link anterior, e só quem criou a família remove pessoas.
+- **Administração:** o e-mail do administrador vê famílias e usuários (sem valores), define palavras e categorias padrão para todos e, com o código de suporte que a família gera (24 horas), abre a família para ajudar.
 - **Sobre e novidades:** tela com informações do app, privacidade e o que mudou em cada versão, e aviso na Visão geral quando sai uma versão nova.
 - **Ajuda:** 36 tutoriais passo a passo, com busca e atalho para a tela de cada assunto.
 - **Vale alimentação e refeição** (Pluxee, VR, Alelo, Ticket e outros): saldo, recarga automática no dia certo e previsão de até quando o saldo dura. Os gastos entram nas categorias, mas não saem do saldo do salário.

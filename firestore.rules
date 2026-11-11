@@ -4,6 +4,11 @@ service cloud.firestore {
 
     function signedIn() { return request.auth != null; }
     function isMember() { return signedIn() && request.auth.uid in resource.data.members; }
+    function memberOf(fid) { return signedIn() && request.auth.uid in get(/databases/$(database)/documents/families/$(fid)).data.members; }
+    // Administrador: e-mail confirmado e na lista abaixo
+    function isAdm() { return signedIn() && request.auth.token.email_verified == true
+      && request.auth.token.email.lower() in ['EMAIL_DO_ADMIN']; }
+    function suporteAtivo() { return isAdm() && resource.data.get('supportUntil', null) != null && resource.data.supportUntil > request.time; }
 
     // Cada pessoa só lê e altera o próprio perfil (família e lançamentos privados)
     match /users/{uid} {
@@ -35,6 +40,13 @@ service cloud.firestore {
         && request.resource.data.joinCode == resource.data.invite
         && resource.data.members.size() < 6;
 
+      // Suporte: o administrador lê e corrige a família só enquanto ela liberar um código (24 horas)
+      allow read: if suporteAtivo();
+      allow update: if suporteAtivo()
+        && request.resource.data.owner == resource.data.owner
+        && request.resource.data.members == resource.data.members
+        && request.resource.data.supportUntil == resource.data.supportUntil;
+
       // Excluir: só o dono
       allow delete: if signedIn() && request.auth.uid == resource.data.owner;
 
@@ -43,6 +55,29 @@ service cloud.firestore {
         allow read, write: if signedIn()
           && request.auth.uid in get(/databases/$(database)/documents/families/$(familyId)).data.members;
       }
+    }
+
+    // Uso do app, sem valores: cada família e cada pessoa registram o próprio; só o administrador lê
+    match /stats/{familyId} {
+      allow write: if memberOf(familyId);
+      allow read: if isAdm();
+    }
+    match /profiles/{uid} {
+      allow write: if signedIn() && request.auth.uid == uid;
+      allow read: if isAdm();
+    }
+
+    // Códigos de suporte: um membro cria para a própria família; o administrador lê
+    match /support/{code} {
+      allow create: if signedIn() && request.resource.data.by == request.auth.uid && memberOf(request.resource.data.famId);
+      allow read: if isAdm() || (signedIn() && resource.data.by == request.auth.uid);
+      allow delete: if isAdm() || memberOf(resource.data.famId);
+    }
+
+    // Padrões do app (palavras e categorias): todos leem, só o administrador altera
+    match /config/{doc} {
+      allow read: if true;
+      allow write: if isAdm();
     }
   }
 }
