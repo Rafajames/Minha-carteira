@@ -53,6 +53,7 @@ Tudo é recalculado na hora: trocar quem paga uma conta, mudar a regra de divis�
 - **Reserva ligada:** marcar "Guardar na reserva" como paga soma no saldo da reserva.
 - **Ler boleto e Pix copia e cola:** colar o código preenche valor e vencimento, e o código fica guardado para copiar na hora de pagar.
 - **Importar extrato e fatura** em CSV ou OFX, sem repetir o que já foi lançado. O banco é reconhecido pelo OFX (e lembrado no CSV), contas cadastradas são marcadas como pagas, e salário, pagamento de fatura e Pix entre a família ou entre as próprias contas ficam desmarcados. Só o nome do banco é guardado.
+- **Salário do fim do mês conta no mês seguinte** (a partir do dia 27, ajustável) e **cada mês começa com a sobra do anterior**, com ajuste manual do valor inicial.
 - **Meus bancos e Meus extratos:** saldo de cada banco tirado do próprio extrato (OFX ou coluna Saldo do CSV), estimado com o que for lançado depois naquele banco, e a lista de linhas do extrato com o saldo linha a linha para conferir. Fica só no perfil de quem importou.
 - **Filtro por banco** no Fluxo de caixa e banco do salário em Nossa renda.
 - **Planejamento:** previsão dos próximos 6 meses, simulador de compra parcelada, objetivos com prazo e lista de assinaturas.
@@ -61,7 +62,7 @@ Tudo é recalculado na hora: trocar quem paga uma conta, mudar a regra de divis�
 - **Gráfico do ano** no Fluxo de caixa.
 - **Cópias de segurança:** uma por dia na nuvem, mais cópia em arquivo para baixar e restaurar.
 - **Convite com código:** "Gerar novo link" desativa o link anterior, e só quem criou a família remove pessoas.
-- **Ajuda:** 33 tutoriais passo a passo, com busca e atalho para a tela de cada assunto.
+- **Ajuda:** 34 tutoriais passo a passo, com busca e atalho para a tela de cada assunto.
 - **Vale alimentação e refeição** (Pluxee, VR, Alelo, Ticket e outros): saldo, recarga automática no dia certo e previsão de até quando o saldo dura. Os gastos entram nas categorias, mas não saem do saldo do salário.
 - **Lançar por foto ou print:** lê comprovantes e prints de fatura no próprio aparelho, com [Tesseract.js](https://github.com/naptha/tesseract.js), e mostra o resultado para conferir antes de lançar.
 - **Balanço do dia:** card Hoje logo abaixo do lançamento rápido, com o que saiu, o que entrou e o saldo do dia, a lista dos lançamentos (gastos, entradas, vale e contas pagas no dia) e setas para ver outros dias.
