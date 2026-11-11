@@ -647,7 +647,7 @@ const brl=v=>(+v||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFrac
 const money=v=>{const [i,c]=brl(Math.abs(v)).split(",");return `<span class="rs">${v<0?"− ":""}R$</span> ${i}<span class="ct">,${c}</span>`};
 const sum=a=>a.reduce((s,x)=>s+(+x.v||0),0);
 const pct=(a,b)=>b?Math.round(a/b*100):0;
-const num=s=>parseFloat(String(s).replace(/\./g,"").replace(",","."))||0;
+const num=s=>{let t=String(s==null?"":s).replace(/[^\d,.-]/g,"");if(/mil\b/i.test(String(s))&&!/[,.]\d{1,2}$/.test(t))return (parseFloat(t.replace(",","."))||0)*1000;if(!t.includes(",")&&/^-?\d+\.\d{1,2}$/.test(t))return parseFloat(t)||0;return parseFloat(t.replace(/\./g,"").replace(",","."))||0};
 const day=s=>Math.min(Math.max(+s||1,1),31);
 const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const ICON=n=>`icons/${n}.png`;
@@ -656,6 +656,7 @@ const on=(sel,ev,fn)=>document.querySelectorAll(sel).forEach(el=>el.addEventList
 const K=()=>mk(ano,mes),kPlus=n=>{const [a,m]=mAdd(ano,mes,n);return mk(a,m)};
 const isNow=()=>K()===NOWK;
 function toast(msg,undo){const t=$("toast");t.innerHTML=`<span>${esc(msg)}</span>${undo?`<button class="tundo" id="tUndo">Desfazer</button>`:""}`;t.hidden=false;if(undo)$("tUndo").onclick=()=>{t.hidden=true;undo()};clearTimeout(toast.k);toast.k=setTimeout(()=>t.hidden=true,undo?6000:2600)}
+window.addEventListener("error",e=>{if(e.message&&D)toast("Algo deu errado: "+e.message.slice(0,90))});
 document.addEventListener("error",e=>{if(e.target.tagName==="IMG")e.target.style.visibility="hidden"},true);
 
 /* pessoas */
@@ -1384,8 +1385,8 @@ function pPatr(){
  on("[data-dv]","change",el=>{const x=D.dividas.find(d=>d.id===el.dataset.dv);if(x){const f=el.dataset.f;x[f]=f==="rest"?Math.max(parseInt(el.value,10)||0,0):num(el.value);renderAll()}});
  const del=(sel,key,list)=>on(sel,"click",b=>{if(!b.dataset.ok){b.dataset.ok=1;b.textContent="Toque de novo";return}const und=snap(),x=D[list].find(y=>y.id===b.dataset[key]);D[list]=D[list].filter(y=>y!==x);toast(`${x.n} removido`,und);renderAll()});
  del("[data-bx]","bx","bens");del("[data-dx]","dx","dividas");$("empB").onclick=openEmp;
- $("fbe").onsubmit=e=>{e.preventDefault();const n=$("ben").value.trim(),v=num($("bev").value);if(!n||!v)return;D.bens.push({id:uid(),n,v});addLog(`cadastrou o bem ${n}`);renderAll()};
- $("fdv").onsubmit=e=>{e.preventDefault();const n=$("dn").value.trim(),s=num($("ds").value);if(!n||!s)return;D.dividas.push({id:uid(),n,saldo:s,parcela:num($("dp").value),rest:Math.max(parseInt($("dr").value,10)||0,0)});addLog(`cadastrou a dívida ${n}`);renderAll()};
+ $("fbe").onsubmit=e=>{e.preventDefault();const n=$("ben").value.trim(),v=num($("bev").value);if(!n||!v){toast(!n?"Escreva o nome do bem":"Informe o valor, por exemplo: 60.000,00");return}D.bens.push({id:uid(),n,v});addLog(`cadastrou o bem ${n}`);toast(`${n} adicionado`);renderAll()};
+ $("fdv").onsubmit=e=>{e.preventDefault();const n=$("dn").value.trim(),s=num($("ds").value);if(!n||!s){toast(!n?"Escreva o nome da dívida":"Informe o saldo devedor");return}D.dividas.push({id:uid(),n,saldo:s,parcela:num($("dp").value),rest:Math.max(parseInt($("dr").value,10)||0,0)});addLog(`cadastrou a dívida ${n}`);renderAll()};
 }
 
 /* lista de compras */
