@@ -59,6 +59,7 @@ Tudo é recalculado na hora: trocar quem paga uma conta, mudar a regra de divis�
 - **Gráfico do ano** no Fluxo de caixa.
 - **Cópias de segurança:** uma por dia na nuvem, mais cópia em arquivo para baixar e restaurar.
 - **Convite com código:** "Gerar novo link" desativa o link anterior, e só quem criou a família remove pessoas.
+- **Ajuda:** 22 tutoriais passo a passo, com busca e atalho para a tela de cada assunto.
 - Layout responsivo: no celular, o menu vira uma barra inferior com Início, Fluxo, Cartões, Casa e Mais.
 - Tema claro e escuro, que respeita o sistema e lembra a sua escolha.
 - Navegação por link direto para cada tela (`#fluxo`, `#cartoes`, `#casa`, `#reserva`, `#renda`, `#contas`).
