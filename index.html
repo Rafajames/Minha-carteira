@@ -410,6 +410,7 @@ body.priv :is(.bkchips b){filter:blur(7px)}
 .ul{margin:8px 0 0;padding-left:20px;line-height:1.6;font-size:13px}.ul li{margin:2px 0}.nv{border-top:1px solid var(--line);padding:10px 0}.nv summary{cursor:pointer;display:flex;gap:8px;align-items:center;flex-wrap:wrap}.nv summary small{color:var(--muted);margin-left:auto}
 .nav[hidden],button[hidden]{display:none!important}
 .meb{display:flex;align-items:center;gap:10px;background:none;border:0;padding:4px;margin:-4px;border-radius:12px;color:inherit;font:inherit;text-align:left;cursor:pointer;min-width:0;flex:1}.meb>div{min-width:0}.meb b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.meb small{white-space:nowrap}.meb:hover{background:var(--chip)}
+.av{position:relative;overflow:hidden}.av img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:inherit}
 </style>
 </head>
 <body>
@@ -683,7 +684,8 @@ const person=id=>D.people.find(p=>p.id===id)||D.people[0];
 const ME=()=>person(me);
 const N=id=>{const n=person(id).n;return id===me&&/^(eu|voc[eê])?$/i.test(String(n||"").trim())?"Você":esc(n||"Pessoa")},I=id=>(person(id).n||"?").trim().charAt(0).toUpperCase()||"?";
 const pc=id=>`--pc:var(--p${Math.max(D.people.findIndex(p=>p.id===id),0)%6})`;
-const av=(id,cls="")=>`<span class="av ${cls}" style="${pc(id)}">${I(id)}</span>`;
+const fotoOf=id=>{const u=typeof fbUser!=="undefined"&&MODE==="cloud"?fbUser:null;if(id===me&&u&&u.photoURL&&!SUP)return u.photoURL;const f=person(id).foto;return /^https:\/\//.test(f||"")?f:""};
+const av=(id,cls="")=>{const f=fotoOf(id);return `<span class="av ${cls}" style="${pc(id)}">${I(id)}${f?`<img src="${esc(f)}" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="this.remove()">`:""}</span>`};
 const chip=(id,cid)=>cid?`<button class="chipw" style="${pc(id)}" data-p="${cid}" aria-label="Trocar quem paga"><i class="dot"></i>${N(id)}</button>`:`<span class="chipw" style="${pc(id)}"><i class="dot"></i>${N(id)}</span>`;
 const totSal=()=>D.people.reduce((s,p)=>s+(+p.sal||0),0);
 const divisores=()=>{const d=D.people.filter(p=>!p.dep);return d.length?d:D.people};
@@ -2195,6 +2197,7 @@ function renderHoje(){
 
 /* ===== sobre e novidades ===== */
 const NOVID=[
+ ["2.13","11/11/2026","Foto do perfil",["Quem entra com o Google aparece com a foto da conta Google no lugar da inicial, para você e para a família."]],
  ["2.12","11/11/2026","Meu perfil",["Toque no seu nome (ou em Mais → Meu perfil, no celular) para ver a conta: e-mail, como entrou, quando criou a conta e o último login.","Trocar a senha pelo e-mail, confirmar o e-mail e atalho para a segurança da conta Google."]],
  ["2.11","11/11/2026","Dados de exemplo novos",["O modo de teste usa uma família fictícia (João e Maria) com valores do dia a dia: salários de R$ 5.200 e R$ 4.300 e contas proporcionais."]],
  ["2.10","11/11/2026","Usuários na administração",["Cada pessoa é registrada na Administração já no login, mesmo antes de criar a família, com o jeito que entrou (Google ou e-mail), quando criou a conta e o último acesso."]],
@@ -2247,7 +2250,7 @@ const tsOf=ms=>firebase.firestore.Timestamp&&firebase.firestore.Timestamp.fromMi
 const dtTxt=x=>{const t=tms(x);return t?new Date(t).toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"}):"—"};
 function loadCfg(){if(!db)return;db.doc("config/app").get().then(s=>{CFG=(s.exists&&s.data())||{};if(D)renderAll()}).catch(()=>{})}
 function pingStats(f){
- if(statDone||SUP||!famId||!fbUser)return;statDone=true;const ow=D.people.find(p=>p.uid===f.owner),sv=firebase.firestore.FieldValue.serverTimestamp();
+ if(statDone||SUP||!famId||!fbUser)return;statDone=true;{const mp=D.people.find(p=>p.uid===fbUser.uid),ph=fbUser.photoURL||"";if(mp&&(mp.foto||"")!==ph){if(ph)mp.foto=ph;else delete mp.foto;save()}}const ow=D.people.find(p=>p.uid===f.owner),sv=firebase.firestore.FieldValue.serverTimestamp();
  db.doc("stats/"+famId).set({owner:ow?ow.n:"",members:(f.members||[]).length,people:D.people.length,created:f.createdAt||null,lastSeen:sv,ver:APPV},{merge:true}).catch(()=>{});
  db.doc("profiles/"+fbUser.uid).set({email:fbUser.email||"",name:first(fbUser),famId,lastSeen:sv,ver:APPV},{merge:true}).catch(()=>{});
 }
