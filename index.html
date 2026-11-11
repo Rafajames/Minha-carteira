@@ -1412,16 +1412,17 @@ function parseOFX(t){
 }
 function parseCSV(t){
  const lines=t.replace(/^﻿/,"").split(/\r?\n/).filter(l=>l.trim());if(lines.length<2)return [];
- const nrm=s=>s.normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase(),hi=lines.findIndex((l,i)=>i<15&&/data|date/.test(nrm(l))&&/valor|amount|quantia/.test(nrm(l)));if(hi<0)return [];
+ const nrm=s=>s.normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase(),hi=lines.findIndex((l,i)=>i<15&&/data|date/.test(nrm(l))&&/valor|amount|quantia|credito|debito/.test(nrm(l)));if(hi<0)return [];
  const hl=lines[hi],sep=(hl.match(/;/g)||[]).length>(hl.match(/,/g)||[]).length?";":hl.includes("\t")?"\t":",";
  const split=l=>{const r=[];let c="",q=false;for(let i=0;i<l.length;i++){const ch=l[i];if(q){if(ch==='"'){if(l[i+1]==='"'){c+='"';i++}else q=false}else c+=ch}else if(ch==='"')q=true;else if(ch===sep){r.push(c);c=""}else c+=ch}r.push(c);return r.map(x=>x.trim())};
  const H=split(hl).map(nrm),fi=re=>H.findIndex(h=>re.test(h)),di=fi(/^(data|date|dt)/),vi=fi(/valor|amount|quantia|montante/),ni=H.findIndex((h,i)=>i!==di&&/descri|title|titulo|estabelec|memo|detalhe|nome/.test(h)),hi2=H.findIndex((h,i)=>i!==di&&/hist|lancamento/.test(h));
- if(di<0||vi<0)return [];
+ const ci=fi(/credito|entrada/),de=fi(/debito|saida/);if(di<0||(vi<0&&ci<0&&de<0))return [];
+ const pv=x=>{let s=(x||"").replace(/r\$|\s/gi,"");const ng=/^\(.*\)$/.test(s)||/-/.test(s);s=s.replace(/[()+-]/g,"");s=s.includes(",")?s.replace(/\./g,"").replace(",","."):s;const v=parseFloat(s);return isNaN(v)?0:(ng?-v:v)};
  const out=[];
  lines.slice(hi+1).forEach(l=>{const c=split(l),ds=c[di]||"";let y,m,d,mm;
   if(mm=ds.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/)){d=+mm[1];m=+mm[2]-1;y=+mm[3];if(y<100)y+=2000}else if(mm=ds.match(/^(\d{4})-(\d{2})-(\d{2})/)){y=+mm[1];m=+mm[2]-1;d=+mm[3]}else return;
-  let s=(c[vi]||"").replace(/r\$|\s/gi,"");const neg=/^\(.*\)$/.test(s)||/-/.test(s);s=s.replace(/[()+-]/g,"");s=s.includes(",")?s.replace(/\./g,"").replace(",","."):s;const v=parseFloat(s);if(isNaN(v)||!v)return;
-  const a=hi2>=0?clean(c[hi2]):"",b_=ni>=0?clean(c[ni]):"";out.push({y,m,d,v:neg?-v:v,n:clean(a&&b_&&a.toLowerCase()!==b_.toLowerCase()?`${a} · ${b_}`:(b_||a))||"Lançamento"})});
+  const sv=vi>=0?pv(c[vi]):Math.abs(pv(c[ci]))-Math.abs(pv(c[de])),v=Math.abs(sv),neg=sv<0;if(!v)return;
+  const a=hi2>=0?clean(c[hi2]):"",b_=ni>=0?clean(c[ni]):"";if(/^saldo\b/i.test(b_||a))return;out.push({y,m,d,v:neg?-v:v,n:clean(a&&b_&&a.toLowerCase()!==b_.toLowerCase()?`${a} · ${b_}`:(b_||a))||"Lançamento"})});
  return out;
 }
 function openImport(){
