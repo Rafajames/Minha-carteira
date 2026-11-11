@@ -59,9 +59,19 @@ Tudo é recalculado na hora: trocar quem paga uma conta, mudar a regra de divis�
 - **Gráfico do ano** no Fluxo de caixa.
 - **Cópias de segurança:** uma por dia na nuvem, mais cópia em arquivo para baixar e restaurar.
 - **Convite com código:** "Gerar novo link" desativa o link anterior, e só quem criou a família remove pessoas.
-- **Ajuda:** 22 tutoriais passo a passo, com busca e atalho para a tela de cada assunto.
+- **Ajuda:** 31 tutoriais passo a passo, com busca e atalho para a tela de cada assunto.
 - **Vale alimentação e refeição** (Pluxee, VR, Alelo, Ticket e outros): saldo, recarga automática no dia certo e previsão de até quando o saldo dura. Os gastos entram nas categorias, mas não saem do saldo do salário.
 - **Lançar por foto ou print:** lê comprovantes e prints de fatura no próprio aparelho, com [Tesseract.js](https://github.com/naptha/tesseract.js), e mostra o resultado para conferir antes de lançar.
+- **Detalhe da categoria:** total, comparação com a média, quem gastou, últimos 12 meses com linha de tendência e lista do que entrou. Ao corrigir a categoria de um lançamento, o app aprende pelo nome.
+- **Novas categorias** Carro e Delivery, e reconhecimento de posto, Shell, Ipiranga, autopeças, oficina, borracharia, iFood e IFD*.
+- **Visão geral:** onde foi o dinheiro (3 categorias que mais pesaram), quanto ainda dá para gastar por dia, aviso de gasto fora do normal, resumo da semana e conquistas.
+- **Controle do mês:** essenciais × supérfluos e mesada por pessoa.
+- **Carro:** custo no mês, no ano e por km, consumo, comparação com o Uber e lembretes de IPVA, licenciamento, seguro e revisão (por data ou km).
+- **iFood:** nomes "iFood · Restaurante" a partir de IFD*, leitura do print de pedidos sem duplicar o que já está na fatura, valor médio e dias em que mais pedem.
+- **Holerite:** leitura do recibo de pagamento com as colunas de proventos e descontos, conferência com o líquido, FGTS informativo e mês de férias sem trocar o salário.
+- **Salário em duas datas:** adiantamento e restante, no dia útil anterior quando cair em fim de semana ou feriado (nacionais, de Roraima e de Boa Vista). O previsto é corrigido pelo holerite.
+- **Consignados:** parcelas pagas e restantes, juros, mês em que o salário sobe, conferência pelo holerite e leitura do print "Detalhes do empréstimo".
+- **Tendência** das saídas no gráfico do ano.
 - Layout responsivo: no celular, o menu vira uma barra inferior com Início, Fluxo, Cartões, Casa e Mais.
 - Tema claro e escuro, que respeita o sistema e lembra a sua escolha.
 - Navegação por link direto para cada tela (`#fluxo`, `#cartoes`, `#casa`, `#reserva`, `#renda`, `#contas`).
