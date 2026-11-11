@@ -3,8 +3,9 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     function signedIn() { return request.auth != null; }
-    function isMember() { return signedIn() && request.auth.uid in resource.data.members; }
-    function memberOf(fid) { return signedIn() && request.auth.uid in get(/databases/$(database)/documents/families/$(fid)).data.members; }
+    function blocked() { return exists(/databases/$(database)/documents/blocked/$(request.auth.uid)); }
+    function isMember() { return signedIn() && !blocked() && request.auth.uid in resource.data.members; }
+    function memberOf(fid) { return signedIn() && !blocked() && request.auth.uid in get(/databases/$(database)/documents/families/$(fid)).data.members; }
     // Administrador: e-mail confirmado e na lista abaixo
     function isAdm() { return signedIn() && request.auth.token.email_verified == true
       && request.auth.token.email.lower() in ['jamersonrafael.sv@gmail.com']; }
@@ -12,7 +13,13 @@ service cloud.firestore {
 
     // Cada pessoa só lê e altera o próprio perfil (família e lançamentos privados)
     match /users/{uid} {
-      allow read, write: if signedIn() && request.auth.uid == uid;
+      allow read, write: if signedIn() && !blocked() && request.auth.uid == uid;
+    }
+
+    // Bloqueio de acesso: só o administrador define; a pessoa só vê o próprio bloqueio
+    match /blocked/{uid} {
+      allow read: if isAdm() || (signedIn() && request.auth.uid == uid);
+      allow write: if isAdm();
     }
 
     match /families/{familyId} {
@@ -33,7 +40,7 @@ service cloud.firestore {
              || request.resource.data.members == resource.data.members.removeAll([request.auth.uid]) );
 
       // Entrar pelo convite: precisa do código atual do link (gerar um link novo desativa o anterior)
-      allow update: if signedIn()
+      allow update: if signedIn() && !blocked()
         && !(request.auth.uid in resource.data.members)
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members', 'joinCode'])
         && request.resource.data.members == resource.data.members.concat([request.auth.uid])
@@ -48,19 +55,22 @@ service cloud.firestore {
         && request.resource.data.supportUntil == resource.data.supportUntil;
 
       // Excluir: só o dono
-      allow delete: if signedIn() && request.auth.uid == resource.data.owner;
+      allow delete: if (signedIn() && request.auth.uid == resource.data.owner) || isAdm();
 
       // Cópias de segurança: só membros da família
       match /backups/{backupId} {
-        allow read, write: if signedIn()
-          && request.auth.uid in get(/databases/$(database)/documents/families/$(familyId)).data.members;
+        allow read, write: if memberOf(familyId)
+          || (isAdm() && get(/databases/$(database)/documents/families/$(familyId)).data.get('supportUntil', null) != null
+              && get(/databases/$(database)/documents/families/$(familyId)).data.supportUntil > request.time);
+        // Depois que o administrador exclui a família, ele apaga as cópias que sobraram
+        allow read, delete: if isAdm() && !exists(/databases/$(database)/documents/families/$(familyId));
       }
     }
 
     // Uso do app, sem valores: cada família e cada pessoa registram o próprio; só o administrador lê
     match /stats/{familyId} {
       allow write: if memberOf(familyId);
-      allow read: if isAdm();
+      allow read, delete: if isAdm();
     }
     match /profiles/{uid} {
       allow write: if signedIn() && request.auth.uid == uid;
