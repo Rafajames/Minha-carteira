@@ -60,6 +60,8 @@ Tudo é recalculado na hora: trocar quem paga uma conta, mudar a regra de divis�
 - **Cópias de segurança:** uma por dia na nuvem, mais cópia em arquivo para baixar e restaurar.
 - **Convite com código:** "Gerar novo link" desativa o link anterior, e só quem criou a família remove pessoas.
 - **Ajuda:** 22 tutoriais passo a passo, com busca e atalho para a tela de cada assunto.
+- **Vale alimentação e refeição** (Pluxee, VR, Alelo, Ticket e outros): saldo, recarga automática no dia certo e previsão de até quando o saldo dura. Os gastos entram nas categorias, mas não saem do saldo do salário.
+- **Lançar por foto ou print:** lê comprovantes e prints de fatura no próprio aparelho, com [Tesseract.js](https://github.com/naptha/tesseract.js), e mostra o resultado para conferir antes de lançar.
 - Layout responsivo: no celular, o menu vira uma barra inferior com Início, Fluxo, Cartões, Casa e Mais.
 - Tema claro e escuro, que respeita o sistema e lembra a sua escolha.
 - Navegação por link direto para cada tela (`#fluxo`, `#cartoes`, `#casa`, `#reserva`, `#renda`, `#contas`).
