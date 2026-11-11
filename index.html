@@ -404,6 +404,7 @@ body.priv :is(.bkchips b){filter:blur(7px)}
 .g4f{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}.g4f>.c{min-width:0}
 @media (max-width:480px){.g4f{grid-template-columns:1fr 1fr;gap:10px}.g4f>.c{padding:14px}.g4f .money{font-size:19px}}
 .cfd{border-top:1px solid var(--line);margin-top:10px;padding-top:8px}.cfd summary{cursor:pointer;font-weight:600;font-size:13px;padding:4px 0}.cfd[open] summary{margin-bottom:6px}
+.catr{display:grid;grid-template-columns:1fr 1.4fr auto;gap:8px;align-items:center;padding:5px 0}.catr.b{grid-template-columns:1fr auto}@media (max-width:480px){.catr{grid-template-columns:1fr auto}.catr [data-ck]{grid-column:1/-1;grid-row:2}}
 </style>
 </head>
 <body>
@@ -592,7 +593,7 @@ function seed(){
   lista:Object.fromEntries([["Café",0],["Leite",0],["Arroz",1]].map(([n,ok],i)=>[uid(),{n,ok,t:i+1}])),log:{},
   mes:{[kOff(-1)]:{paid:{...pa},settled:true},[kOff(-2)]:{paid:{...pa},settled:true}}};
 }
-const empty=()=>({v:3,regra:"50",people:[{id:"y",n:"Eu",sal:0,pess:0,dia:0,uid:null}],casa:[],bills:[],dia:[],extra:[],cards:[],reserva:{meta:10000,saldo:0,aportes:[]},acertos:[],metas:{},goals:[],bens:[],dividas:[],vales:[],lista:{},log:{},mes:{},learn:{},carro:{uber:2.4,lemb:[]},ess:{mercado:1,casa:1,carro:1,transporte:1,saude:1,educacao:1,familia:1},mesada:{},hol:{},bancos:[]});
+const empty=()=>({v:3,regra:"50",people:[{id:"y",n:"Eu",sal:0,pess:0,dia:0,uid:null}],casa:[],bills:[],dia:[],extra:[],cards:[],reserva:{meta:10000,saldo:0,aportes:[]},acertos:[],metas:{},goals:[],bens:[],dividas:[],vales:[],lista:{},log:{},mes:{},cats:{custom:[],ren:{},hide:{}},learn:{},carro:{uber:2.4,lemb:[]},ess:{mercado:1,casa:1,carro:1,transporte:1,saude:1,educacao:1,familia:1},mesada:{},hol:{},bancos:[]});
 function norm(d){
  d=d||{};
  if(!d.people){ // formato antigo → novo
@@ -611,7 +612,7 @@ function norm(d){
  const E=empty();for(const k in E)if(d[k]==null)d[k]=E[k];
  if(!d.people.length)d.people=E.people;
  d.casa.forEach(c=>{if(!c.id)c.id=uid()});
- if(!d.carro.lemb)d.carro.lemb=[];if(Array.isArray(d.lista))d.lista={};if(Array.isArray(d.log))d.log={};
+ if(!d.carro.lemb)d.carro.lemb=[];["custom","ren","hide"].forEach(k=>{if(!d.cats[k])d.cats[k]=k==="custom"?[]:{}});if(Array.isArray(d.lista))d.lista={};if(Array.isArray(d.log))d.log={};
  d.cards.forEach(c=>{if(c.fecha==null)c.fecha=c.venc>7?c.venc-7:c.venc+21});d.people.forEach(p=>{if(!p.pay)p.pay=1});(d.vales||[]).forEach(v=>{if(!v.lanc)v.lanc=[];if(!v.id)v.id=uid()});
  return d;
 }
@@ -713,12 +714,16 @@ function find(id){
  for(const v of D.vales||[]){if(v.id===id)return {kind:"valecard",list:D.vales,it:v};it=v.lanc.find(x=>x.id===id);if(it)return {kind:"vale",list:v.lanc,it,vale:v}}
  return null;
 }
-const CATS=[["mercado","Mercado"],["casa","Casa e contas"],["carro","Carro"],["transporte","Transporte"],["delivery","Delivery"],["saude","Saúde"],["lazer","Lazer e restaurantes"],["educacao","Educação"],["assinaturas","Assinaturas"],["compras","Compras"],["familia","Família"],["mesada","Mesada"],["reserva","Reserva"],["outros","Outros"],["fatura","Fatura de cartão"]];
+const CATS0=[["mercado","Mercado"],["casa","Casa e contas"],["carro","Carro"],["transporte","Transporte"],["delivery","Delivery"],["saude","Saúde"],["lazer","Lazer e restaurantes"],["educacao","Educação"],["assinaturas","Assinaturas"],["compras","Compras"],["familia","Família"],["mesada","Mesada"],["reserva","Reserva"],["outros","Outros"],["fatura","Fatura de cartão"]];
 const GUESS=[[/fatura|cart[aã]o/i,"fatura"],[/ifood|\bifd\b|ifd\*|rappi|aiqfome|delivery/i,"delivery"],[/mercado|padaria|feira|a[cç]ougue|hortifruti|atacad/i,"mercado"],[/combust|gasolina|etanol|diesel|\bposto\b|departamento estadual de|shell|ipiranga|petrobras|auto ?pe[cç]as|\bpe[cç]as?\b|mec[aâ]nic|oficina|borracharia|\bpneus?\b|ipva|licenciamento|detran|seguro (do )?(carro|auto|ve[ií]culo)|seguro auto|estaciona|lava.?jato|revis[aã]o|troca de [oó]leo|ped[aá]gio|\bcarro\b/i,"carro"],[/uber|\b99\b|99pop|t[aá]xi|transporte|passage|[oô]nibus|metr[oô]/i,"transporte"],[/aluguel|condom|\bluz\b|energia|[aá]gua|internet|\bg[aá]s\b|iptu|apartamento|casa|seguro|telefone/i,"casa"],[/farm[aá]cia|drogaria|m[eé]dic|sa[uú]de|academia|dentist|exame|rem[eé]dio|cl[ií]nica|psicolog/i,"saude"],[/restaurante|lazer|cinema|\bbar\b|viagem|lanche|pizza|hamburg|ingresso|churros|mousse|\bfood\b|bambu|a[cç]a[ií]|sorvet|doceria|lanchonete/i,"lazer"],[/escola|curso|faculdade|livro|mensalidade/i,"educacao"],[/streaming|assinatura|netflix|spotify|youtube|prime|google one|icloud|ebanx/i,"assinaturas"],[/mesada/i,"mesada"],[/fam[ií]lia|presente/i,"familia"],[/reserva|poupan|invest/i,"reserva"],[/roupa|loja|notebook|\btv\b|t[eê]nis|pet|celular|eletro|amazon|iphone/i,"compras"]];
 const guess0=n=>{for(const [r,c] of GUESS)if(r.test(n||""))return c;return "outros"};
-const guess=n=>{const L=D&&D.learn,k=nkey(n);return (L&&k&&L[k])||guess0(n)};
+let CATS=CATS0.slice();
+const CT=()=>(D&&D.cats)||{custom:[],ren:{},hide:{}};
+function syncCats(){const C=CT(),base=CATS0.filter(c=>!["outros","fatura"].includes(c[0])&&!C.hide[c[0]]).map(([id,l])=>[id,C.ren[id]||l]);CATS=[...base,...C.custom.map(c=>[c.id,c.n]),["outros",C.ren.outros||"Outros"],["fatura","Fatura de cartão"]]}
+function kwCat(n){const t=nkey(n);if(!t)return "";for(const c of CT().custom){const ks=String(c.kw||"").split(/[,;]/).map(x=>nkey(x)).filter(Boolean);if(ks.some(k=>(" "+t+" ").includes(" "+k+" ")||(k.length>=4&&t.includes(k))))return c.id}return ""}
+const guess=n=>{const L=D&&D.learn,k=nkey(n),r=(L&&k&&L[k])||kwCat(n)||guess0(n);return CT().hide[r]?"outros":r};
 const catOf=x=>x.cat||guess(x.n);
-const CATN=id=>(CATS.find(c=>c[0]===id)||["outros","Outros"])[1];
+const CATN=id=>{const C=CT(),c=C.custom.find(x=>x.id===id);if(c)return c.n;const b=CATS0.find(x=>x[0]===id);return b?(C.ren[id]||b[1]):(C.ren.outros||"Outros")};
 function gastos(k=K()){
  const out=[],ki=mIdx(k),A=(x,cat,src,d)=>out.push({v:+x.v||0,cat,n:x.n,d:d===undefined?x.d||0:d,by:x.by,id:x.id,src:src+(x.bco?" · "+x.bco:""),km:x.km,l:x.l});
  billsOf(k).forEach(x=>{if(!isCardBill(x.b))A(x.b,catOf(x.b),"conta")});
@@ -729,7 +734,7 @@ function gastos(k=K()){
 }
 const byCat=a=>a.reduce((m,x)=>(m[x.cat]=(m[x.cat]||0)+(+x.v||0),m),{});
 const hasData=k=>billsOf(k).length>0||onesOf("dia",k).length>0;
-const catSel=it=>`<label class="field full">Categoria<select id="ad_cat"><option value="">Automática${it.n?` (${CATN(guess(it.n))})`:""}</option>${CATS.map(([id,l])=>`<option value="${id}"${it.cat===id?" selected":""}>${l}</option>`).join("")}</select></label>`;
+const catSel=it=>`<label class="field full">Categoria<select id="ad_cat"><option value="">Automática${it.n?` (${CATN(guess(it.n))})`:""}</option>${(it.cat&&!CATS.some(c=>c[0]===it.cat)?[...CATS,[it.cat,CATN(it.cat)]]:CATS).map(([id,l])=>`<option value="${id}"${it.cat===id?" selected":""}>${l}</option>`).join("")}<option value="__new">+ Nova categoria…</option></select></label><label class="field full" id="ad_ncw" hidden>Nome da nova categoria<input id="ad_nc" placeholder="Ex.: Pets" maxlength="24"></label>`;
 function catSection(){
  const pk=kPlus(-1),cur=byCat(gastos()),prev=byCat(gastos(pk)),hp=hasData(pk),M=D.metas||{},pmN=MESES[+pk.slice(6)-1].toLowerCase(),pm=AB[+pk.slice(6)-1].toLowerCase();
  const tot=Object.values(cur).reduce((a,b)=>a+b,0),ptot=Object.values(prev).reduce((a,b)=>a+b,0);
@@ -744,6 +749,29 @@ function catSection(){
  <div class="note">Soma contas a pagar, gastos do dia e compras no cartão e no vale. A fatura de um cartão cadastrado não entra de novo, porque as compras dele já são contadas.</div></section>`;
 }
 function metaAlerts(){const c=byCat(gastos(NOWK)),M=D.metas||{};return Object.keys(M).filter(id=>M[id]>0&&(c[id]||0)>=.8*M[id]).map(id=>({id,m:M[id],v:c[id]||0}))}
+function newCat(n,kw,meta,ess){const C=D.cats;const ex=CATS.find(c=>c[1].toLowerCase()===n.toLowerCase());if(ex)return ex[0];const id="c"+uid().slice(1);C.custom.push({id,n,kw:kw||""});if(meta>0){D.metas=D.metas||{};D.metas[id]=meta}if(ess){D.ess=D.ess||{...ESS0};D.ess[id]=1}addLog(`criou a categoria ${n}`);syncCats();return id}
+function openCats(){
+ tipo="cats";ED=null;const C=D.cats,B=CATS0.filter(c=>c[0]!=="fatura");
+ $("addForm").innerHTML=`<div class="mhead"><h2>Categorias</h2><button type="button" class="circ" id="addX" aria-label="Fechar">×</button></div>
+ <div class="sub">Nova categoria</div><div class="mgrid"><label class="field">Nome<input id="cnN" placeholder="Ex.: Pets" maxlength="24"></label><label class="field">Meta por mês (R$, opcional)<input id="cnM" inputmode="decimal" placeholder="sem meta"></label><label class="field full">Palavras para reconhecer sozinho (separe com vírgula)<input id="cnK" placeholder="Ex.: petz, cobasi, ração, veterinário"></label><label class="chk full"><input type="checkbox" id="cnE">É essencial</label><div class="full"><button type="button" class="btnp" id="cnGo">Criar categoria</button></div></div>
+ ${C.custom.length?`<div class="sub">Suas categorias</div>${C.custom.map(c=>`<div class="catr"><input class="oin" data-cn="${c.id}" value="${esc(c.n)}" maxlength="24" aria-label="Nome"><input class="oin" data-ck="${c.id}" value="${esc(c.kw||"")}" placeholder="palavras, separadas por vírgula" aria-label="Palavras"><button type="button" class="btn danger" data-cx="${c.id}">Excluir</button></div>`).join("")}`:""}
+ <div class="sub">Categorias do app</div><div class="note">Troque o nome ou esconda as que você não usa. Escondida, ela some das listas e o que cairia nela vai para Outros.</div>
+ ${B.map(([id,l])=>`<div class="catr b"><input class="oin" data-rn="${id}" value="${esc(C.ren[id]||l)}" maxlength="24" aria-label="Nome de ${esc(l)}">${id==="outros"?"<span></span>":`<label class="chk"><input type="checkbox" data-hd="${id}"${C.hide[id]?" checked":""}>Esconder</label>`}</div>`).join("")}
+ <div style="display:flex;gap:8px;margin-top:18px;justify-content:flex-end"><button type="button" class="btn" id="addCancel">Cancelar</button><button class="btnp">Salvar</button></div>`;
+ $("addOv").hidden=false;$("addX").onclick=$("addCancel").onclick=closeForm;
+ $("cnGo").onclick=()=>{const n=$("cnN").value.trim();if(!n){toast("Escreva o nome da categoria");return}if(CATS.some(c=>c[1].toLowerCase()===n.toLowerCase())){toast("Já existe uma categoria com esse nome");return}const und=snap();newCat(n,$("cnK").value.trim(),num($("cnM").value),$("cnE").checked);toast(`Categoria ${n} criada`,und);renderAll();openCats()};
+ on("[data-cx]","click",b=>{if(!b.dataset.ok){b.dataset.ok=1;b.textContent="Toque de novo";return}const id=b.dataset.cx,und=snap(),c=C.custom.find(x=>x.id===id);C.custom=C.custom.filter(x=>x.id!==id);
+  const fix=x=>{if(x.cat===id)delete x.cat};[D.bills,D.dia,D.extra,P.bills,P.dia,P.extra].forEach(L=>L.forEach(fix));D.cards.forEach(k=>k.lanc.forEach(fix));(D.vales||[]).forEach(v=>v.lanc.forEach(fix));
+  if(D.metas)delete D.metas[id];if(D.ess)delete D.ess[id];Object.keys(D.learn||{}).forEach(k=>{if(D.learn[k]===id)delete D.learn[k]});addLog(`excluiu a categoria ${c.n}`);toast(`Categoria ${c.n} excluída. Os lançamentos dela voltaram para a categoria automática.`,und);renderAll();openCats()});
+}
+function saveCats(){
+ const C=D.cats,und=snap();
+ document.querySelectorAll("[data-cn]").forEach(el=>{const c=C.custom.find(x=>x.id===el.dataset.cn);if(c&&el.value.trim())c.n=el.value.trim()});
+ document.querySelectorAll("[data-ck]").forEach(el=>{const c=C.custom.find(x=>x.id===el.dataset.ck);if(c)c.kw=el.value.trim()});
+ document.querySelectorAll("[data-rn]").forEach(el=>{const id=el.dataset.rn,b=CATS0.find(x=>x[0]===id),v=el.value.trim();if(v&&v!==b[1])C.ren[id]=v;else delete C.ren[id]});
+ document.querySelectorAll("[data-hd]").forEach(el=>{if(el.checked)C.hide[el.dataset.hd]=1;else delete C.hide[el.dataset.hd]});
+ addLog("atualizou as categorias");closeForm();toast("Categorias salvas",und);renderAll();
+}
 function openMetas(){
  tipo="metas";ED=null;const M=D.metas||{};
  $("addForm").innerHTML=`<div class="mhead"><h2>Metas por categoria</h2><button type="button" class="circ" id="addX" aria-label="Fechar">×</button></div><div class="note">Quanto pode ser gasto por mês em cada categoria. Deixe em branco para não ter meta.</div><div class="mgrid">${CATS.filter(c=>c[0]!=="fatura").map(([id,l])=>`<label class="field">${l}<input id="mt_${id}" inputmode="decimal" placeholder="sem meta" value="${M[id]?brl(M[id]):""}"></label>`).join("")}</div><div style="display:flex;gap:8px;margin-top:18px;justify-content:flex-end"><button type="button" class="btn" id="addCancel">Cancelar</button><button class="btnp">Salvar metas</button></div>`;
@@ -906,14 +934,14 @@ function pFluxo(){
   g+=`<rect x="${x+14}" y="${180-he}" width="30" height="${he}" rx="5" fill="var(--green)"><title>Entradas R$ ${brl(e)}</title></rect><rect x="${x+48}" y="${180-hs}" width="30" height="${hs}" rx="5" fill="var(--blue)"><title>Saídas R$ ${brl(s)}</title></rect><text x="${x+46}" y="202" text-anchor="middle" font-size="11" fill="var(--muted)">${two(W[i][0])}–${two(W[i][1])}</text>`});
  const bks=[...new Set(tx.map(t=>t.bco).filter(Boolean))];if(fB&&!bks.includes(fB))fB="";
  const list=tx.filter(t=>(fF==="todas"||(fF==="ent"?t.v>0:t.v<0))&&(!fB||t.bco===fB));
- $("v-fluxo").innerHTML=PH("chart_increasing","Fluxo de caixa",`Entradas e saídas de ${MESES[mes].toLowerCase()} de ${ano}`,`<button class="btn" id="metasB">Metas</button><button class="btn" id="ocrB2">Lançar por foto</button><button class="btn" id="impB">Importar extrato</button><button class="btn" id="expB">Exportar planilha</button>`)+
+ $("v-fluxo").innerHTML=PH("chart_increasing","Fluxo de caixa",`Entradas e saídas de ${MESES[mes].toLowerCase()} de ${ano}`,`<button class="btn" id="catsB">Categorias</button><button class="btn" id="metasB">Metas</button><button class="btn" id="ocrB2">Lançar por foto</button><button class="btn" id="impB">Importar extrato</button><button class="btn" id="expB">Exportar planilha</button>`)+
  `<div class="pg g4f">${kpi("Começou com",st.v,`${st.anchor===K()?"valor ajustado por você":st.bank===K()?"saldo dos bancos no dia 1, sem o salário que já entra aqui":`sobra de ${MESES[(mes+11)%12].toLowerCase()}`} · <button class="link" id="iniB">ajustar</button>`)}${kpi("Entradas",E)}${kpi("Saídas",S)}${kpi("Termina com",st.v+E-S,`saldo do mês ${E-S>=0?"+":"−"} R$ ${brl(Math.abs(E-S))}`,st.v+E-S>=0?"var(--green)":"var(--pink)")}</div>
  <form class="c box" id="iniF" hidden><div class="h">Com quanto ${MESES[mes].toLowerCase()} começou?</div><div class="note">Use o dinheiro que você tinha no dia 1, sem contar o salário recebido no fim do mês anterior (ele já entra como entrada deste mês). Os meses seguintes partem desse valor.</div><div class="gact"><input class="gin" id="iniV" inputmode="decimal" value="${brl(st.v)}" aria-label="Valor no começo do mês"><button class="btnp">Salvar</button>${st.anchor===K()?`<button type="button" class="btn" id="iniA">Voltar ao cálculo automático</button>`:""}</div></form>
  <div class="pg g2"><section class="c box"><div class="h">Por semana</div><div class="leg2"><span><i class="dot" style="background:var(--green)"></i>Entradas</span><span><i class="dot" style="background:var(--blue)"></i>Saídas</span></div><svg class="chart" viewBox="0 0 600 212">${g}</svg></section>
  <section class="c box"><div class="h">Lançamentos</div><div class="seg" style="grid-template-columns:repeat(3,1fr)">${[["todas","Todos"],["ent","Entradas"],["sai","Saídas"]].map(([k,l])=>`<button data-f="${k}" class="${fF===k?"on":""}">${l}</button>`).join("")}</div>${bks.length?`<label class="field" style="margin-top:10px">Banco<select id="fBk"><option value="">Todos os bancos</option>${bks.map(b=>`<option${b===fB?" selected":""}>${esc(b)}</option>`).join("")}</select></label>${fB?`<div class="note">Em ${esc(fB)}: entrou R$ ${brl(sum(list.filter(t=>t.v>0)))} · saiu R$ ${brl(-sum(list.filter(t=>t.v<0)))}</div>`:""}`:""}
  <div class="list" style="max-height:440px;margin-top:8px">${list.length?list.map(t=>row(t.v>0?"+":"−",t.v>0?"in":"out",esc(t.n)+(t.x?tagp(t.x):""),`dia ${two(t.d)} · ${t.cat}${t.x&&t.v<0?" · "+CATN(catOf(t.x.b)):""}${t.bco?" · "+esc(t.bco):""}`,`${t.v>0?"+":"−"} R$ ${brl(Math.abs(t.v))}`,t.v>0?"pos":"",t.id)).join(""):`<div class="note">Nenhum lançamento neste mês.</div>`}</div></section></div>`+confSection()+catSection()+essSection()+yearSection();
  on("#v-fluxo [data-f]","click",b=>{fF=b.dataset.f;pFluxo()});if($("fBk"))$("fBk").onchange=e=>{fB=e.target.value;pFluxo()};
- bindControle();bindConf();$("metasB").onclick=openMetas;
+ bindControle();bindConf();$("metasB").onclick=openMetas;$("catsB").onclick=openCats;
  $("iniB").onclick=e=>{e.preventDefault();$("iniF").hidden=!$("iniF").hidden;if(!$("iniF").hidden)$("iniV").focus()};
  $("iniF").onsubmit=e=>{e.preventDefault();const und=snap();P.ini=P.ini||{};P.ini[K()]=num($("iniV").value);toast(`${MESES[mes]} começa com R$ ${brl(P.ini[K()])}`,und);renderAll()};
  if($("iniA"))$("iniA").onclick=()=>{const und=snap();delete P.ini[K()];toast("Voltou ao cálculo automático",und);renderAll()};$("expB").onclick=exportCSV;$("impB").onclick=openImport;$("ocrB2").onclick=openOCR;
@@ -1063,6 +1091,7 @@ function openForm(t,ed){
  $("addX").onclick=$("addCancel").onclick=closeForm;
  if($("addDel"))$("addDel").onclick=e=>{const b=e.currentTarget;if(!b.dataset.ok){b.dataset.ok=1;b.textContent="Toque de novo para excluir";return}delItem()};
  const pay=$("ad_pay");if(pay){const rd=()=>{const r=readPay(pay.value),h=$("payHint");if(!pay.value.trim()){h.textContent="";return}if(!r){h.textContent="Código guardado. Não consegui ler o valor; preencha à mão.";return}if(r.v>0)$("ad_v").value=brl(r.v);if(r.date)$("ad_d").value=r.date.getDate();h.innerHTML=`<b>${r.kind} lido:</b> ${r.v>0?"R$ "+brl(r.v):"o código não traz o valor"}${r.date?` · vence ${r.date.toLocaleDateString("pt-BR")}`:""}`};pay.addEventListener("input",rd)}
+ const acs=$("ad_cat");if(acs)acs.addEventListener("change",()=>{const nw=acs.value==="__new";$("ad_ncw").hidden=!nw;if(nw)$("ad_nc").focus()});
  const kmw=$("ad_kmw");if(kmw){const fu=()=>{const s=FUEL.test($("ad_n").value)||$("ad_cat").value==="carro"||(!$("ad_cat").value&&guess($("ad_n").value)==="carro");kmw.hidden=$("ad_lw").hidden=!s};$("ad_n").addEventListener("input",fu);$("ad_cat").addEventListener("change",fu);fu()}
  const fh=$("fatHint");if(fh){const up=()=>{const c=D.cards[+$("ad_c").value];if(!c)return;$("ad_fnw").hidden=c.fn!=="mult";const deb=isDeb(c)||(c.fn==="mult"&&$("ad_fnc").value==="deb");$("ad_p").closest("label").hidden=deb;fh.textContent=deb?`No débito: sai direto da conta em ${MESES[mes].toLowerCase()}.`:`Entra na fatura de ${kLabel(fatK(c,day($("ad_dc").value))).toLowerCase()} (o ${c.bk} fecha dia ${c.fecha||1}).`};$("ad_c").onchange=up;$("ad_dc").oninput=up;$("ad_fnc").onchange=up;up()}
 }
@@ -1078,6 +1107,7 @@ function delItem(){
 $("addOv").onclick=e=>{if(e.target===$("addOv"))closeForm()};
 $("addForm").onsubmit=e=>{
  e.preventDefault();
+ if(tipo==="cats"){saveCats();return}
  if(tipo==="metas"){const M={};CATS.forEach(([id])=>{const el=$("mt_"+id);if(el){const v=num(el.value);if(v>0)M[id]=v}});D.metas=M;addLog("atualizou as metas");closeForm();toast("Metas salvas");renderAll();return}
  if(tipo==="import"){doImport();return}
  if(tipo==="ocr"){doOCR();return}
@@ -1094,6 +1124,7 @@ $("addForm").onsubmit=e=>{
  if(tipo==="cartao"){const cd=ED?null:D.cards[+g("ad_c")||0];if(cd&&(isDeb(cd)||(cd.fn==="mult"&&g("ad_fnc")==="deb"))){Object.assign(it,{n,v,d:day(g("ad_dc")),k:K(),cid:cd.id});D.dia.push(it)}else{const p=Math.max(+g("ad_p")||1,1);Object.assign(it,{n,v:v/p,p});if(!ED){it.k=fatK(cd,day(g("ad_dc")));it.dd=day(g("ad_dc"));it.kc=K();cd.lanc.push(it)}}}
  if(tipo==="vale"){Object.assign(it,{n,v,d});if(!ED){it.k=K();D.vales[+g("ad_vv")||0].lanc.push(it)}}
  if(tipo==="valecard")Object.assign(it,{emp:n,tipo:g("ad_vt"),dono:g("ad_vd"),dia:d,recarga:v});
+ if(g("ad_cat")==="__new"){const nn=g("ad_nc").trim();if(!nn){toast("Escreva o nome da nova categoria");return}$("ad_cat").innerHTML+=`<option value="${newCat(nn)}" selected></option>`}
  if(["conta","dia","cartao","vale"].includes(tipo)){const ct=g("ad_cat");if(ct)it.cat=ct;else delete it.cat;const lk=nkey(n);if(ct&&lk){D.learn=D.learn||{};if(ct!==guess0(n))D.learn[lk]=ct;else delete D.learn[lk]}}
  if($("ad_bco")&&(tipo==="dia"||tipo==="entrada")){const bc=g("ad_bco");if(bc)it.bco=bc;else delete it.bco}
  if($("ad_km")&&!$("ad_kmw").hidden){const km=parseInt(g("ad_km"),10)||0,l=num(g("ad_l"));if(km)it.km=km;else delete it.km;if(l)it.l=l;else delete it.l}
@@ -2119,6 +2150,7 @@ const HELP=[
  ["Dividir as contas da casa","casa",["Em Nossa casa, escolha a regra: Partes iguais ou Proporcional à renda.","Toque no nome ao lado de cada conta para trocar quem paga.","Para uma conta ter regra própria, toque no ✎ dela e escolha em Divisão desta conta."],"Dependentes, marcados em Nossa renda, não entram na divisão."],
  ["Fazer o acerto via Pix","casa",["Na Visão geral ou em Nossa casa, veja quem devolve quanto para quem.","Depois de fazer o Pix, toque em Marcar como pago.","O acerto vai para o histórico do mês."],""],
  ["Lançar algo que só você vê","visao",["Ao adicionar uma conta, um gasto ou uma entrada, marque Só eu vejo.","O lançamento aparece só para você, com a etiqueta só você, e entra no seu Saldo previsto."],"Essa opção aparece quando você está conectado à sua conta."],
+ ["Criar e organizar categorias","fluxo",["Em Fluxo de caixa, toque em Categorias.","Em Nova categoria, escreva o nome, as palavras que o app deve reconhecer (ex.: petz, cobasi, ração), a meta do mês e se é essencial. Toque em Criar categoria.","Na mesma tela, troque o nome das categorias do app ou esconda as que não usa e toque em Salvar.","Também dá para criar na hora de lançar: na lista Categoria, escolha + Nova categoria…"],"Ao excluir uma categoria sua, os lançamentos dela voltam para a categoria automática."],
  ["Categorias e metas","fluxo",["Em Fluxo de caixa, veja Gastos por categoria e a comparação com o mês anterior.","Toque em Metas para definir um limite por mês em cada categoria.","O sino avisa quando uma categoria passa de 80% da meta."],"Para trocar a categoria de um lançamento, toque no ✎ dele."],
  ["Reserva e objetivos","reserva",["Em Nossa reserva, defina a meta e lance os aportes.","Marcar a conta Guardar na reserva como paga já soma no saldo da reserva.","Em Planejamento, crie objetivos com prazo, como uma viagem, e toque em Guardar para juntar dinheiro."],""],
  ["Simular uma compra antes de fazer","plano",["Abra Planejamento.","Em Simular uma compra, informe o valor, as parcelas e o cartão.","A tabela mostra como fica a sobra de cada mês com a compra."],""],
@@ -2157,7 +2189,7 @@ function route(){
 }
 addEventListener("hashchange",route);
 function renderMonth(){$("month").innerHTML=`${MESES[mes]} <span>${ano}</span>`}
-function renderAll(){if(!D)return;save();renderSide();renderMonth();renderHello();renderHoje();renderBancos();renderResumo();renderKpis();renderAviso();renderSemana();renderOnde();renderGastar();renderConq();renderSaldo();renderContas();renderDiv();renderCart();renderVline();renderMor();renderObra();renderSaude();renderBell();if(V[cur])V[cur]()}
+function renderAll(){if(!D)return;syncCats();save();renderSide();renderMonth();renderHello();renderHoje();renderBancos();renderResumo();renderKpis();renderAviso();renderSemana();renderOnde();renderGastar();renderConq();renderSaldo();renderContas();renderDiv();renderCart();renderVline();renderMor();renderObra();renderSaude();renderBell();if(V[cur])V[cur]()}
 const goM=n=>{[ano,mes]=mAdd(ano,mes,n);selDay=null;renderAll()};
 $("prev").onclick=()=>goM(-1);$("next").onclick=()=>goM(1);
 
