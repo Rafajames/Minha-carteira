@@ -762,6 +762,41 @@ function catSection(){
  <div class="cgrid2">${rows||`<div class="note">Nenhum gasto neste mês.</div>`}</div>
  <div class="note">Soma contas a pagar, gastos do dia e compras no cartão e no vale. A fatura de um cartão cadastrado não entra de novo, porque as compras dele já são contadas.</div></section>`;
 }
+
+/* ===== análises: para onde vai o dinheiro, alertas e gastos por pessoa ===== */
+const CCOL=["#2563eb","#16a34a","#f59e0b","#db2777","#7c3aed","#0891b2","#ea580c"];
+const spark=v=>{const mx=Math.max(...v,1),w=84,h=24,st=w/(v.length-1||1),pt=v.map((x,i)=>`${(i*st).toFixed(1)},${(h-2-x/mx*(h-4)).toFixed(1)}`).join(" ");return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true"><polyline points="${pt}" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linejoin="round"/></svg>`};
+const catMes=k=>{const c=byCat(gastos(k));delete c.fatura;delete c.reserva;return c};
+function whereSection(){
+ const cur=catMes(),tot=Object.values(cur).reduce((a,b)=>a+b,0),E=sum(flowTx().filter(t=>t.v>0));
+ if(!tot)return "";
+ const ids=Object.keys(cur).filter(id=>cur[id]>0).sort((a,b)=>cur[b]-cur[a]),top=ids.slice(0,7),rest=ids.slice(7).reduce((a,id)=>a+cur[id],0);
+ const segs=[...top.map((id,i)=>({l:CATN(id),v:cur[id],c:CCOL[i]})),...(rest?[{l:"Outras",v:rest,c:"#94a3b8"}]:[])];
+ const hist=[5,4,3,2,1,0].map(i=>catMes(kPlus(-i)));
+ const bar=segs.map(x=>{const q=pct(x.v,tot);return `<div class="sg" style="flex:${x.v};background:${x.c};--pc:${x.c}" title="${esc(x.l)} ${q}%">${q>=8?q+"%":""}</div>`}).join("");
+ const h100=top.slice(0,4).map(id=>`<b>R$ ${Math.round(cur[id]/tot*100)}</b> ${esc(CATN(id).toLowerCase())}`).join(", ");
+ const rows=segs.map((x,i)=>{const id=top[i];return `<div class="pr" style="align-items:center;margin-top:8px;gap:8px"><span style="flex:1"><i class="dot" style="background:${x.c}"></i>${esc(x.l)}</span><span style="min-width:62px;text-align:right">${pct(x.v,tot)}% dos gastos</span><span style="min-width:74px;text-align:right">${E?pct(x.v,E)+"% da receita":""}</span><b style="min-width:92px;text-align:right">R$ ${brl(x.v)}</b>${id?spark(hist.map(h=>h[id]||0)):"<span style='width:84px'></span>"}</div>`}).join("");
+ return `<section class="c box"><div class="h">Para onde vai o dinheiro <small>· ${MESES[mes].toLowerCase()}</small></div>
+ <div class="split" style="margin-top:12px;min-height:34px">${bar}</div>
+ <div class="note">De cada R$ 100 que saem: ${h100}${ids.length>4?" e o resto em outras categorias":""}.</div>${rows}
+ <div class="note">A linha no fim de cada categoria mostra a tendência dos últimos 6 meses. Fatura de cartão e reserva não entram na conta.</div></section>`;
+}
+function alertSection(){
+ const cur=catMes(),L=[],nowM=isNow(),dim=new Date(ano,mes+1,0).getDate(),dn=new Date().getDate();
+ const prevs=[1,2,3].map(i=>kPlus(-i)).filter(hasData).map(catMes);
+ if(prevs.length){Object.keys(cur).forEach(id=>{const avg=prevs.reduce((a,c)=>a+(c[id]||0),0)/prevs.length;if(avg>0&&cur[id]>avg*1.3&&cur[id]-avg>=50)L.push(`<b>${esc(CATN(id))}</b> está R$ ${brl(cur[id]-avg)} acima da média dos últimos ${prevs.length} meses (R$ ${brl(avg)}).`)})}
+ if(nowM&&dn>=5){const pr=Object.keys(cur).filter(id=>cur[id]>0).sort((a,b)=>cur[b]-cur[a]).slice(0,3).map(id=>`${esc(CATN(id))} R$ ${brl(cur[id]/dn*dim)}`);if(pr.length)L.push(`No ritmo atual, o mês fecha assim: ${pr.join(" · ")}.`)}
+ const ly=kPlus(-12);if(hasData(ly)){const a=Object.values(cur).reduce((x,y)=>x+y,0),b=Object.values(catMes(ly)).reduce((x,y)=>x+y,0);if(b)L.push(`Em relação a ${MESES[mes].toLowerCase()} do ano passado, os gastos ${a>=b?"subiram":"caíram"} ${Math.abs(pct(a-b,b))}% (R$ ${brl(b)} → R$ ${brl(a)}).`)}
+ const M=D.metas||{},ids=Object.keys(M).filter(id=>M[id]>0);
+ if(ids.length){let st=0;for(let i=1;i<=12;i++){const k=kPlus(-i);if(!hasData(k))break;const c=catMes(k);if(ids.some(id=>(c[id]||0)>M[id]))break;st++}if(st>=2)L.push(`🏆 ${st} meses seguidos dentro de todas as metas.`)}
+ return `<section class="c box"><div class="h">Avisos e previsões</div>${L.length?L.map(x=>`<div class="note" style="margin-top:8px">${x}</div>`).join(""):`<div class="note">Nada fora do normal por enquanto. Os avisos aparecem quando há meses anteriores para comparar.</div>`}</section>`;
+}
+function pessoaSection(){
+ const G=gastos().filter(x=>!["fatura","reserva"].includes(x.cat)),ps=D.people;
+ if(ps.length<2||!G.length)return "";
+ const by=id=>sum(G.filter(x=>x.by===id)),ids=[...new Set(G.map(x=>x.cat))].sort((a,b)=>sum(G.filter(x=>x.cat===b))-sum(G.filter(x=>x.cat===a)));
+ return `<section class="c box"><div class="h">Gastos por pessoa</div><div class="tw"><table class="tbl"><thead><tr><th>Categoria</th>${ps.map(p=>`<th>${esc(N(p.id))}</th>`).join("")}</tr></thead><tbody>${ids.map(id=>`<tr><td>${esc(CATN(id))}</td>${ps.map(p=>{const v=sum(G.filter(x=>x.cat===id&&x.by===p.id));return `<td>${v?"R$ "+brl(v):"—"}</td>`}).join("")}</tr>`).join("")}<tr><td><b>Total</b></td>${ps.map(p=>`<td><b>R$ ${brl(by(p.id))}</b></td>`).join("")}</tr></tbody></table></div><div class="note">Conta quem lançou cada gasto.</div></section>`;
+}
 function metaAlerts(){const c=byCat(gastos(NOWK)),M=D.metas||{};return Object.keys(M).filter(id=>M[id]>0&&(c[id]||0)>=.8*M[id]).map(id=>({id,m:M[id],v:c[id]||0}))}
 function newCat(n,kw,meta,ess){const C=D.cats;const ex=CATS.find(c=>c[1].toLowerCase()===n.toLowerCase());if(ex)return ex[0];const id="c"+uid().slice(1);C.custom.push({id,n,kw:kw||""});if(meta>0){D.metas=D.metas||{};D.metas[id]=meta}if(ess){D.ess=D.ess||{...ESS0};D.ess[id]=1}addLog(`criou a categoria ${n}`);syncCats();return id}
 function openCats(){
@@ -956,7 +991,7 @@ function pFluxo(){
  <form class="c box" id="iniF" hidden><div class="h">Com quanto ${MESES[mes].toLowerCase()} começou?</div><div class="note">Use o dinheiro que você tinha no dia 1, sem contar o salário recebido no fim do mês anterior (ele já entra como entrada deste mês). Os meses seguintes partem desse valor.</div><div class="gact"><input class="gin" id="iniV" inputmode="decimal" value="${brl(st.v)}" aria-label="Valor no começo do mês"><button class="btnp">Salvar</button>${st.anchor===K()?`<button type="button" class="btn" id="iniA">Voltar ao cálculo automático</button>`:""}</div></form>
  <div class="pg g2"><section class="c box"><div class="h">Por semana</div><div class="leg2"><span><i class="dot" style="background:var(--green)"></i>Receitas</span><span><i class="dot" style="background:var(--blue)"></i>Despesas</span></div><svg class="chart" viewBox="0 0 600 212">${g}</svg></section>
  <section class="c box"><div class="h">Lançamentos</div><div class="seg" style="grid-template-columns:repeat(3,1fr)">${[["todas","Todos"],["ent","Receitas"],["sai","Despesas"]].map(([k,l])=>`<button data-f="${k}" class="${fF===k?"on":""}">${l}</button>`).join("")}</div>${bks.length?`<label class="field" style="margin-top:10px">Banco<select id="fBk"><option value="">Todos os bancos</option>${bks.map(b=>`<option${b===fB?" selected":""}>${esc(b)}</option>`).join("")}</select></label>${fB?`<div class="note">Em ${esc(fB)}: entrou R$ ${brl(sum(list.filter(t=>t.v>0)))} · saiu R$ ${brl(-sum(list.filter(t=>t.v<0)))}</div>`:""}`:""}
- <div class="list" style="max-height:440px;margin-top:8px">${fF!=="ent"&&!fB?consRows(K()):""}${list.length?list.map(t=>row(t.v>0?"+":"−",t.v>0?"in":"out",esc(t.n)+(t.x?tagp(t.x):""),`dia ${two(t.d)} · ${t.cat}${t.x&&t.v<0?" · "+CATN(catOf(t.x.b)):""}${t.bco?" · "+esc(t.bco):""}`,`${t.v>0?"+":"−"} R$ ${brl(Math.abs(t.v))}`,t.v>0?"pos":"",t.id)).join(""):`<div class="note">Nenhum lançamento neste mês.</div>`}</div></section></div>`+confSection()+catSection()+essSection()+yearSection();
+ <div class="list" style="max-height:440px;margin-top:8px">${fF!=="ent"&&!fB?consRows(K()):""}${list.length?list.map(t=>row(t.v>0?"+":"−",t.v>0?"in":"out",esc(t.n)+(t.x?tagp(t.x):""),`dia ${two(t.d)} · ${t.cat}${t.x&&t.v<0?" · "+CATN(catOf(t.x.b)):""}${t.bco?" · "+esc(t.bco):""}`,`${t.v>0?"+":"−"} R$ ${brl(Math.abs(t.v))}`,t.v>0?"pos":"",t.id)).join(""):`<div class="note">Nenhum lançamento neste mês.</div>`}</div></section></div>`+confSection()+whereSection()+alertSection()+catSection()+pessoaSection()+essSection()+yearSection();
  on("#v-fluxo [data-f]","click",b=>{fF=b.dataset.f;pFluxo()});if($("fBk"))$("fBk").onchange=e=>{fB=e.target.value;pFluxo()};
  bindControle();bindConf();$("metasB").onclick=openMetas;$("catsB").onclick=openCats;
  $("iniB").onclick=e=>{e.preventDefault();$("iniF").hidden=!$("iniF").hidden;if(!$("iniF").hidden)$("iniV").focus()};
