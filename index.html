@@ -1101,7 +1101,7 @@ function gcal(b){
 function openForm(t,ed){
  tipo=t||tipo;ED=ed||null;$("addPop").hidden=true;
  const it=ED?ED.it:{},f=$("addForm"),nowD=isNow()?new Date().getDate():1,cloud=MODE==="cloud";
- const bcoF=x=>bkList().length?`<label class="field">Banco (opcional)<select id="ad_bco"><option value="">—</option>${bkList().map(b=>`<option${x.bco===b?" selected":""}>${esc(b)}</option>`).join("")}</select></label>`:"";
+ const bcoF=x=>`<label class="field">Banco (opcional)<select id="ad_bco"><option value="">—</option>${bkList().map(b=>`<option${x.bco===b?" selected":""}>${esc(b)}</option>`).join("")}<option value="__new">+ Outro banco…</option></select></label><label class="field" id="ad_nbw" hidden>Nome do banco<input id="ad_nb" placeholder="Ex.: Inter" maxlength="30"></label>`;
  const fuelF=x=>`<label class="field" id="ad_kmw" hidden>Km do painel (opcional)<input id="ad_km" type="number" min="0" value="${+x.km||""}" placeholder="41230"></label><label class="field" id="ad_lw" hidden>Litros (opcional)<input id="ad_l" inputmode="decimal" value="${x.l?brl(x.l):""}" placeholder="26,80"></label>`;
  const fld=(id,l,attr,full)=>`<label class="field${full?" full":""}">${l}<input id="${id}" ${attr}></label>`;
  const chk=(id,l,v)=>`<label class="chk full"><input type="checkbox" id="${id}"${v?" checked":""}>${l}</label>`;
@@ -1133,6 +1133,7 @@ function openForm(t,ed){
  if($("addDel"))$("addDel").onclick=e=>{const b=e.currentTarget;if(!b.dataset.ok){b.dataset.ok=1;b.textContent="Toque de novo para excluir";return}delItem()};
  const pay=$("ad_pay");if(pay){const rd=()=>{const r=readPay(pay.value),h=$("payHint");if(!pay.value.trim()){h.textContent="";return}if(!r){h.textContent="Código guardado. Não consegui ler o valor; preencha à mão.";return}if(r.v>0)$("ad_v").value=brl(r.v);if(r.date)$("ad_d").value=r.date.getDate();h.innerHTML=`<b>${r.kind} lido:</b> ${r.v>0?"R$ "+brl(r.v):"o código não traz o valor"}${r.date?` · vence ${r.date.toLocaleDateString("pt-BR")}`:""}`};pay.addEventListener("input",rd)}
  const rpS=$("ad_rp");if(rpS)rpS.onchange=()=>{$("ad_enw").hidden=$("ad_enh").hidden=!rpS.value};
+ const abk=$("ad_bco");if(abk)abk.onchange=()=>{const nw=abk.value==="__new";$("ad_nbw").hidden=!nw;if(nw)$("ad_nb").focus()};
  const acs=$("ad_cat");if(acs)acs.addEventListener("change",()=>{const nw=acs.value==="__new";$("ad_ncw").hidden=!nw;if(nw)$("ad_nc").focus()});
  const kmw=$("ad_kmw");if(kmw){const fu=()=>{const s=FUEL.test($("ad_n").value)||$("ad_cat").value==="carro"||(!$("ad_cat").value&&guess($("ad_n").value)==="carro");kmw.hidden=$("ad_lw").hidden=!s};$("ad_n").addEventListener("input",fu);$("ad_cat").addEventListener("change",fu);fu()}
  const fh=$("fatHint");if(fh){const up=()=>{const c=D.cards[+$("ad_c").value];if(!c)return;$("ad_fnw").hidden=c.fn!=="mult";const deb=isDeb(c)||(c.fn==="mult"&&$("ad_fnc").value==="deb");$("ad_p").closest("label").hidden=deb;fh.textContent=deb?`No débito: sai direto da conta em ${MESES[mes].toLowerCase()}.`:`Entra na fatura de ${kLabel(fatK(c,day($("ad_dc").value))).toLowerCase()} (o ${c.bk} fecha dia ${c.fecha||1}).`};$("ad_c").onchange=up;$("ad_dc").oninput=up;$("ad_fnc").onchange=up;up()}
@@ -1171,7 +1172,7 @@ $("addForm").onsubmit=e=>{
  if(tipo==="valecard")Object.assign(it,{emp:n,tipo:g("ad_vt"),dono:g("ad_vd"),dia:d,recarga:v});
  if(g("ad_cat")==="__new"){const nn=g("ad_nc").trim();if(!nn){toast("Escreva o nome da nova categoria");return}$("ad_cat").innerHTML+=`<option value="${newCat(nn)}" selected></option>`}
  if(["conta","dia","cartao","vale"].includes(tipo)){const ct=g("ad_cat");if(ct)it.cat=ct;else delete it.cat;const lk=nkey(n);if(ct&&lk){D.learn=D.learn||{};if(ct!==guess0(n))D.learn[lk]=ct;else delete D.learn[lk]}}
- if($("ad_bco")&&(tipo==="dia"||tipo==="entrada")){const bc=g("ad_bco");if(bc)it.bco=bc;else delete it.bco}
+ if($("ad_bco")&&(tipo==="dia"||tipo==="entrada")){let bc=g("ad_bco");if(bc==="__new"){bc=g("ad_nb").trim();if(!bc){toast("Escreva o nome do banco");return}D.bancos=D.bancos||[];if(!bkList().some(b=>b.toLowerCase()===bc.toLowerCase()))D.bancos.push(bc);else bc=bkList().find(b=>b.toLowerCase()===bc.toLowerCase())}if(bc)it.bco=bc;else delete it.bco}
  if($("ad_km")&&!$("ad_kmw").hidden){const km=parseInt(g("ad_km"),10)||0,l=num(g("ad_l"));if(km)it.km=km;else delete it.km;if(l)it.l=l;else delete it.l}
  if(tipo==="casa"){Object.assign(it,{n,v,d,q:g("ad_q"),mor:c("ad_mor"),obra:c("ad_obra"),est:c("ad_est")});const rg=g("ad_rg");if(rg)it.regra=rg;else delete it.regra}
  if(tipo==="card")Object.assign(it,{fn:g("ad_fn")||"cred",bk:n,nm:(g("ad_nm").trim()||"Cartão").toUpperCase(),venc:d,lim:v,fecha:day(g("ad_fe"))});
@@ -1566,7 +1567,7 @@ function detBank(txt,fname){
  const org=/<ORG>([^<\r\n]+)/i.exec(txt),hit=s=>{const m=BKRE.exec(s||"");return m?titleC(m[1].replace(/^itau$/i,"Itaú")):""};
  return hit(org&&org[1])||hit(fname)||hit(txt.slice(0,400))||"";
 }
-const bkList=()=>[...new Set([...(D.bancos||[]),...D.people.map(p=>p.bco).filter(Boolean)])];
+const bkList=()=>[...new Set([...(D.bancos||[]),...D.people.map(p=>p.bco).filter(Boolean),...D.cards.map(c=>c.bk).filter(Boolean)])];
 function classify(r,v,bco){
  const k=mk(r.y,r.m),n=r.n,low=n.toLowerCase(),nk=nkey(n),mine=ME(),op=ownPair(rdt(r),v,n,bco);
  if(op)return {kind:"own",lbl:`transferência entre as suas contas (${bco||"este banco"} ↔ ${op.b})`,on:false,pair:op};
