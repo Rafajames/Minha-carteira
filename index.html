@@ -127,6 +127,7 @@ button.chipw:hover{filter:brightness(.95)}
 .others{color:var(--muted);font-size:11px;font-weight:600;letter-spacing:.08em;padding:16px 0 4px}
 .bill{display:flex;align-items:center;gap:16px;padding:8px 0;border-bottom:1px solid var(--line);width:100%;text-align:left}
 .bill:last-child{border:0}
+.mi.est{color:var(--muted);font-style:italic}
 .mi{font:inherit;font-size:12px;color:var(--fg);background:var(--card);border:1px solid var(--line);border-radius:8px;padding:6px;min-width:0;text-align:right}
 .ck{width:24px;height:24px;border:1.5px solid var(--soft);border-radius:50%;flex:none;display:grid;place-items:center}
 .bill:hover .ck{border-color:var(--green)}
@@ -1708,6 +1709,7 @@ function cpListaOk(it){
    a.forEach(j=>{used.add(j);const nn=CP.its[j].n;if(!tm(li.n,nn)&&ak(li.n)&&ak(nn)){const ar=D.apit[ak(li.n)]=D.apit[ak(li.n)]||[];if(!ar.includes(ak(nn))){ar.push(ak(nn));if(ar.length>20)ar.shift()}}});
    li.s=2;li.ls=(li.ls||[]).concat(a.map(j=>ln(CP.its[j])));const v=tot(li.ls),f=qf(li.ls);if(v)li.v=v;if(li.q==null&&f.q)li.q=f.q});
   CP.its.forEach((x,j)=>{if(!used.has(j))L.its[uid()]=mk(x.n,[x],{x:1})})}
+ if(!L.mk&&(CP.cnpj||CP.nome))L.mk=CP.cnpj||ak(CP.nome);
  if(it)L.lc=[...(L.lc||[]),it.id]}
 function cpLs(){
  const el=$("cpLs");if(!CP.its||!CP.its.length){el.hidden=true;el.innerHTML="";return}
@@ -1819,6 +1821,19 @@ function cpOpen(){
  $("nfS").textContent="Escolha como ler o comprovante."}
 /* lista de compras */
 let LSEL=null;
+const sk=x=>x.cnpj||ak(x.n||""),hPrecos=()=>cpAll().filter(x=>x.its&&x.its.length).sort((a,b)=>cpDt(b)-cpDt(a)),
+ hDm=x=>{const d=cpDt(x);return two(d.getDate())+"/"+two(d.getMonth()+1)};
+function hAchar(nome,loja,excl){const ap=(D.apit||{})[ak(nome)]||[];let outro=null;
+ for(const x of hPrecos()){if(excl&&excl.includes(x.id))continue;const l=x.its.find(i=>i.v&&(tm(nome,i.n)||ap.includes(ak(i.n))));if(!l)continue;if(!loja||sk(x)===loja)return{l,x,mesmo:true};if(!outro)outro={l,x,mesmo:false}}
+ return outro}
+function hEst(x,H){const l=H.l;if(/^KG/i.test(l.un||""))return l.v;const u=l.pu||(l.v/(l.q||1));return Math.round(u*(x.q||1)*100)/100}
+function hTxt(H,L){const l=H.l,kg=/^KG/i.test(l.un||"");return `Última vez: ${kg?`R$ ${brl(l.pu)}/kg · pago R$ ${brl(l.v)}`:`R$ ${brl(l.pu||l.v)}`} · ${hDm(H.x)}${H.mesmo&&L.mk?"":" · "+esc(H.x.n)}`}
+function lInfo(x,L){let vv=x.s===2?x.v:x.vp!=null?x.vp:x.v,est=0,hint="";
+ if(x.s!==2){const H=hAchar(x.n,L.mk,null);if(H){hint=hTxt(H,L);if(vv==null){vv=hEst(x,H);est=1}}}
+ else{const c=(x.ls||[])[0],H=c&&c.pu?hAchar(x.n,L.mk,L.lc):null;if(H&&H.l.pu){const df=Math.round((c.pu-H.l.pu)*100)/100;hint=df>0?`▲ +R$ ${brl(df)} vs ${hDm(H.x)}`:df<0?`▼ −R$ ${brl(-df)} vs ${hDm(H.x)}`:`= igual a ${hDm(H.x)}`}}
+ return{vv,est,hint}}
+const lmkOpts=L=>{const m={};hPrecos().forEach(x=>{m[sk(x)]=x.n});if(L.mk&&!m[L.mk])m[L.mk]="Mercado atual";
+ return `<option value="">Não definido</option>`+Object.entries(m).map(([k,n])=>`<option value="${esc(k)}"${k===L.mk?" selected":""}>${esc(n)}</option>`).join("")};
 const lfpOpts=L=>{const cu=L.fp?(L.fp==="cred"?"c:"+L.fr:L.fp==="vale"?"v:"+L.fr:L.fp):"",o=(v,t)=>`<option value="${v}"${v===cu?" selected":""}>${t}</option>`;
  return o("","Não definido")+o("pix","Pix")+o("deb","Débito")+o("din","Dinheiro")+D.cards.filter(c=>!isDeb(c)).map(c=>o("c:"+c.id,"Crédito · "+esc(c.bk+" "+c.nm))).join("")+(D.vales||[]).map(v=>o("v:"+v.id,"Vale · "+esc(v.emp)+" · "+vtl(v.tipo).toLowerCase())).join("")};
 function pLista(){
@@ -1837,13 +1852,14 @@ function pLista(){
   on("[data-ld]","click",b=>{const und=snap(),l=D.listas[b.dataset.ld];delete D.listas[b.dataset.ld];toast(`${l?l.n:"Lista"} excluída`,und);renderAll()});return}
  const its=Object.entries(cur.its||{}).map(([id,x])=>({id,...x})).sort((a,b)=>(a.s-b.s)||((a.t||0)-(b.t||0))),ok=its.filter(x=>x.s===1),
  lc=(cur.lc||[]).map(i=>cpAll().find(x=>x.id===i)).filter(Boolean),
- tot=Math.round(its.reduce((r,x)=>r+(+(x.s===2?x.v:x.vp!=null?x.vp:x.v)||0),0)*100)/100;
+ inf=its.map(x=>lInfo(x,cur)),tot=Math.round(inf.reduce((r,i)=>r+(+i.vv||0),0)*100)/100;
  $("v-lista").innerHTML=hd+
  `<section class="c box"><button type="button" class="btn" id="lBk">‹ Listas</button><div class="h" style="margin-top:8px">${esc(cur.n)} <small>· ${lSt(cur,ok.length,its.filter(x=>x.s===2).length)}</small></div>
+ <label class="field">Mercado<select id="lmk">${lmkOpts(cur)}</select></label>
  <label class="field">Como vai pagar<select id="lfp">${lfpOpts(cur)}</select></label>
  <form id="fli" class="form f2"><label class="field">Item<input id="lin" required placeholder="Ex.: Café" autocomplete="off"></label><button class="btnp">Adicionar</button></form>
- <div style="margin-top:8px">${its.length?its.map(x=>{const vv=x.s===2?x.v:x.vp!=null?x.vp:x.v,sm=[x.s===2?"Pago"+(x.v?" · R$ "+brl(x.v):"")+(x.x?" · extra":"")+(x.ls&&x.ls.length&&(x.ls.length>1||nz(x.ls[0].n)!==nz(x.n))?" · nota: "+x.ls.map(l=>l.n).join("; "):""):x.s===1?"Escolhido":"",x.by&&x.by!==me&&D.people.some(p=>p.id===x.by)?"pedido por "+N(x.by):""].filter(Boolean).join(" · ");return `<div class="bill${x.s?" done":""}"><button class="tg" data-li="${x.id}"><span class="ck"></span><span class="nm">${esc(x.n)}${sm?`<small>${sm}</small>`:""}</span></button><input class="mi" style="width:46px" inputmode="decimal" placeholder="Qtd" aria-label="Quantidade de ${esc(x.n)}" data-lq="${x.id}" value="${x.q||""}"><input class="mi" style="width:68px" inputmode="decimal" placeholder="R$" aria-label="Valor de ${esc(x.n)}" data-lv="${x.id}" value="${vv?brl(vv):""}"><button class="ed" data-lx="${x.id}" aria-label="Remover ${esc(x.n)}">×</button></div>`}).join(""):`<div class="note">A lista está vazia.</div>`}</div>
- ${tot?`<div class="note">${its.every(x=>x.s===2)?"Total pago":"Total previsto"}: R$ ${brl(tot)}</div>`:""}
+ <div style="margin-top:8px">${its.length?its.map((x,ix)=>{const I=inf[ix],vv=I.vv,sm=[x.s===2?"Pago"+(x.v?" · R$ "+brl(x.v):"")+(x.x?" · extra":"")+(x.ls&&x.ls.length&&(x.ls.length>1||nz(x.ls[0].n)!==nz(x.n))?" · nota: "+x.ls.map(l=>l.n).join("; "):""):x.s===1?"Escolhido":"",x.by&&x.by!==me&&D.people.some(p=>p.id===x.by)?"pedido por "+N(x.by):"",I.hint].filter(Boolean).join(" · ");return `<div class="bill${x.s?" done":""}"><button class="tg" data-li="${x.id}"><span class="ck"></span><span class="nm">${esc(x.n)}${sm?`<small>${sm}</small>`:""}</span></button><input class="mi" style="width:46px" inputmode="decimal" placeholder="Qtd" aria-label="Quantidade de ${esc(x.n)}" data-lq="${x.id}" value="${x.q||""}"><input class="mi${I.est?" est":""}" style="width:68px" inputmode="decimal" placeholder="R$" aria-label="Valor de ${esc(x.n)}" data-lv="${x.id}" value="${vv?brl(vv):""}"><button class="ed" data-lx="${x.id}" aria-label="Remover ${esc(x.n)}">×</button></div>`}).join(""):`<div class="note">A lista está vazia.</div>`}</div>
+ ${tot?`<div class="note">${its.every(x=>x.s===2)?"Total pago":inf.some(i=>i.est)?"Total estimado":"Total previsto"}: R$ ${brl(tot)}</div>`:""}
  ${lc.length?`<div class="note">Compra ligada: ${lc.map(x=>esc(x.n)+" · R$ "+brl(cpVal(x))).join(" · ")}</div>`:""}
  <div class="nfacts"><button type="button" class="btnp" id="lNf">Ler a nota desta lista</button><button type="button" class="btn" id="lDel">Excluir lista</button>${cur.enc?"":`<button type="button" class="btn" id="lEnc">Encerrar lista</button>`}</div></section>
  ${ok.length?`<section class="c box"><div class="h">Fechar a compra <small>· ${ok.length} ${ok.length>1?"itens escolhidos":"item escolhido"}</small></div><form id="ffc" class="form f3"><label class="field">Valor pago (R$)<input id="fcv" inputmode="decimal" required placeholder="0,00"></label><label class="field">Lançar como<select id="fcc"><option value="-1">Gasto do dia</option>${(D.vales||[]).map((v,i)=>`<option value="v${i}">No vale ${esc(v.emp)}</option>`).join("")}${D.cards.map((c,i)=>`<option value="${i}">Compra no ${esc(c.bk)}</option>`).join("")}</select></label><button class="btnp">Fechar compra</button></form><div class="note">Os itens escolhidos viram pagos e a compra entra em Mercado. Se você tem a nota, prefira Ler a nota desta lista.</div></section>`:""}`;
@@ -1854,6 +1870,7 @@ function pLista(){
   L.enc=1;LSEL=null;addLog(`encerrou a lista ${L.n}`);toast(msg,und);renderAll()};
  $("lDel").onclick=()=>{const und=snap();delete D.listas[cur.id];LSEL=null;toast("Lista excluída",und);renderAll()};
  $("fli").onsubmit=e=>{e.preventDefault();const n=$("lin").value.trim();if(!n)return;D.listas[cur.id].its[uid()]={n:n.replace(/^./,c=>c.toUpperCase()),s:0,t:now(),by:me};renderAll();const i=$("lin");if(i)i.focus()};
+ $("lmk").onchange=e=>{const L=D.listas[cur.id];if(e.target.value)L.mk=e.target.value;else delete L.mk;renderAll()};
  $("lfp").onchange=e=>{const v=e.target.value,L=D.listas[cur.id];if(!v){delete L.fp;delete L.fr}else if(v[1]===":"){L.fp=v[0]==="c"?"cred":"vale";L.fr=v.slice(2)}else{L.fp=v;delete L.fr}renderAll()};
  on("[data-lq]","change",b=>{const x=D.listas[cur.id].its[b.dataset.lq];if(!x)return;const q=num(b.value);if(q>0)x.q=q;else delete x.q;renderAll()});
  on("[data-lv]","change",b=>{const x=D.listas[cur.id].its[b.dataset.lv];if(!x)return;const v=num(b.value),k=x.s===2?"v":"vp";if(v>0)x[k]=v;else delete x[k];renderAll()});

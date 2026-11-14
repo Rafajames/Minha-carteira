@@ -1,7 +1,7 @@
 /* Minha Carteira — uso sem internet.
    Guarda o app no aparelho. Os dados continuam no Firebase (que tem cache próprio)
    ou no aparelho, no modo sem conta. Suba a versão abaixo ao mudar a lista de arquivos. */
-const V = "mc-v7";
+const V = "mc-v8";
 const SHELL = ["./", "index.html", "manifest.webmanifest", "icons/logo-light.png", "icons/logo-dark.png", "icons/icon-192.png", "icons/icon-512.png"];
 const EXT = [
   "https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js",
