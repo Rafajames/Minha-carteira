@@ -1616,7 +1616,7 @@ function cpFp(k){CP.fp=k||"";document.querySelectorAll("#cpP button").forEach(b=
  $("cpCw").hidden=k!=="cred";$("cpC").innerHTML=D.cards.map((c,i)=>[i,c]).filter(([i,c])=>!isDeb(c)).map(([i,c])=>`<option value="${i}">${esc(c.bk)} ${esc(c.nm)}</option>`).join("")||`<option value="">Nenhum cartão de crédito</option>`;
  $("cpVw").hidden=k!=="vale";$("cpVv").innerHTML=D.vales.map((v,i)=>`<option value="${i}">${esc(v.emp)} · ${vtl(v.tipo).toLowerCase()} · saldo R$ ${brl(valeSaldo(v))}</option>`).join("")||`<option value="">Nenhum vale cadastrado</option>`}
 function cpShow(){
- $("cpF").hidden=false;$("cpN").value=CP.nome||"";$("cpD").value=CP.d||isoD(new Date());$("cpV").value=CP.v?brl(CP.v):"";cpFp(CP.fp);
+ $("cpF").hidden=false;$("cpN").value=CP.nome||"";$("cpD").value=CP.d||isoD(new Date());$("cpV").value=CP.v?brl(CP.v):"";cpFp(CP.fp);if(!CP.catSet)$("cpCat").value=(CP.ch&&!/^pix:/.test(CP.ch))||CP.fp==="vale"?"mercado":"";
  $("cpI").innerHTML=[CP.cnpj&&"CNPJ "+esc(CP.cnpj),CP.num&&"Nota nº "+CP.num+(CP.ser?" · série "+CP.ser:""),CP.url?`<a href="${esc(CP.url)}" target="_blank" rel="noopener">Abrir nota</a>`:""].filter(Boolean).join(" · ");
  const du=CP.ch?cpAll().find(x=>x.ch===CP.ch):null;$("cpDup").hidden=!du;$("cpGo").disabled=!!du;
  if(du)$("cpDup").innerHTML=`<p><b>Nota repetida.</b> Esta nota já foi lançada como ${esc(du.n)}, R$ ${brl(du.v*(du.p||1))}. Ela não será lançada de novo.</p>`}
@@ -1675,12 +1675,15 @@ function cpText(tx,info){
  if(/saldo total/i.test(tx)&&/compra no/i.test(tx))return cpExtrato(tx);
  const o=info||{};
  if(!o.ch){const m=tx.match(/(?:\d{4}\s?){10}\d{4}/),p=m?nfParse(m[0].replace(/\s/g,"")):null;if(p)Object.assign(o,{ch:p.ch,cnpj:p.cnpj,num:p.num,ser:p.ser})}
- if(!o.cnpj)o.cnpj=g(/(\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2})/);
+ const rb=tx.match(/Dados do recebedor([\s\S]*?)(?:Dados do pagador|$)/i);
+ if(rb){const n=rb[1].match(/Para\s+(.+?)\s+(?:CPF|CNPJ)\b/i),c=rb[1].match(/(\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2})/),id=tx.match(/ID\/Transa[cç][aã]o\s+(\w{20,})/i);
+  o.pix=1;o.fp=o.fp||"pix";if(n&&n[1].length<60&&!/\d/.test(n[1]))o.nome=cpNome(n[1]);if(c)o.cnpj=c[1];if(id)o.ch="pix:"+id[1]}
+ if(!o.cnpj&&!o.pix)o.cnpj=g(/(\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2})/);
  if(!o.d){const m=tx.match(/(\d{2})\/(\d{2})\/(\d{2,4})/);if(m)o.d=`${m[3].length===2?"20"+m[3]:m[3]}-${m[2]}-${m[1]}`}
  if(!o.v){const s=g(/(?:valor total|total a pagar|valor pago|valor)\s*:?\s*(?:r\$)?\s*([\d.]+,\d{2})/i);if(s)o.v=num(s)}
  if(!o.fp)o.fp=/sodexo|pluxee|alelo|ticket|voucher|alimenta[cç][aã]o|refei[cç][aã]o/i.test(tx)?"vale":/d[eé]bito/i.test(tx)?"deb":/cr[eé]dito/i.test(tx)?"cred":/\bpix\b/i.test(tx)?"pix":/dinheiro/i.test(tx)?"din":"";
  if(!o.nome){const l=tx.split(/\n/).map(x=>x.replace(/\s+/g," ").trim()).find(x=>/(super|mercad|atacad|hiper|assa[ií]|comercial|ltda)/i.test(x)&&x.length<60);if(l)o.nome=cpNome(l)}
- S.textContent=Object.values(o).some(Boolean)?"Arquivo lido. Confira os dados abaixo.":"Não achei dados nesse arquivo. Preencha à mão.";
+ delete o.pix;S.textContent=!Object.values(o).some(Boolean)?"Não achei dados nesse arquivo. Preencha à mão ou use Colar texto.":!o.v?"Li parte dos dados, mas não achei o valor. Digite o valor ou use Colar texto.":"Arquivo lido. Confira os dados abaixo.";
  cpMerge(o)}
 async function cpFile(f){
  const S=$("nfS"),nm=f.name.toLowerCase();nfStop();$("nfV").hidden=true;S.textContent="Lendo o arquivo…";
@@ -1697,17 +1700,18 @@ function cpOpen(){
  o.innerHTML=`<div class="nfbox"><div class="hhead"><b>Comprovante</b><span class="sp"></span><button class="btn" id="nfX" type="button">Fechar</button></div>
  <div class="nfacts"><button class="btnp" id="cpQ" type="button">Ler QR da nota</button><button class="btn" id="cpA" type="button">Anexar arquivo</button><button class="btn" id="cpM" type="button">Preencher à mão</button></div>
  <input type="file" id="cpFi" hidden accept="image/*,application/pdf,.pdf,.html,.htm,.mhtml,.mht">
- <video id="nfV" playsinline muted hidden></video><div class="note" id="nfS" style="margin:0"></div><div id="cpEx" class="cpf"></div>
+ <video id="nfV" playsinline muted hidden></video><div class="note" id="nfS" style="margin:0"></div><div id="cpEx" class="cpf"></div><details><summary class="note" style="margin:0">Colar texto da nota</summary><textarea id="cpT" rows="3" style="width:100%;margin:8px 0" placeholder="Abra a nota, selecione tudo, copie e cole aqui"></textarea><button class="btn" id="cpTb" type="button">Ler texto</button></details>
  <form id="cpF" class="cpf" hidden><div class="banner box warnban" id="cpDup" hidden></div>
  <label class="field">Mercado<input id="cpN" list="cpNL" autocomplete="off" placeholder="Nome do mercado"></label><datalist id="cpNL">${[...new Set(Object.values(D.lojas||{}))].map(x=>`<option value="${esc(x)}">`).join("")}</datalist><div class="note" id="cpI" style="margin:0"></div>
  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><label class="field">Data<input id="cpD" type="date"></label><label class="field">Valor total (R$)<input id="cpV" inputmode="decimal" placeholder="0,00"></label></div>
  <div><div class="note" style="margin:0">Forma de pagamento</div><div class="chips" id="cpP">${FPG.map(([k,l])=>`<button type="button" data-fp="${k}">${l}</button>`).join("")}</div></div>
  <label class="field" id="cpCw" hidden>Cartão de crédito<select id="cpC"></select></label><label class="field" id="cpVw" hidden>Vale<select id="cpVv"></select></label>
- <label class="field">Categoria<select id="cpCat">${CATS.map(([id,l])=>`<option value="${id}"${id==="mercado"?" selected":""}>${esc(l)}</option>`).join("")}</select></label>
+ <label class="field">Categoria<select id="cpCat"><option value="">Automática (pelo nome)</option>${CATS.map(([id,l])=>`<option value="${id}">${esc(l)}</option>`).join("")}</select></label>
  <button class="btnp" id="cpGo" type="submit">Lançar</button></form></div>`;
  document.body.appendChild(o);
  const close=()=>{nfStop();o.remove()};$("nfX").onclick=close;o.onclick=e=>{if(e.target===o)close()};
  $("cpQ").onclick=nfStart;$("cpA").onclick=()=>$("cpFi").click();$("cpM").onclick=()=>{nfStop();$("nfV").hidden=true;$("nfS").textContent="";cpMerge({})};
+ $("cpTb").onclick=()=>{const t=$("cpT").value;if(t.trim())cpText(t,null)};$("cpCat").onchange=()=>{CP.catSet=1};
  $("cpFi").onchange=e=>{const f=e.target.files[0];e.target.value="";if(f)cpFile(f)};
  $("cpP").onclick=e=>{const b=e.target.closest("[data-fp]");if(b){cpRead();cpFp(b.dataset.fp)}};
  $("cpF").onsubmit=e=>{e.preventDefault();cpRead();
