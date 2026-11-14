@@ -1658,7 +1658,17 @@ function cpQR(t){
  if(!r){S.textContent="Isso não parece o QR de uma nota fiscal. Toque em Ler QR da nota para tentar de novo.";return}
  if(navigator.vibrate)navigator.vibrate(60);
  S.textContent=`QR lido · ${r.uf} · ${r.mes}. Confira os dados e informe o valor.`;
- cpMerge({cnpj:r.cnpj,ch:r.ch,num:r.num,ser:r.ser,url:r.url})}
+ cpMerge({cnpj:r.cnpj,ch:r.ch,num:r.num,ser:r.ser,url:r.url});
+ if(r.url&&/^https:\/\/[^\/]*sefaz\.[a-z]{2}\.gov\.br\//i.test(r.url))cpProxy(r.url)}
+const NFPX="https://minha-carteira-proxy.vercel.app/api/nota";
+async function cpProxy(u){
+ const S=$("nfS"),t0=S.textContent;S.textContent=t0+" Buscando a nota…";
+ try{const c=new AbortController(),tm=setTimeout(()=>c.abort(),12000),
+  j=await (await fetch(NFPX+"?raw=1&url="+encodeURIComponent(u),{signal:c.signal})).json();clearTimeout(tm);
+  const i=j&&j.ok?cpNota(cpHtml(j.html).replace(/></g,"> <")):null;
+  if(!i){S.textContent=t0;return}
+  cpMerge(i);S.textContent=t0.replace(/Confira os dados e informe o valor\./,"Nota lida: confira os dados.")}
+ catch(e){S.textContent=t0}}
 function cpHtml(raw){
  if(!/^\s*(From|MIME-Version|Subject|Content-Type):/i.test(raw))return raw;
  const b=(raw.match(/boundary="?([^"\r\n;]+)"?/i)||[])[1];if(!b)return raw;
