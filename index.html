@@ -6,6 +6,7 @@
 <meta name="theme-color" content="#2563eb">
 <title>Minha Carteira</title>
 <meta name="claude:viewport-fit-sides" content="cover">
+<link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/logo-light.png">
 <link rel="icon" href="icons/logo-dark.png" media="(prefers-color-scheme: dark)">
 <link rel="apple-touch-icon" href="icons/logo-light.png">
@@ -166,9 +167,10 @@ button.chipw:hover{filter:brightness(.95)}
 .cfoot{display:flex;justify-content:space-between;font-size:11px;letter-spacing:.06em;opacity:.8}
 .cfoot b{display:block;font-size:13px;letter-spacing:0;margin-top:3px}
 .cfoot div:last-child{text-align:right}
-.dots{display:flex;justify-content:center;gap:6px;margin-top:10px}
-.dots button{width:7px;height:7px;border-radius:4px;background:var(--line);transition:width .2s}
-.dots button.on{width:18px;background:var(--blue)}
+.dots{display:flex;justify-content:center;margin-top:8px}
+.dots button{height:32px;padding:0 6px;display:grid;place-items:center;background:none}
+.dots button::before{content:"";width:8px;height:8px;border-radius:4px;background:var(--line);transition:width .2s}
+.dots button.on::before{width:24px;background:var(--blue)}
 .nf{color:var(--muted);font-size:11px;font-weight:600;letter-spacing:.08em;margin:20px 0 10px}
 .inv{position:relative;display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
 .iv{background:var(--chip);border-radius:10px;height:150px;padding:12px 6px;text-align:center;position:relative;overflow:hidden;border:2px solid transparent}
@@ -2447,5 +2449,6 @@ bindTheme();syncTheme();
 
 try{boot()}catch(e){gate("error","Erro ao iniciar: "+(e&&e.message||e))}
 </script>
+<script>if("serviceWorker"in navigator&&/^https?:/.test(location.protocol))addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));</script>
 </body>
 </html>

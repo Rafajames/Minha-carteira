@@ -6,6 +6,8 @@ Painel de finanças domésticas para casais e famílias organizarem juntos as co
 
 > Entre com sua conta Google, crie a família e envie o link de convite. Todos os membros veem e editam os mesmos dados, sincronizados em tempo real. Também dá para usar sem conta, com os dados salvos só no aparelho.
 
+> **Sem internet:** o app fica guardado no aparelho e abre offline (no celular, use "Adicionar à tela inicial" para instalar). Lançamentos feitos offline são enviados quando a conexão volta.
+
 ---
 
 ## ✨ Telas
