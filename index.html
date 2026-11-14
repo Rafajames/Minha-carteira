@@ -644,10 +644,10 @@ function seed(){
    return [{id:uid(),emp:"Pluxee",tipo:"alim",dono:"y",dia:1,recarga:650,base:650,baseAt:t1,lanc:[VL("Supermercado",186.4,3),VL("Padaria",18,6),VL("Hortifruti",34.9,9)]},
     {id:uid(),emp:"VR",tipo:"ref",dono:"e",dia:5,recarga:600,base:40,baseAt:t1,lanc:[VL("Restaurante",45.9,6,"e"),VL("Almoço",38,7,"e"),VL("Lanchonete",22.5,10,"e")]}]})(),
   carro:{uber:2.4,lemb:[{id:uid(),n:"IPVA",data:`${HOJE.getFullYear()+1}-01-20`,km:0},{id:uid(),n:"Revisão",data:"",km:50000}]},
-  lista:Object.fromEntries([["Café",0],["Leite",0],["Arroz",1]].map(([n,ok],i)=>[uid(),{n,ok,t:i+1}])),log:{},
+  listas:(()=>{const its={};[["Café",0],["Leite",0],["Arroz",1]].forEach(([n,s],i)=>{its[uid()]={n,s,t:i+1}});return{[uid()]:{n:"Compras do mês",t:1,its}}})(),log:{},
   mes:{[kOff(-1)]:{paid:{...pa},settled:true},[kOff(-2)]:{paid:{...pa},settled:true}}};
 }
-const empty=()=>({v:3,regra:"50",people:[{id:"y",n:"Eu",sal:0,pess:0,dia:0,uid:null}],casa:[],bills:[],dia:[],extra:[],cards:[],reserva:{meta:10000,saldo:0,aportes:[]},acertos:[],metas:{},goals:[],bens:[],dividas:[],vales:[],lista:{},log:{},mes:{},cats:{custom:[],ren:{},hide:{}},learn:{},carro:{uber:2.4,lemb:[]},ess:{mercado:1,casa:1,carro:1,transporte:1,saude:1,educacao:1,familia:1},mesada:{},hol:{},bancos:[]});
+const empty=()=>({v:3,regra:"50",people:[{id:"y",n:"Eu",sal:0,pess:0,dia:0,uid:null}],casa:[],bills:[],dia:[],extra:[],cards:[],reserva:{meta:10000,saldo:0,aportes:[]},acertos:[],metas:{},goals:[],bens:[],dividas:[],vales:[],lista:{},listas:{},log:{},mes:{},cats:{custom:[],ren:{},hide:{}},learn:{},carro:{uber:2.4,lemb:[]},ess:{mercado:1,casa:1,carro:1,transporte:1,saude:1,educacao:1,familia:1},mesada:{},hol:{},bancos:[]});
 function norm(d){
  d=d||{};
  if(!d.people){ // formato antigo → novo
@@ -666,7 +666,7 @@ function norm(d){
  const E=empty();for(const k in E)if(d[k]==null)d[k]=E[k];
  if(!d.people.length)d.people=E.people;
  d.casa.forEach(c=>{if(!c.id)c.id=uid()});
- if(!d.carro.lemb)d.carro.lemb=[];["custom","ren","hide"].forEach(k=>{if(!d.cats[k])d.cats[k]=k==="custom"?[]:{}});if(Array.isArray(d.lista))d.lista={};if(Array.isArray(d.log))d.log={};
+ if(!d.carro.lemb)d.carro.lemb=[];["custom","ren","hide"].forEach(k=>{if(!d.cats[k])d.cats[k]=k==="custom"?[]:{}});if(Array.isArray(d.lista))d.lista={};if(!d.listas||Array.isArray(d.listas))d.listas={};if(d.lista&&Object.keys(d.lista).length){const its={};for(const k in d.lista){const x=d.lista[k];its[k]={n:x.n,s:x.ok?1:0,t:x.t||0,by:x.by}}d.listas[uid()]={n:"Lista atual",t:Date.now(),its};d.lista={}}if(Array.isArray(d.log))d.log={};
  d.cards.forEach(c=>{if(c.fecha==null)c.fecha=c.venc>7?c.venc-7:c.venc+21});d.people.forEach(p=>{if(!p.pay)p.pay=1});(d.vales||[]).forEach(v=>{if(!v.lanc)v.lanc=[];if(!v.id)v.id=uid()});
  return d;
 }
@@ -1623,7 +1623,7 @@ function cpShow(){
  $("cpI").innerHTML=[CP.cnpj&&"CNPJ "+esc(CP.cnpj),CP.num&&"Nota nº "+CP.num+(CP.ser?" · série "+CP.ser:""),CP.url?`<a href="${esc(CP.url)}" target="_blank" rel="noopener">Abrir nota</a>`:""].filter(Boolean).join(" · ");
  const du=CP.ch?cpHas(CP.ch):null;$("cpDup").hidden=!du;$("cpGo").disabled=!!du;
  if(du)$("cpDup").innerHTML=`<p><b>Nota repetida.</b> Esta nota já foi lançada como ${esc(du.n)}, R$ ${brl(du.v*(du.p||1))}. Ela não será lançada de novo.</p>${CP.its&&!du.its?`<button type="button" class="btn" id="cpDi">Guardar os itens nesta compra</button>`:""}`;
- if($("cpDi"))$("cpDi").onclick=()=>{const und=snap();du.its=CP.its;cpListaOk();toast("Itens guardados",und);$("nfX").click();renderAll()};
+ if($("cpDi"))$("cpDi").onclick=()=>{const und=snap();du.its=CP.its;cpListaOk(du);toast("Itens guardados",und);$("nfX").click();renderAll()};
  cpMatches();cpLs()}
 function cpMatches(){
  const el=$("cpMt"),du=CP.ch&&cpHas(CP.ch),L=CP.v&&!du?cpNear(CP.v,CP.d):[];
@@ -1640,7 +1640,7 @@ function cpJoin(id){
  const und=snap(),nome=CP.nome,own=D.dia.includes(it)?"dia":D.vales.some(v=>v.lanc.includes(it))?"vale":"cred";
  if(nome&&nome!==it.n){it.al=[...new Set([...(it.al||[]),it.n])];it.n=nome}
  if(CP.rec&&CP.rec!==it.n)it.al=[...new Set([...(it.al||[]),CP.rec])];
- if(CP.cnpj)it.cnpj=CP.cnpj;if(CP.h&&!it.h)it.h=CP.h;if(CP.its&&!it.its)it.its=CP.its;cpListaOk();
+ if(CP.cnpj)it.cnpj=CP.cnpj;if(CP.h&&!it.h)it.h=CP.h;if(CP.its&&!it.its)it.its=CP.its;cpListaOk(it);
  const ids=[CP.ch,CP.xid].filter(Boolean);if(ids.length)it.ids=[...new Set([...(it.ids||[]),...ids])];
  if(CP.xid)it.cf=1;
  const cc=$("cpCat"),cat=cc?cc.value:"";if(cat&&!it.cat)it.cat=cat;
@@ -1689,16 +1689,36 @@ function cpNota(h){
   const q=(c[2]?c[2].textContent:"").trim().match(/^(\d[\d.]*,\d+)\s*(\S+)/),it={n:nm.toLowerCase().replace(/(^|\s)(\p{L})/gu,(m,a,x)=>a+x.toUpperCase())};if(q&&/^UN/i.test(q[2])){const k=Math.round(num(q[1]));if(k>1)it.q=k}return it}).filter(Boolean);
  if(its.length)o.its=its;return o}
 const nz=s=>String(s).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
-function cpLista(){if(!CP.its||!CP.its.length)return[];const N=CP.its.map(x=>nz(x.n));
- return Object.entries(D.lista||{}).map(([id,x])=>({id,n:x.n})).filter(l=>{const tk=nz(l.n).split(/[^a-z0-9]+/).filter(t=>t.length>=3).map(t=>t.replace(/s$/,""));return tk.length&&N.some(n=>tk.every(t=>n.includes(t)))})}
-function cpListaOk(){if(CP.its&&CP.lx)[...CP.lx].forEach(id=>{if(D.lista)delete D.lista[id]})}
+const LST=()=>Object.entries(D.listas||{}).map(([id,x])=>({id,...x})),lPaga=l=>{const a=Object.values(l.its||{});return a.length>0&&a.every(x=>x.s===2)};
+function lMatch(its,nts){const used=new Set(),mp={};
+ its.forEach(l=>{const tk=nz(l.n).split(/[^a-z0-9]+/).filter(t=>t.length>=3).map(t=>t.replace(/s$/,""));if(!tk.length)return;
+  const i=nts.findIndex((x,j)=>!used.has(j)&&tk.every(t=>nz(x.n).includes(t)));if(i>=0){used.add(i);mp[l.id]=i}});return mp}
+function cpListaOk(it){
+ if(!CP.its||!CP.its.length)return;
+ const mk=(x,o)=>Object.assign({n:x.n,s:2,t:now(),by:me},x.q?{q:x.q}:{},o||{});let L;
+ if(CP.lid==="new"||!D.listas||!D.listas[CP.lid]){const dt=(CP.d||isoD(new Date())).split("-");D.listas=D.listas||{};L=D.listas[uid()]={n:"Compra "+(CP.nome||"mercado")+" "+dt[2]+"/"+dt[1],t:now(),by:me,its:{}};CP.its.forEach(x=>{L.its[uid()]=mk(x)})}
+ else{L=D.listas[CP.lid];const used=new Set();
+  Object.entries(CP.lmp||{}).forEach(([id,j])=>{if(L.its[id]&&!used.has(j)){used.add(j);L.its[id].s=2}});
+  CP.its.forEach((x,j)=>{if(!used.has(j))L.its[uid()]=mk(x,{x:1})})}
+ if(it)L.lc=[...(L.lc||[]),it.id]}
 function cpLs(){
  const el=$("cpLs");if(!CP.its||!CP.its.length){el.hidden=true;el.innerHTML="";return}
- const L=cpLista();if(!CP.lxSet){CP.lx=new Set(L.map(x=>x.id));CP.lxSet=1}
- el.hidden=false;
- el.innerHTML=`<div class="note" style="margin:0"><b>${CP.its.length} ${CP.its.length>1?"itens lidos":"item lido"} da nota</b> serão guardados nesta compra.</div>`+
-  (L.length?`<div class="note" style="margin:0">Itens da sua lista que estão na nota (toque para tirar da lista ou deixar):</div>`+L.map(x=>`<button type="button" class="opt${CP.lx.has(x.id)?" on":""}" data-lx2="${x.id}"><div><b>${esc(x.n)}</b><small>${CP.lx.has(x.id)?"sai da lista":"fica na lista"}</small></div></button>`).join(""):"");
- on("#cpLs [data-lx2]","click",b=>{const i=b.dataset.lx2;CP.lx.has(i)?CP.lx.delete(i):CP.lx.add(i);cpLs()})}
+ const Ls=LST().filter(l=>!lPaga(l)).sort((a,b)=>(b.t||0)-(a.t||0));
+ if(CP.lid===undefined){let best=null,bn=0;Ls.forEach(l=>{const n=Object.keys(lMatch(Object.entries(l.its||{}).map(([id,x])=>({id,n:x.n})),CP.its)).length;if(n>bn){bn=n;best=l.id}});CP.lid=best||"new"}
+ if(CP.lid!=="new"&&!(D.listas&&D.listas[CP.lid]))CP.lid="new";
+ let h=`<div class="note" style="margin:0"><b>${CP.its.length} ${CP.its.length>1?"itens lidos":"item lido"} da nota</b> serão guardados nesta compra.</div>`;
+ if(Ls.length||CP.lid!=="new")h+=`<label class="field">Lista desta compra<select id="cpLid">${Ls.map(l=>`<option value="${l.id}"${CP.lid===l.id?" selected":""}>${esc(l.n)}</option>`).join("")}<option value="new"${CP.lid==="new"?" selected":""}>Nenhuma: criar lista com os itens da nota</option></select></label>`;
+ if(CP.lid==="new")h+=`<div class="note" style="margin:0">Será criada uma lista nova com os itens da nota, todos como pagos.</div>`;
+ else{const L=D.listas[CP.lid],its=Object.entries(L.its||{}).map(([id,x])=>({id,...x}));
+  if(!CP.lmp||CP.lmpL!==CP.lid){CP.lmp=lMatch(its,CP.its);CP.lmpL=CP.lid;CP.lauto=new Set(Object.keys(CP.lmp))}
+  const mp=CP.lmp,auto=its.filter(x=>CP.lauto.has(x.id)),ask=its.filter(x=>!CP.lauto.has(x.id)&&x.s===1);
+  if(auto.length)h+=`<div class="note" style="margin:0"><b>Confere com a lista (${auto.length}):</b><br>${auto.map(x=>`${esc(x.n)} → ${esc(CP.its[mp[x.id]].n)}`).join("<br>")}</div>`;
+  h+=ask.map(x=>{const u=new Set(Object.entries(mp).filter(([k])=>k!==x.id).map(([,v])=>v));return `<label class="field">${esc(x.n)} <small>(escolhido, não achei na nota)</small><select data-mp="${x.id}"><option value="">Não está na nota</option>${CP.its.map((n,j)=>u.has(j)?"":`<option value="${j}"${mp[x.id]===j?" selected":""}>${esc(n.n)}</option>`).join("")}</select></label>`}).join("");
+  const ex=CP.its.length-new Set(Object.values(mp)).size;
+  if(ex)h+=`<div class="note" style="margin:0">${ex} ${ex>1?"itens da nota entram":"item da nota entra"} na lista como extra, já pago.</div>`}
+ el.hidden=false;el.innerHTML=h;
+ if($("cpLid"))$("cpLid").onchange=e=>{CP.lid=e.target.value;CP.lmp=null;cpLs()};
+ on("#cpLs [data-mp]","change",b=>{if(b.value==="")delete CP.lmp[b.dataset.mp];else CP.lmp[b.dataset.mp]=+b.value;cpLs()})}
 async function cpPdf(f){
  if(!window.pdfjsLib){await new Promise((ok,no)=>{const x=document.createElement("script");x.src=JSPDF;x.onload=ok;x.onerror=()=>no(new Error("lib"));document.head.appendChild(x)});
   pdfjsLib.GlobalWorkerOptions.workerSrc=URL.createObjectURL(await (await fetch(JSPDFW)).blob())}
@@ -1785,25 +1805,42 @@ function cpOpen(){
   if(fp==="cred"){const cd=D.cards[+$("cpC").value];if(!cd){toast("Cadastre um cartão de crédito em Cartões");return}delete it.d;Object.assign(it,{p:1,dd,kc:kk,k:fatK(cd,dd,kk)});cd.lanc.push(it)}
   else if(fp==="vale"){const vl=D.vales[+$("cpVv").value];if(!vl){toast("Cadastre um vale em Cartões");return}vl.lanc.push(it)}
   else D.dia.push(it);
-  cpLearn();cpListaOk();
+  cpLearn();cpListaOk(it);
   addLog(`lançou ${nome} pelo comprovante`);toast(`${nome} lançado`,und);close();renderAll()};
  $("nfS").textContent="Escolha como ler o comprovante."}
 /* lista de compras */
+let LSEL=null;
 function pLista(){
- const L=Object.entries(D.lista||{}).map(([id,x])=>({id,...x})).sort((a,b)=>(a.ok-b.ok)||((a.t||0)-(b.t||0))),ok=L.filter(x=>x.ok);
- $("v-lista").innerHTML=PH("shopping_cart","Lista de compras","A mesma lista para toda a família, atualizada na hora")+
- `<section class="c box"><div class="h">Comprovante</div><div class="note" style="margin:0 0 8px">Leia o QR da nota do mercado, anexe a nota ou preencha à mão.</div><button class="btnp" id="nfGo" type="button">Abrir comprovante</button></section>`+
- `<section class="c box"><form id="fli" class="form f2"><label class="field">Item<input id="lin" required placeholder="Ex.: Café" autocomplete="off"></label><button class="btnp">Adicionar</button></form>
- <div style="margin-top:8px">${L.length?L.map(x=>`<div class="bill${x.ok?" done":""}"><button class="tg" data-li="${x.id}"><span class="ck"></span><span class="nm">${esc(x.n)}${x.by&&x.by!==me&&D.people.some(p=>p.id===x.by)?`<small>pedido por ${N(x.by)}</small>`:""}</span></button><button class="ed" data-lx="${x.id}" aria-label="Remover ${esc(x.n)}">×</button></div>`).join(""):`<div class="note">A lista está vazia.</div>`}</div></section>
- ${(()=>{const R=cpAll().filter(x=>x.its&&x.its.length).sort((a,b)=>(b.at||0)-(a.at||0)).slice(0,5);return R.length?`<section class="c box"><div class="h">Compras lidas da nota</div>${R.map(x=>`<details style="margin:6px 0"><summary><b>${esc(x.n)}</b> · R$ ${brl(cpVal(x))} · ${x.its.length} itens</summary><div class="note" style="margin:6px 0 0">${x.its.map(i=>esc(i.n)+(i.q?" ×"+i.q:"")).join("<br>")}</div></details>`).join("")}</section>`:""})()}
- ${ok.length?`<section class="c box"><div class="h">Fechar a compra <small>· ${ok.length} ${ok.length>1?"itens marcados":"item marcado"}</small></div><form id="ffc" class="form f3"><label class="field">Valor pago (R$)<input id="fcv" inputmode="decimal" required placeholder="0,00"></label><label class="field">Lançar como<select id="fcc"><option value="-1">Gasto do dia</option>${(D.vales||[]).map((v,i)=>`<option value="v${i}">No vale ${esc(v.emp)}</option>`).join("")}${D.cards.map((c,i)=>`<option value="${i}">Compra no ${esc(c.bk)}</option>`).join("")}</select></label><button class="btnp">Fechar compra</button></form><div class="note">Os itens marcados saem da lista e a compra entra em Mercado.</div></section>`:""}`;
- $("nfGo").onclick=cpOpen;
- $("fli").onsubmit=e=>{e.preventDefault();const n=$("lin").value.trim();if(!n)return;if(!D.lista)D.lista={};D.lista[uid()]={n:n.replace(/^./,c=>c.toUpperCase()),ok:0,t:now(),by:me};renderAll();const i=$("lin");if(i)i.focus()};
- on("[data-li]","click",b=>{const x=D.lista[b.dataset.li];if(x){x.ok=x.ok?0:1;renderAll()}});
- on("[data-lx]","click",b=>{const und=snap(),x=D.lista[b.dataset.lx];delete D.lista[b.dataset.lx];toast(`${x?x.n:"Item"} removido`,und);renderAll()});
+ const cur=LSEL&&D.listas&&D.listas[LSEL]?{id:LSEL,...D.listas[LSEL]}:null;if(LSEL&&!cur)LSEL=null;
+ const hd=PH("shopping_cart","Lista de compras","As mesmas listas para toda a família, atualizadas na hora"),
+ nf=`<section class="c box"><div class="h">Comprovante</div><div class="note" style="margin:0 0 8px">Leia o QR da nota do mercado. Sem lista, o app cria uma com os itens da nota.</div><button class="btnp" id="nfGo" type="button">Abrir comprovante</button></section>`;
+ if(!cur){
+  const Ls=LST().sort((a,b)=>(lPaga(a)-lPaga(b))||((b.t||0)-(a.t||0))),nw=new Date(),dd=two(nw.getDate())+"/"+two(nw.getMonth()+1);
+  $("v-lista").innerHTML=hd+nf+
+  `<section class="c box"><form id="fnl" class="form f2"><label class="field">Nova lista<input id="lnn" required value="Compras ${dd}" autocomplete="off"></label><button class="btnp">Criar lista</button></form>
+  <div style="margin-top:8px">${Ls.length?Ls.map(l=>{const a=Object.values(l.its||{}),n=a.length,p=a.filter(x=>x.s===2).length,e=a.filter(x=>x.s===1).length;return `<button type="button" class="opt" data-ls="${l.id}"><div><b>${esc(l.n)}</b><small>${lPaga(l)?"Paga":e||p?"Em compra":"Aberta"} · ${n} ${n===1?"item":"itens"}${p?` · ${p} pagos`:""}${e?` · ${e} escolhidos`:""}</small></div></button>`}).join(""):`<div class="note">Nenhuma lista ainda.</div>`}</div></section>`+
+  (()=>{const R=cpAll().filter(x=>x.its&&x.its.length).sort((a,b)=>(b.at||0)-(a.at||0)).slice(0,5);return R.length?`<section class="c box"><div class="h">Compras lidas da nota</div>${R.map(x=>`<details style="margin:6px 0"><summary><b>${esc(x.n)}</b> · R$ ${brl(cpVal(x))} · ${x.its.length} itens</summary><div class="note" style="margin:6px 0 0">${x.its.map(i=>esc(i.n)+(i.q?" ×"+i.q:"")).join("<br>")}</div></details>`).join("")}</section>`:""})();
+  $("nfGo").onclick=cpOpen;
+  $("fnl").onsubmit=e=>{e.preventDefault();const n=$("lnn").value.trim();if(!n)return;if(!D.listas)D.listas={};const id=uid();D.listas[id]={n,t:now(),by:me,its:{}};LSEL=id;renderAll()};
+  on("[data-ls]","click",b=>{LSEL=b.dataset.ls;renderAll()});return}
+ const its=Object.entries(cur.its||{}).map(([id,x])=>({id,...x})).sort((a,b)=>(a.s-b.s)||((a.t||0)-(b.t||0))),ok=its.filter(x=>x.s===1),
+ lc=(cur.lc||[]).map(i=>cpAll().find(x=>x.id===i)).filter(Boolean);
+ $("v-lista").innerHTML=hd+
+ `<section class="c box"><button type="button" class="btn" id="lBk">‹ Listas</button><div class="h" style="margin-top:8px">${esc(cur.n)} <small>· ${lPaga(cur)?"Paga":"Aberta"}</small></div>
+ <form id="fli" class="form f2"><label class="field">Item<input id="lin" required placeholder="Ex.: Café" autocomplete="off"></label><button class="btnp">Adicionar</button></form>
+ <div style="margin-top:8px">${its.length?its.map(x=>{const sm=[x.s===2?"Pago"+(x.x?" · extra":""):x.s===1?"Escolhido":"",x.by&&x.by!==me&&D.people.some(p=>p.id===x.by)?"pedido por "+N(x.by):""].filter(Boolean).join(" · ");return `<div class="bill${x.s?" done":""}"><button class="tg" data-li="${x.id}"><span class="ck"></span><span class="nm">${esc(x.n)}${x.q?" ×"+x.q:""}${sm?`<small>${sm}</small>`:""}</span></button><button class="ed" data-lx="${x.id}" aria-label="Remover ${esc(x.n)}">×</button></div>`}).join(""):`<div class="note">A lista está vazia.</div>`}</div>
+ ${lc.length?`<div class="note">Compra ligada: ${lc.map(x=>esc(x.n)+" · R$ "+brl(cpVal(x))).join(" · ")}</div>`:""}
+ <div class="nfacts"><button type="button" class="btnp" id="lNf">Ler a nota desta lista</button><button type="button" class="btn" id="lDel">Excluir lista</button></div></section>
+ ${ok.length?`<section class="c box"><div class="h">Fechar a compra <small>· ${ok.length} ${ok.length>1?"itens escolhidos":"item escolhido"}</small></div><form id="ffc" class="form f3"><label class="field">Valor pago (R$)<input id="fcv" inputmode="decimal" required placeholder="0,00"></label><label class="field">Lançar como<select id="fcc"><option value="-1">Gasto do dia</option>${(D.vales||[]).map((v,i)=>`<option value="v${i}">No vale ${esc(v.emp)}</option>`).join("")}${D.cards.map((c,i)=>`<option value="${i}">Compra no ${esc(c.bk)}</option>`).join("")}</select></label><button class="btnp">Fechar compra</button></form><div class="note">Os itens escolhidos viram pagos e a compra entra em Mercado. Se você tem a nota, prefira Ler a nota desta lista.</div></section>`:""}`;
+ $("lBk").onclick=()=>{LSEL=null;renderAll()};
+ $("lNf").onclick=()=>{cpOpen();CP.lid=cur.id};
+ $("lDel").onclick=()=>{const und=snap();delete D.listas[cur.id];LSEL=null;toast("Lista excluída",und);renderAll()};
+ $("fli").onsubmit=e=>{e.preventDefault();const n=$("lin").value.trim();if(!n)return;D.listas[cur.id].its[uid()]={n:n.replace(/^./,c=>c.toUpperCase()),s:0,t:now(),by:me};renderAll();const i=$("lin");if(i)i.focus()};
+ on("[data-li]","click",b=>{const x=D.listas[cur.id].its[b.dataset.li];if(x){x.s=x.s===0?1:x.s===1?0:1;renderAll()}});
+ on("[data-lx]","click",b=>{const und=snap(),x=D.listas[cur.id].its[b.dataset.lx];delete D.listas[cur.id].its[b.dataset.lx];toast(`${x?x.n:"Item"} removido`,und);renderAll()});
  if($("ffc"))$("ffc").onsubmit=e=>{e.preventDefault();const v=num($("fcv").value);if(!v)return;const und=snap(),fv=$("fcc").value,vl=fv[0]==="v"?D.vales[+fv.slice(1)]:null,c=vl?null:D.cards[+fv],it={id:uid(),n:"Compras do mercado",v,cat:"mercado",by:me,at:now()};
   if(vl){it.d=isNow()?new Date().getDate():1;it.k=K();vl.lanc.push(it)}else if(c&&!isDeb(c)){it.p=1;it.k=fatK(c,new Date().getDate(),NOWK);c.lanc.push(it)}else{it.d=isNow()?new Date().getDate():1;it.k=K();if(c)it.cid=c.id;D.dia.push(it)}
-  ok.forEach(x=>delete D.lista[x.id]);addLog(`fechou a compra do mercado (R$ ${brl(v)})`);toast(`Compra de R$ ${brl(v)} lançada em Mercado`,und);renderAll()};
+  const L=D.listas[cur.id];ok.forEach(x=>{L.its[x.id].s=2});L.lc=[...(L.lc||[]),it.id];addLog(`fechou a compra do mercado (R$ ${brl(v)})`);toast(`Compra de R$ ${brl(v)} lançada em Mercado`,und);renderAll()};
 }
 
 /* importar extrato */
