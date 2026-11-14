@@ -1622,7 +1622,9 @@ function cpShow(){
  $("cpF").hidden=false;$("cpN").value=CP.nome||"";$("cpD").value=CP.d||isoD(new Date());$("cpV").value=CP.v?brl(CP.v):"";cpFp(CP.fp);if(!CP.catSet)$("cpCat").value=(CP.ch&&!/^pix:/.test(CP.ch))||CP.fp==="vale"?"mercado":"";
  $("cpI").innerHTML=[CP.cnpj&&"CNPJ "+esc(CP.cnpj),CP.num&&"Nota nº "+CP.num+(CP.ser?" · série "+CP.ser:""),CP.url?`<a href="${esc(CP.url)}" target="_blank" rel="noopener">Abrir nota</a>`:""].filter(Boolean).join(" · ");
  const du=CP.ch?cpHas(CP.ch):null;$("cpDup").hidden=!du;$("cpGo").disabled=!!du;
- if(du)$("cpDup").innerHTML=`<p><b>Nota repetida.</b> Esta nota já foi lançada como ${esc(du.n)}, R$ ${brl(du.v*(du.p||1))}. Ela não será lançada de novo.</p>`;cpMatches()}
+ if(du)$("cpDup").innerHTML=`<p><b>Nota repetida.</b> Esta nota já foi lançada como ${esc(du.n)}, R$ ${brl(du.v*(du.p||1))}. Ela não será lançada de novo.</p>${CP.its&&!du.its?`<button type="button" class="btn" id="cpDi">Guardar os itens nesta compra</button>`:""}`;
+ if($("cpDi"))$("cpDi").onclick=()=>{const und=snap();du.its=CP.its;cpListaOk();toast("Itens guardados",und);$("nfX").click();renderAll()};
+ cpMatches();cpLs()}
 function cpMatches(){
  const el=$("cpMt"),du=CP.ch&&cpHas(CP.ch),L=CP.v&&!du?cpNear(CP.v,CP.d):[];
  if(!L.length){el.hidden=true;el.innerHTML="";CP.mg=undefined;return}
@@ -1638,7 +1640,7 @@ function cpJoin(id){
  const und=snap(),nome=CP.nome,own=D.dia.includes(it)?"dia":D.vales.some(v=>v.lanc.includes(it))?"vale":"cred";
  if(nome&&nome!==it.n){it.al=[...new Set([...(it.al||[]),it.n])];it.n=nome}
  if(CP.rec&&CP.rec!==it.n)it.al=[...new Set([...(it.al||[]),CP.rec])];
- if(CP.cnpj)it.cnpj=CP.cnpj;if(CP.h&&!it.h)it.h=CP.h;
+ if(CP.cnpj)it.cnpj=CP.cnpj;if(CP.h&&!it.h)it.h=CP.h;if(CP.its&&!it.its)it.its=CP.its;cpListaOk();
  const ids=[CP.ch,CP.xid].filter(Boolean);if(ids.length)it.ids=[...new Set([...(it.ids||[]),...ids])];
  if(CP.xid)it.cf=1;
  const cc=$("cpCat"),cat=cc?cc.value:"";if(cat&&!it.cat)it.cat=cat;
@@ -1682,7 +1684,21 @@ function cpNota(h){
  if(!d.querySelector("table.gx-cupom-itens")&&!/NFC-e/i.test(t))return null;
  const o={},m=t.match(/(?:\d{4}\s?){10}\d{4}/),p=m?nfParse(m[0].replace(/\s/g,"")):null;if(p)Object.assign(o,{ch:p.ch,cnpj:p.cnpj,num:p.num,ser:p.ser});
  const n=t.match(/AUTORIZADA\s+(.+?)\s+CNPJ\/CPF:/i),e=t.match(/Emiss\S*\s+(\d{2})\/(\d{2})\/(\d{4})/),v=t.match(/VALOR TOTAL\s*R\$\s*([\d.]+,\d{2})/i);
- if(n)o.nome=cpNome(n[1]);if(e)o.d=`${e[3]}-${e[2]}-${e[1]}`;if(v)o.v=num(v[1]);return o}
+ if(n)o.nome=cpNome(n[1]);if(e)o.d=`${e[3]}-${e[2]}-${e[1]}`;if(v)o.v=num(v[1]);
+ const its=[...d.querySelectorAll("table.gx-cupom-itens tbody tr")].map(r=>{const c=r.querySelectorAll("td"),sg=c[1]&&c[1].querySelector("strong"),nm=sg?sg.textContent.replace(/\s+KG$/i,"").replace(/\s+/g," ").trim():"";if(!nm)return null;
+  const q=(c[2]?c[2].textContent:"").trim().match(/^(\d[\d.]*,\d+)\s*(\S+)/),it={n:nm.toLowerCase().replace(/(^|\s)(\p{L})/gu,(m,a,x)=>a+x.toUpperCase())};if(q&&/^UN/i.test(q[2])){const k=Math.round(num(q[1]));if(k>1)it.q=k}return it}).filter(Boolean);
+ if(its.length)o.its=its;return o}
+const nz=s=>String(s).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
+function cpLista(){if(!CP.its||!CP.its.length)return[];const N=CP.its.map(x=>nz(x.n));
+ return Object.entries(D.lista||{}).map(([id,x])=>({id,n:x.n})).filter(l=>{const tk=nz(l.n).split(/[^a-z0-9]+/).filter(t=>t.length>=3).map(t=>t.replace(/s$/,""));return tk.length&&N.some(n=>tk.every(t=>n.includes(t)))})}
+function cpListaOk(){if(CP.its&&CP.lx)[...CP.lx].forEach(id=>{if(D.lista)delete D.lista[id]})}
+function cpLs(){
+ const el=$("cpLs");if(!CP.its||!CP.its.length){el.hidden=true;el.innerHTML="";return}
+ const L=cpLista();if(!CP.lxSet){CP.lx=new Set(L.map(x=>x.id));CP.lxSet=1}
+ el.hidden=false;
+ el.innerHTML=`<div class="note" style="margin:0"><b>${CP.its.length} ${CP.its.length>1?"itens lidos":"item lido"} da nota</b> serão guardados nesta compra.</div>`+
+  (L.length?`<div class="note" style="margin:0">Itens da sua lista que estão na nota (toque para tirar da lista ou deixar):</div>`+L.map(x=>`<button type="button" class="opt${CP.lx.has(x.id)?" on":""}" data-lx2="${x.id}"><div><b>${esc(x.n)}</b><small>${CP.lx.has(x.id)?"sai da lista":"fica na lista"}</small></div></button>`).join(""):"");
+ on("#cpLs [data-lx2]","click",b=>{const i=b.dataset.lx2;CP.lx.has(i)?CP.lx.delete(i):CP.lx.add(i);cpLs()})}
 async function cpPdf(f){
  if(!window.pdfjsLib){await new Promise((ok,no)=>{const x=document.createElement("script");x.src=JSPDF;x.onload=ok;x.onerror=()=>no(new Error("lib"));document.head.appendChild(x)});
   pdfjsLib.GlobalWorkerOptions.workerSrc=URL.createObjectURL(await (await fetch(JSPDFW)).blob())}
@@ -1745,7 +1761,7 @@ function cpOpen(){
  <div class="nfacts"><button class="btnp" id="cpQ" type="button">Ler QR da nota</button><button class="btn" id="cpA" type="button">Anexar arquivo</button><button class="btn" id="cpM" type="button">Preencher à mão</button></div>
  <input type="file" id="cpFi" hidden accept="image/*,application/pdf,.pdf,.html,.htm,.mhtml,.mht">
  <video id="nfV" playsinline muted hidden></video><div class="note" id="nfS" style="margin:0"></div><div id="cpEx" class="cpf"></div><details><summary class="note" style="margin:0">Colar texto da nota</summary><textarea id="cpT" rows="3" style="width:100%;margin:8px 0" placeholder="Abra a nota, selecione tudo, copie e cole aqui"></textarea><button class="btn" id="cpTb" type="button">Ler texto</button></details>
- <form id="cpF" class="cpf" hidden><div class="banner box warnban" id="cpDup" hidden></div><div class="cpf" id="cpMt" hidden></div>
+ <form id="cpF" class="cpf" hidden><div class="banner box warnban" id="cpDup" hidden></div><div class="cpf" id="cpMt" hidden></div><div class="cpf" id="cpLs" hidden></div>
  <label class="field">Mercado<input id="cpN" list="cpNL" autocomplete="off" placeholder="Nome do mercado"></label><datalist id="cpNL">${[...new Set(Object.values(D.lojas||{}))].map(x=>`<option value="${esc(x)}">`).join("")}</datalist><div class="note" id="cpI" style="margin:0"></div>
  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><label class="field">Data<input id="cpD" type="date"></label><label class="field">Valor total (R$)<input id="cpV" inputmode="decimal" placeholder="0,00"></label></div>
  <div><div class="note" style="margin:0">Forma de pagamento</div><div class="chips" id="cpP">${FPG.map(([k,l])=>`<button type="button" data-fp="${k}">${l}</button>`).join("")}</div></div>
@@ -1765,11 +1781,11 @@ function cpOpen(){
   if(cpNear(v,CP.d).length&&!CP.mg){toast("Escolha: juntar com um lançamento existente ou criar novo");$("cpMt").scrollIntoView({behavior:"smooth",block:"center"});return}
   if(CP.mg&&CP.mg!=="new"){if(cpJoin(CP.mg)){close();renderAll()}return}
   const dt=(CP.d||isoD(new Date())).split("-"),dd=day(dt[2]),kk=mk(+dt[0],+dt[1]-1),cat=$("cpCat").value,und=snap(),it={id:uid(),by:me,at:now(),n:nome,v,d:dd,k:kk,fp};
-  if(cat)it.cat=cat;if(CP.ch)it.ch=CP.ch;if(CP.cnpj)it.cnpj=CP.cnpj;if(CP.h)it.h=CP.h;if(CP.rec&&CP.rec!==nome)it.al=[CP.rec];if(CP.xid){it.ids=[CP.xid];it.cf=1}
+  if(cat)it.cat=cat;if(CP.ch)it.ch=CP.ch;if(CP.cnpj)it.cnpj=CP.cnpj;if(CP.h)it.h=CP.h;if(CP.rec&&CP.rec!==nome)it.al=[CP.rec];if(CP.xid){it.ids=[CP.xid];it.cf=1}if(CP.its)it.its=CP.its;
   if(fp==="cred"){const cd=D.cards[+$("cpC").value];if(!cd){toast("Cadastre um cartão de crédito em Cartões");return}delete it.d;Object.assign(it,{p:1,dd,kc:kk,k:fatK(cd,dd,kk)});cd.lanc.push(it)}
   else if(fp==="vale"){const vl=D.vales[+$("cpVv").value];if(!vl){toast("Cadastre um vale em Cartões");return}vl.lanc.push(it)}
   else D.dia.push(it);
-  cpLearn();
+  cpLearn();cpListaOk();
   addLog(`lançou ${nome} pelo comprovante`);toast(`${nome} lançado`,und);close();renderAll()};
  $("nfS").textContent="Escolha como ler o comprovante."}
 /* lista de compras */
@@ -1779,6 +1795,7 @@ function pLista(){
  `<section class="c box"><div class="h">Comprovante</div><div class="note" style="margin:0 0 8px">Leia o QR da nota do mercado, anexe a nota ou preencha à mão.</div><button class="btnp" id="nfGo" type="button">Abrir comprovante</button></section>`+
  `<section class="c box"><form id="fli" class="form f2"><label class="field">Item<input id="lin" required placeholder="Ex.: Café" autocomplete="off"></label><button class="btnp">Adicionar</button></form>
  <div style="margin-top:8px">${L.length?L.map(x=>`<div class="bill${x.ok?" done":""}"><button class="tg" data-li="${x.id}"><span class="ck"></span><span class="nm">${esc(x.n)}${x.by&&x.by!==me&&D.people.some(p=>p.id===x.by)?`<small>pedido por ${N(x.by)}</small>`:""}</span></button><button class="ed" data-lx="${x.id}" aria-label="Remover ${esc(x.n)}">×</button></div>`).join(""):`<div class="note">A lista está vazia.</div>`}</div></section>
+ ${(()=>{const R=cpAll().filter(x=>x.its&&x.its.length).sort((a,b)=>(b.at||0)-(a.at||0)).slice(0,5);return R.length?`<section class="c box"><div class="h">Compras lidas da nota</div>${R.map(x=>`<details style="margin:6px 0"><summary><b>${esc(x.n)}</b> · R$ ${brl(cpVal(x))} · ${x.its.length} itens</summary><div class="note" style="margin:6px 0 0">${x.its.map(i=>esc(i.n)+(i.q?" ×"+i.q:"")).join("<br>")}</div></details>`).join("")}</section>`:""})()}
  ${ok.length?`<section class="c box"><div class="h">Fechar a compra <small>· ${ok.length} ${ok.length>1?"itens marcados":"item marcado"}</small></div><form id="ffc" class="form f3"><label class="field">Valor pago (R$)<input id="fcv" inputmode="decimal" required placeholder="0,00"></label><label class="field">Lançar como<select id="fcc"><option value="-1">Gasto do dia</option>${(D.vales||[]).map((v,i)=>`<option value="v${i}">No vale ${esc(v.emp)}</option>`).join("")}${D.cards.map((c,i)=>`<option value="${i}">Compra no ${esc(c.bk)}</option>`).join("")}</select></label><button class="btnp">Fechar compra</button></form><div class="note">Os itens marcados saem da lista e a compra entra em Mercado.</div></section>`:""}`;
  $("nfGo").onclick=cpOpen;
  $("fli").onsubmit=e=>{e.preventDefault();const n=$("lin").value.trim();if(!n)return;if(!D.lista)D.lista={};D.lista[uid()]={n:n.replace(/^./,c=>c.toUpperCase()),ok:0,t:now(),by:me};renderAll();const i=$("lin");if(i)i.focus()};
