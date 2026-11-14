@@ -127,6 +127,7 @@ button.chipw:hover{filter:brightness(.95)}
 .others{color:var(--muted);font-size:11px;font-weight:600;letter-spacing:.08em;padding:16px 0 4px}
 .bill{display:flex;align-items:center;gap:16px;padding:8px 0;border-bottom:1px solid var(--line);width:100%;text-align:left}
 .bill:last-child{border:0}
+.mi{font:inherit;font-size:12px;color:var(--fg);background:var(--card);border:1px solid var(--line);border-radius:8px;padding:6px;min-width:0;text-align:right}
 .ck{width:24px;height:24px;border:1.5px solid var(--soft);border-radius:50%;flex:none;display:grid;place-items:center}
 .bill:hover .ck{border-color:var(--green)}
 .bill.done .ck{background:var(--green);border-color:var(--green)}
@@ -1699,12 +1700,13 @@ function cpListaOk(it){
  if(!CP.its||!CP.its.length)return;
  const ln=x=>{const o={n:x.n};["q","v","pu","un"].forEach(k=>{if(x[k]!=null)o[k]=x[k]});return o},
   tot=a=>Math.round(a.reduce((r,x)=>r+(x.v||0),0)*100)/100,
-  mk=(n,a,o)=>Object.assign({n,s:2,t:now(),by:me,ls:a.map(ln)},tot(a)?{v:tot(a)}:{},o||{});let L;
+  qf=a=>a.length&&a.every(x=>/^UN/i.test(x.un||""))?{q:a.reduce((r,x)=>r+(x.q||1),0)}:{},
+  mk=(n,a,o)=>Object.assign({n,s:2,t:now(),by:me,ls:a.map(ln)},tot(a)?{v:tot(a)}:{},qf(a),o||{});let L;
  if(CP.lid==="new"||!D.listas||!D.listas[CP.lid]){const dt=(CP.d||isoD(new Date())).split("-");D.listas=D.listas||{};L=D.listas[uid()]={n:"Compra "+(CP.nome||"mercado")+" "+dt[2]+"/"+dt[1],t:now(),by:me,its:{}};CP.its.forEach(x=>{L.its[uid()]=mk(x.n,[x])})}
  else{L=D.listas[CP.lid];const used=new Set();D.apit=D.apit||{};
   Object.entries(CP.lmp||{}).forEach(([id,arr])=>{const li=L.its[id];if(!li)return;const a=arr.filter(j=>!used.has(j));if(!a.length)return;
    a.forEach(j=>{used.add(j);const nn=CP.its[j].n;if(!tm(li.n,nn)&&ak(li.n)&&ak(nn)){const ar=D.apit[ak(li.n)]=D.apit[ak(li.n)]||[];if(!ar.includes(ak(nn))){ar.push(ak(nn));if(ar.length>20)ar.shift()}}});
-   li.s=2;li.ls=(li.ls||[]).concat(a.map(j=>ln(CP.its[j])));const v=tot(li.ls);if(v)li.v=v});
+   li.s=2;li.ls=(li.ls||[]).concat(a.map(j=>ln(CP.its[j])));const v=tot(li.ls),f=qf(li.ls);if(v)li.v=v;if(li.q==null&&f.q)li.q=f.q});
   CP.its.forEach((x,j)=>{if(!used.has(j))L.its[uid()]=mk(x.n,[x],{x:1})})}
  if(it)L.lc=[...(L.lc||[]),it.id]}
 function cpLs(){
@@ -1712,6 +1714,7 @@ function cpLs(){
  const Ls=LST().filter(l=>!lPaga(l)).sort((a,b)=>(b.t||0)-(a.t||0));
  if(CP.lid===undefined){let best=null,bn=0;Ls.forEach(l=>{const n=Object.values(lMatch(Object.entries(l.its||{}).map(([id,x])=>({id,n:x.n})),CP.its)).reduce((r,v)=>r+v.length,0);if(n>bn){bn=n;best=l.id}});CP.lid=best||"new"}
  if(CP.lid!=="new"&&!(D.listas&&D.listas[CP.lid]))CP.lid="new";
+ if(CP.lid!=="new"&&!CP.fpL){const L0=D.listas[CP.lid];CP.fpL=1;if(L0.fp&&!CP.fp){CP.fp=L0.fp;cpFp(CP.fp);const ar=L0.fp==="cred"?D.cards:L0.fp==="vale"?D.vales:null,i=ar?ar.findIndex(z=>z.id===L0.fr):-1,sel=L0.fp==="cred"?$("cpC"):L0.fp==="vale"?$("cpVv"):null;if(sel&&i>=0)sel.value=String(i)}}
  let h=`<div class="note" style="margin:0"><b>${CP.its.length} ${CP.its.length>1?"itens lidos":"item lido"} da nota</b> serão guardados nesta compra.</div>`;
  if(Ls.length||CP.lid!=="new")h+=`<label class="field">Lista desta compra<select id="cpLid">${Ls.map(l=>`<option value="${l.id}"${CP.lid===l.id?" selected":""}>${esc(l.n)}</option>`).join("")}<option value="new"${CP.lid==="new"?" selected":""}>Nenhuma: criar lista com os itens da nota</option></select></label>`;
  if(CP.lid==="new")h+=`<div class="note" style="margin:0">Será criada uma lista nova com os itens da nota, todos como pagos.</div>`;
@@ -1816,6 +1819,8 @@ function cpOpen(){
  $("nfS").textContent="Escolha como ler o comprovante."}
 /* lista de compras */
 let LSEL=null;
+const lfpOpts=L=>{const cu=L.fp?(L.fp==="cred"?"c:"+L.fr:L.fp==="vale"?"v:"+L.fr:L.fp):"",o=(v,t)=>`<option value="${v}"${v===cu?" selected":""}>${t}</option>`;
+ return o("","Não definido")+o("pix","Pix")+o("deb","Débito")+o("din","Dinheiro")+D.cards.filter(c=>!isDeb(c)).map(c=>o("c:"+c.id,"Crédito · "+esc(c.bk+" "+c.nm))).join("")+(D.vales||[]).map(v=>o("v:"+v.id,"Vale · "+esc(v.emp)+" · "+vtl(v.tipo).toLowerCase())).join("")};
 function pLista(){
  const cur=LSEL&&D.listas&&D.listas[LSEL]?{id:LSEL,...D.listas[LSEL]}:null;if(LSEL&&!cur)LSEL=null;
  const hd=PH("shopping_cart","Lista de compras","As mesmas listas para toda a família, atualizadas na hora"),
@@ -1824,17 +1829,21 @@ function pLista(){
   const Ls=LST().sort((a,b)=>(lPaga(a)-lPaga(b))||((b.t||0)-(a.t||0))),nw=new Date(),dd=two(nw.getDate())+"/"+two(nw.getMonth()+1);
   $("v-lista").innerHTML=hd+nf+
   `<section class="c box"><form id="fnl" class="form f2"><label class="field">Nova lista<input id="lnn" required value="Compras ${dd}" autocomplete="off"></label><button class="btnp">Criar lista</button></form>
-  <div style="margin-top:8px">${Ls.length?Ls.map(l=>{const a=Object.values(l.its||{}),n=a.length,p=a.filter(x=>x.s===2).length,e=a.filter(x=>x.s===1).length;return `<button type="button" class="opt" data-ls="${l.id}"><div><b>${esc(l.n)}</b><small>${lSt(l,e,p)} · ${n} ${n===1?"item":"itens"}${p?` · ${p} pagos`:""}${e?` · ${e} escolhidos`:""}</small></div></button>`}).join(""):`<div class="note">Nenhuma lista ainda.</div>`}</div></section>`+
+  <div style="margin-top:8px">${Ls.length?Ls.map(l=>{const a=Object.values(l.its||{}),n=a.length,p=a.filter(x=>x.s===2).length,e=a.filter(x=>x.s===1).length;return `<div style="display:flex;align-items:center"><button type="button" class="opt" data-ls="${l.id}"><div><b>${esc(l.n)}</b><small>${lSt(l,e,p)} · ${n} ${n===1?"item":"itens"}${p?` · ${p} pagos`:""}${e?` · ${e} escolhidos`:""}</small></div></button><button type="button" class="ed" data-ld="${l.id}" aria-label="Excluir ${esc(l.n)}">×</button></div>`}).join(""):`<div class="note">Nenhuma lista ainda.</div>`}</div></section>`+
   (()=>{const R=cpAll().filter(x=>x.its&&x.its.length).sort((a,b)=>(b.at||0)-(a.at||0)).slice(0,5);return R.length?`<section class="c box"><div class="h">Compras lidas da nota</div>${R.map(x=>`<details style="margin:6px 0"><summary><b>${esc(x.n)}</b> · R$ ${brl(cpVal(x))} · ${x.its.length} itens</summary><div class="note" style="margin:6px 0 0">${x.its.map(i=>esc(i.n)+(i.q?" ×"+i.q:"")).join("<br>")}</div></details>`).join("")}</section>`:""})();
   $("nfGo").onclick=cpOpen;
   $("fnl").onsubmit=e=>{e.preventDefault();const n=$("lnn").value.trim();if(!n)return;if(!D.listas)D.listas={};const id=uid();D.listas[id]={n,t:now(),by:me,its:{}};LSEL=id;renderAll()};
-  on("[data-ls]","click",b=>{LSEL=b.dataset.ls;renderAll()});return}
+  on("[data-ls]","click",b=>{LSEL=b.dataset.ls;renderAll()});
+  on("[data-ld]","click",b=>{const und=snap(),l=D.listas[b.dataset.ld];delete D.listas[b.dataset.ld];toast(`${l?l.n:"Lista"} excluída`,und);renderAll()});return}
  const its=Object.entries(cur.its||{}).map(([id,x])=>({id,...x})).sort((a,b)=>(a.s-b.s)||((a.t||0)-(b.t||0))),ok=its.filter(x=>x.s===1),
- lc=(cur.lc||[]).map(i=>cpAll().find(x=>x.id===i)).filter(Boolean);
+ lc=(cur.lc||[]).map(i=>cpAll().find(x=>x.id===i)).filter(Boolean),
+ tot=Math.round(its.reduce((r,x)=>r+(+(x.s===2?x.v:x.vp!=null?x.vp:x.v)||0),0)*100)/100;
  $("v-lista").innerHTML=hd+
  `<section class="c box"><button type="button" class="btn" id="lBk">‹ Listas</button><div class="h" style="margin-top:8px">${esc(cur.n)} <small>· ${lSt(cur,ok.length,its.filter(x=>x.s===2).length)}</small></div>
+ <label class="field">Como vai pagar<select id="lfp">${lfpOpts(cur)}</select></label>
  <form id="fli" class="form f2"><label class="field">Item<input id="lin" required placeholder="Ex.: Café" autocomplete="off"></label><button class="btnp">Adicionar</button></form>
- <div style="margin-top:8px">${its.length?its.map(x=>{const sm=[x.s===2?"Pago"+(x.v?" · R$ "+brl(x.v):"")+(x.x?" · extra":"")+(x.ls&&x.ls.length&&(x.ls.length>1||nz(x.ls[0].n)!==nz(x.n))?" · nota: "+x.ls.map(l=>l.n).join("; "):""):x.s===1?"Escolhido":"",x.by&&x.by!==me&&D.people.some(p=>p.id===x.by)?"pedido por "+N(x.by):""].filter(Boolean).join(" · ");return `<div class="bill${x.s?" done":""}"><button class="tg" data-li="${x.id}"><span class="ck"></span><span class="nm">${esc(x.n)}${x.q?" ×"+x.q:""}${sm?`<small>${sm}</small>`:""}</span></button><button class="ed" data-lx="${x.id}" aria-label="Remover ${esc(x.n)}">×</button></div>`}).join(""):`<div class="note">A lista está vazia.</div>`}</div>
+ <div style="margin-top:8px">${its.length?its.map(x=>{const vv=x.s===2?x.v:x.vp!=null?x.vp:x.v,sm=[x.s===2?"Pago"+(x.v?" · R$ "+brl(x.v):"")+(x.x?" · extra":"")+(x.ls&&x.ls.length&&(x.ls.length>1||nz(x.ls[0].n)!==nz(x.n))?" · nota: "+x.ls.map(l=>l.n).join("; "):""):x.s===1?"Escolhido":"",x.by&&x.by!==me&&D.people.some(p=>p.id===x.by)?"pedido por "+N(x.by):""].filter(Boolean).join(" · ");return `<div class="bill${x.s?" done":""}"><button class="tg" data-li="${x.id}"><span class="ck"></span><span class="nm">${esc(x.n)}${sm?`<small>${sm}</small>`:""}</span></button><input class="mi" style="width:46px" inputmode="decimal" placeholder="Qtd" aria-label="Quantidade de ${esc(x.n)}" data-lq="${x.id}" value="${x.q||""}"><input class="mi" style="width:68px" inputmode="decimal" placeholder="R$" aria-label="Valor de ${esc(x.n)}" data-lv="${x.id}" value="${vv?brl(vv):""}"><button class="ed" data-lx="${x.id}" aria-label="Remover ${esc(x.n)}">×</button></div>`}).join(""):`<div class="note">A lista está vazia.</div>`}</div>
+ ${tot?`<div class="note">${its.every(x=>x.s===2)?"Total pago":"Total previsto"}: R$ ${brl(tot)}</div>`:""}
  ${lc.length?`<div class="note">Compra ligada: ${lc.map(x=>esc(x.n)+" · R$ "+brl(cpVal(x))).join(" · ")}</div>`:""}
  <div class="nfacts"><button type="button" class="btnp" id="lNf">Ler a nota desta lista</button><button type="button" class="btn" id="lDel">Excluir lista</button>${cur.enc?"":`<button type="button" class="btn" id="lEnc">Encerrar lista</button>`}</div></section>
  ${ok.length?`<section class="c box"><div class="h">Fechar a compra <small>· ${ok.length} ${ok.length>1?"itens escolhidos":"item escolhido"}</small></div><form id="ffc" class="form f3"><label class="field">Valor pago (R$)<input id="fcv" inputmode="decimal" required placeholder="0,00"></label><label class="field">Lançar como<select id="fcc"><option value="-1">Gasto do dia</option>${(D.vales||[]).map((v,i)=>`<option value="v${i}">No vale ${esc(v.emp)}</option>`).join("")}${D.cards.map((c,i)=>`<option value="${i}">Compra no ${esc(c.bk)}</option>`).join("")}</select></label><button class="btnp">Fechar compra</button></form><div class="note">Os itens escolhidos viram pagos e a compra entra em Mercado. Se você tem a nota, prefira Ler a nota desta lista.</div></section>`:""}`;
@@ -1845,6 +1854,9 @@ function pLista(){
   L.enc=1;LSEL=null;addLog(`encerrou a lista ${L.n}`);toast(msg,und);renderAll()};
  $("lDel").onclick=()=>{const und=snap();delete D.listas[cur.id];LSEL=null;toast("Lista excluída",und);renderAll()};
  $("fli").onsubmit=e=>{e.preventDefault();const n=$("lin").value.trim();if(!n)return;D.listas[cur.id].its[uid()]={n:n.replace(/^./,c=>c.toUpperCase()),s:0,t:now(),by:me};renderAll();const i=$("lin");if(i)i.focus()};
+ $("lfp").onchange=e=>{const v=e.target.value,L=D.listas[cur.id];if(!v){delete L.fp;delete L.fr}else if(v[1]===":"){L.fp=v[0]==="c"?"cred":"vale";L.fr=v.slice(2)}else{L.fp=v;delete L.fr}renderAll()};
+ on("[data-lq]","change",b=>{const x=D.listas[cur.id].its[b.dataset.lq];if(!x)return;const q=num(b.value);if(q>0)x.q=q;else delete x.q;renderAll()});
+ on("[data-lv]","change",b=>{const x=D.listas[cur.id].its[b.dataset.lv];if(!x)return;const v=num(b.value),k=x.s===2?"v":"vp";if(v>0)x[k]=v;else delete x[k];renderAll()});
  on("[data-li]","click",b=>{const x=D.listas[cur.id].its[b.dataset.li];if(x){x.s=x.s===0?1:x.s===1?0:1;renderAll()}});
  on("[data-lx]","click",b=>{const und=snap(),x=D.listas[cur.id].its[b.dataset.lx];delete D.listas[cur.id].its[b.dataset.lx];toast(`${x?x.n:"Item"} removido`,und);renderAll()});
  if($("ffc"))$("ffc").onsubmit=e=>{e.preventDefault();const v=num($("fcv").value);if(!v)return;const und=snap(),fv=$("fcc").value,vl=fv[0]==="v"?D.vales[+fv.slice(1)]:null,c=vl?null:D.cards[+fv],it={id:uid(),n:"Compras do mercado",v,cat:"mercado",by:me,at:now()};
