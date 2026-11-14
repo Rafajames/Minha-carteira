@@ -452,7 +452,7 @@ body.priv :is(.bkchips b){filter:blur(7px)}
  .colp.col>.h::after{transform:rotate(-45deg)}
  .colp.col>*:not(.h){display:none!important}
 }
-.nfov{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.6);display:grid;place-items:center;padding:12px;overflow:auto}.nfbox{background:var(--card);color:var(--fg);border-radius:16px;padding:16px;max-width:420px;width:100%;display:flex;flex-direction:column;gap:12px}.nfbox video{width:100%;max-height:50vh;object-fit:cover;border-radius:12px;background:#000}.nfbox video[hidden]{display:none}.nfres{display:grid;gap:8px;font-size:14px;word-break:break-all}.nfres span{display:block;color:var(--muted);font-size:12px}.nfacts{display:flex;gap:8px;flex-wrap:wrap}.nfacts a{text-decoration:none;display:inline-flex;align-items:center}.btnp:disabled{opacity:.4;cursor:not-allowed}.cpf{display:flex;flex-direction:column;gap:12px}.nfbox .opt{width:100%}.nfbox .field{margin:0}
+.nfov{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.6);display:grid;place-items:center;padding:12px;overflow:auto}.nfbox{background:var(--card);color:var(--fg);border-radius:16px;padding:16px;max-width:420px;width:100%;display:flex;flex-direction:column;gap:12px}.nfbox video{width:100%;max-height:50vh;object-fit:cover;border-radius:12px;background:#000}.nfbox video[hidden]{display:none}.nfres{display:grid;gap:8px;font-size:14px;word-break:break-all}.nfres span{display:block;color:var(--muted);font-size:12px}.nfacts{display:flex;gap:8px;flex-wrap:wrap}.nfacts a{text-decoration:none;display:inline-flex;align-items:center}.btnp:disabled{opacity:.4;cursor:not-allowed}.cpf{display:flex;flex-direction:column;gap:12px}.nfbox .opt{width:100%}.nfbox .opt.on{outline:2px solid var(--blue);outline-offset:-2px}.nfbox .field{margin:0}
 </style>
 </head>
 <body>
@@ -1610,6 +1610,9 @@ async function nfStart(){
 const FPG=[["pix","Pix"],["deb","Débito"],["cred","Crédito"],["vale","Vale alimentação"],["din","Dinheiro"]],MESN=["janeiro","fevereiro","marco","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"],JSPDF="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js",JSPDFW="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
 let CP={};
 const isoD=d=>`${d.getFullYear()}-${two(d.getMonth()+1)}-${two(d.getDate())}`,cpAll=()=>[].concat(D.dia,...D.cards.map(c=>c.lanc||[]),...D.vales.map(v=>v.lanc||[])),
+ cpVal=x=>Math.round(x.v*(x.p||1)*100)/100,cpDt=x=>{const k=x.kc||x.k||"";return new Date(+k.slice(1,5),+k.slice(6)-1,x.d||x.dd||1)},
+ cpHas=id=>cpAll().find(x=>x.ch===id||(x.ids||[]).includes(id)),
+ cpNear=(v,iso)=>{const t=iso?new Date(+iso.slice(0,4),+iso.slice(5,7)-1,+iso.slice(8)):null;return cpAll().filter(x=>Math.abs(cpVal(x)-v)<.005&&(!t||Math.abs(cpDt(x)-t)<=5*864e5+36e5))},
  cpNome=t=>String(t||"").replace(/\s*-\s*FILIAL.*$/i,"").replace(/\b(LTDA|S\/A|EIRELI|EPP)\b\.?/gi,"").replace(/\s+/g," ").trim().toLowerCase().replace(/(^|\s)(\p{L})/gu,(m,a,c)=>a+c.toUpperCase());
 function cpRead(){const n=$("cpN").value.trim();if(n!==(CP.nome||""))CP.nomeMan=1;CP.nome=n;CP.d=$("cpD").value||CP.d;CP.v=num($("cpV").value)||0}
 function cpFp(k){CP.fp=k||"";document.querySelectorAll("#cpP button").forEach(b=>b.classList.toggle("on",b.dataset.fp===k));
@@ -1618,14 +1621,36 @@ function cpFp(k){CP.fp=k||"";document.querySelectorAll("#cpP button").forEach(b=
 function cpShow(){
  $("cpF").hidden=false;$("cpN").value=CP.nome||"";$("cpD").value=CP.d||isoD(new Date());$("cpV").value=CP.v?brl(CP.v):"";cpFp(CP.fp);if(!CP.catSet)$("cpCat").value=(CP.ch&&!/^pix:/.test(CP.ch))||CP.fp==="vale"?"mercado":"";
  $("cpI").innerHTML=[CP.cnpj&&"CNPJ "+esc(CP.cnpj),CP.num&&"Nota nº "+CP.num+(CP.ser?" · série "+CP.ser:""),CP.url?`<a href="${esc(CP.url)}" target="_blank" rel="noopener">Abrir nota</a>`:""].filter(Boolean).join(" · ");
- const du=CP.ch?cpAll().find(x=>x.ch===CP.ch):null;$("cpDup").hidden=!du;$("cpGo").disabled=!!du;
- if(du)$("cpDup").innerHTML=`<p><b>Nota repetida.</b> Esta nota já foi lançada como ${esc(du.n)}, R$ ${brl(du.v*(du.p||1))}. Ela não será lançada de novo.</p>`}
+ const du=CP.ch?cpHas(CP.ch):null;$("cpDup").hidden=!du;$("cpGo").disabled=!!du;
+ if(du)$("cpDup").innerHTML=`<p><b>Nota repetida.</b> Esta nota já foi lançada como ${esc(du.n)}, R$ ${brl(du.v*(du.p||1))}. Ela não será lançada de novo.</p>`;cpMatches()}
+function cpMatches(){
+ const el=$("cpMt"),du=CP.ch&&cpHas(CP.ch),L=CP.v&&!du?cpNear(CP.v,CP.d):[];
+ if(!L.length){el.hidden=true;el.innerHTML="";CP.mg=undefined;return}
+ if(CP.mg&&CP.mg!=="new"&&!L.some(x=>x.id===CP.mg))CP.mg=undefined;
+ el.hidden=false;
+ el.innerHTML=`<div class="note" style="margin:0"><b>Parece que este lançamento já existe.</b> Escolha com qual juntar ou crie um novo.</div>`+L.map(x=>{const d=cpDt(x);return `<button type="button" class="opt${CP.mg===x.id?" on":""}" data-mg="${x.id}"><div><b>${esc(x.n)}</b><small>${two(d.getDate())}/${two(d.getMonth()+1)} · R$ ${brl(cpVal(x))} · juntar com este</small></div></button>`}).join("")+`<button type="button" class="opt${CP.mg==="new"?" on":""}" data-mg="new"><div><b>Criar lançamento novo</b></div></button>`;
+ on("#cpMt [data-mg]","click",b=>{CP.mg=b.dataset.mg;cpMatches()})}
+function cpLearn(){
+ if(CP.cnpj&&CP.nome){D.lojas=D.lojas||{};D.lojas[CP.cnpj]=CP.nome}
+ if(CP.rec&&CP.nome&&nkey(CP.rec)!==nkey(CP.nome)){D.apel=D.apel||{};D.apel[nkey(CP.rec)]=CP.nome}}
+function cpJoin(id){
+ const it=cpAll().find(x=>x.id===id);if(!it){toast("Lançamento não encontrado");return false}
+ const und=snap(),nome=CP.nome,own=D.dia.includes(it)?"dia":D.vales.some(v=>v.lanc.includes(it))?"vale":"cred";
+ if(nome&&nome!==it.n){it.al=[...new Set([...(it.al||[]),it.n])];it.n=nome}
+ if(CP.rec&&CP.rec!==it.n)it.al=[...new Set([...(it.al||[]),CP.rec])];
+ if(CP.cnpj)it.cnpj=CP.cnpj;if(CP.h&&!it.h)it.h=CP.h;
+ const ids=[CP.ch,CP.xid].filter(Boolean);if(ids.length)it.ids=[...new Set([...(it.ids||[]),...ids])];
+ if(CP.xid)it.cf=1;
+ const cc=$("cpCat"),cat=cc?cc.value:"";if(cat&&!it.cat)it.cat=cat;
+ if(!it.fp&&((own==="dia"&&["pix","deb","din"].includes(CP.fp))||(own==="vale"&&CP.fp==="vale")||(own==="cred"&&CP.fp==="cred")))it.fp=CP.fp;
+ cpLearn();addLog(`completou ${it.n} pelo comprovante`);toast(`${it.n} completado`,und);return true}
 function cpMerge(o){
  if(!$("cpF").hidden)cpRead();
  for(const k in o){const x=o[k];if(!x)continue;
   if(k==="nome"){if(!CP.nome||(!CP.nomeMan&&x.length>CP.nome.length))CP.nome=x}
   else if(k==="d"){if(!CP.dSet){CP.d=x;CP.dSet=1}}
   else if(!CP[k])CP[k]=x}
+ if(CP.rec&&D.apel&&D.apel[nkey(CP.rec)]&&!CP.nomeMan)CP.nome=D.apel[nkey(CP.rec)];
  if(!CP.nome&&CP.cnpj&&D.lojas&&D.lojas[CP.cnpj])CP.nome=D.lojas[CP.cnpj];
  cpShow()}
 function cpQR(t){
@@ -1657,6 +1682,16 @@ async function cpPdf(f){
   Object.keys(R).map(Number).sort((a,b)=>b-a).forEach(y=>out.push(R[y].sort((a,b)=>a[0]-b[0]).map(x=>x[1]).join(" ")))}
  return out.join("\n")}
 async function cpOcr(f){const T=await loadTess(),cv=await prepImg(f,false),r=await T.recognize(cv,"por",{logger:m=>{$("nfS").textContent=m.status==="recognizing text"?`Lendo a imagem… ${Math.round(m.progress*100)}%`:"Preparando o leitor (na primeira vez, ele é baixado)…"}});return r.data.text}
+function cpExLink(it,e,id){it.ids=[...new Set([...(it.ids||[]),id])];if(e.h&&!it.h)it.h=e.h;it.cf=1;if(e.nome&&e.nome!==it.n)it.al=[...new Set([...(it.al||[]),e.nome])]}
+function cpExRender(){
+ const S=$("nfS"),R=(CP.exE||[]).map(e=>{const id=`ex:${e.d}|${e.h}|${e.v}`,lk=cpHas(id);return{e,id,lk,cand:lk?[]:cpNear(e.v,e.d).filter(x=>!(x.ids||[]).some(i=>String(i).startsWith("ex:")))}}),
+  un=R.filter(r=>!r.lk&&r.cand.length===1),no=R.filter(r=>!r.lk&&!r.cand.length);
+ $("cpEx").innerHTML=`<div class="note" style="margin:0">Compras do extrato · toque numa para usar</div><div class="nfacts">${un.length?`<button type="button" class="btn" id="cpExC">Conferir as que combinam (${un.length})</button>`:""}${no.length&&D.vales.length?`<button type="button" class="btn" id="cpExL">Lançar as que faltam (${no.length})</button>`:""}</div>`+
+  (no.length&&D.vales.length>1?`<label class="field">Vale para as novas<select id="cpExV">${D.vales.map((v,i)=>`<option value="${i}">${esc(v.emp)} · ${vtl(v.tipo).toLowerCase()}</option>`).join("")}</select></label>`:"")+
+  R.slice(0,30).map((r,i)=>`<button type="button" class="opt" data-ex="${i}"><div><b>${esc(r.e.nome)}</b><small>${r.e.d.slice(8)}/${r.e.d.slice(5,7)} ${r.e.h} · R$ ${brl(r.e.v)} · ${r.lk?"já conferida":r.cand.length===1?"confere com "+esc(r.cand[0].n):r.cand.length>1?"mais de um combina":"não lançada"}</small></div></button>`).join("");
+ on("#cpEx [data-ex]","click",b=>{const r=R[+b.dataset.ex];if(r.lk){toast("Esta compra já foi conferida");return}const e=r.e;CP.nome=e.nome;CP.nomeMan=0;CP.d=e.d;CP.dSet=1;CP.v=e.v;CP.fp="vale";CP.h=e.h;CP.xid=r.id;CP.mg=undefined;$("cpEx").innerHTML="";S.textContent="";cpShow()});
+ if($("cpExC"))$("cpExC").onclick=()=>{const und=snap(),used=new Set();let n=0;R.forEach(r=>{if(r.lk||r.cand.length!==1||used.has(r.cand[0].id))return;used.add(r.cand[0].id);cpExLink(r.cand[0],r.e,r.id);n++});addLog(`conferiu ${n} compras com o extrato`);toast(`${n} ${n>1?"compras conferidas":"compra conferida"}`,und);renderAll();cpExRender()};
+ if($("cpExL"))$("cpExL").onclick=()=>{const vl=D.vales[$("cpExV")?+$("cpExV").value:0];if(!vl)return;const und=snap();let n=0;no.forEach(r=>{const e=r.e;vl.lanc.push({id:uid(),by:me,at:now(),n:e.nome,v:e.v,d:day(+e.d.slice(8)),k:mk(+e.d.slice(0,4),+e.d.slice(5,7)-1),fp:"vale",ids:[r.id],h:e.h,cf:1});n++});addLog(`lançou ${n} compras do extrato`);toast(`${n} ${n>1?"compras lançadas":"compra lançada"}`,und);renderAll();cpExRender()}}
 function cpExtrato(tx){
  const L=tx.split(/\n/).map(x=>x.replace(/\s+/g," ").trim()).filter(Boolean),E=[],S=$("nfS");let dt=null;
  L.forEach((l,i)=>{const hm=l.normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().match(new RegExp("^(\\d{1,2}) ("+MESN.join("|")+") (\\d{4})$"));
@@ -1666,10 +1701,8 @@ function cpExtrato(tx){
  if(!E.length){S.textContent="Não achei compras nesse extrato.";return}
  if(!$("cpF").hidden)cpRead();
  const mt=CP.v&&E.find(e=>Math.abs(e.v-CP.v)<.005&&(!CP.dSet||e.d===CP.d));
- if(mt){S.textContent=`Achei no extrato: ${mt.nome}. Dados completados.`;$("cpEx").innerHTML="";cpMerge({nome:mt.nome,d:mt.d,v:mt.v,fp:"vale"});return}
- S.textContent="Extrato lido. Toque na compra que quer lançar.";
- $("cpEx").innerHTML=E.slice(0,12).map((e,i)=>`<button type="button" class="opt" data-ex="${i}"><div><b>${esc(e.nome)}</b><small>${e.d.slice(8)}/${e.d.slice(5,7)} ${e.h} · R$ ${brl(e.v)}${cpAll().some(x=>Math.abs(x.v*(x.p||1)-e.v)<.005&&(x.d||x.dd)===+e.d.slice(8))?" · talvez já lançada":""}</small></div></button>`).join("");
- on("#cpEx [data-ex]","click",b=>{const e=E[+b.dataset.ex];CP.nome=e.nome;CP.nomeMan=0;CP.d=e.d;CP.dSet=1;CP.v=e.v;CP.fp="vale";$("cpEx").innerHTML="";S.textContent="";cpShow()})}
+ if(mt){S.textContent=`Achei no extrato: ${mt.nome}. Dados completados.`;$("cpEx").innerHTML="";CP.xid=`ex:${mt.d}|${mt.h}|${mt.v}`;cpMerge({nome:mt.nome,d:mt.d,v:mt.v,fp:"vale",h:mt.h});return}
+ CP.exE=E;S.textContent="Extrato lido.";cpExRender()}
 function cpText(tx,info){
  const S=$("nfS"),g=re=>(tx.match(re)||[])[1];
  if(/saldo total/i.test(tx)&&/compra no/i.test(tx))return cpExtrato(tx);
@@ -1677,10 +1710,11 @@ function cpText(tx,info){
  if(!o.ch){const m=tx.match(/(?:\d{4}\s?){10}\d{4}/),p=m?nfParse(m[0].replace(/\s/g,"")):null;if(p)Object.assign(o,{ch:p.ch,cnpj:p.cnpj,num:p.num,ser:p.ser})}
  const rb=tx.match(/Dados do recebedor([\s\S]*?)(?:Dados do pagador|$)/i);
  if(rb){const n=rb[1].match(/Para\s+(.+?)\s+(?:CPF|CNPJ)\b/i),c=rb[1].match(/(\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2})/),id=tx.match(/ID\/Transa[cç][aã]o\s+(\w{20,})/i);
-  o.pix=1;o.fp=o.fp||"pix";if(n&&n[1].length<60&&!/\d/.test(n[1]))o.nome=cpNome(n[1]);if(c)o.cnpj=c[1];if(id)o.ch="pix:"+id[1]}
+  o.pix=1;o.fp=o.fp||"pix";if(n&&n[1].length<60&&!/\d/.test(n[1])){o.nome=cpNome(n[1]);o.rec=o.nome}if(c)o.cnpj=c[1];if(id)o.ch="pix:"+id[1]}
  if(!o.cnpj&&!o.pix)o.cnpj=g(/(\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2})/);
  if(!o.d){const m=tx.match(/(\d{2})\/(\d{2})\/(\d{2,4})/);if(m)o.d=`${m[3].length===2?"20"+m[3]:m[3]}-${m[2]}-${m[1]}`}
  if(!o.v){const s=g(/(?:valor total|total a pagar|valor pago|valor)\s*:?\s*(?:r\$)?\s*([\d.]+,\d{2})/i);if(s)o.v=num(s)}
+ if(!o.v){const am=[...tx.matchAll(/R\$\s*([\d.]+,\d{2})/g)].map(m=>num(m[1]));if(am.length)o.v=Math.max(...am)}
  if(!o.fp)o.fp=/sodexo|pluxee|alelo|ticket|voucher|alimenta[cç][aã]o|refei[cç][aã]o/i.test(tx)?"vale":/d[eé]bito/i.test(tx)?"deb":/cr[eé]dito/i.test(tx)?"cred":/\bpix\b/i.test(tx)?"pix":/dinheiro/i.test(tx)?"din":"";
  if(!o.nome){const l=tx.split(/\n/).map(x=>x.replace(/\s+/g," ").trim()).find(x=>/(super|mercad|atacad|hiper|assa[ií]|comercial|ltda)/i.test(x)&&x.length<60);if(l)o.nome=cpNome(l)}
  delete o.pix;S.textContent=!Object.values(o).some(Boolean)?"Não achei dados nesse arquivo. Preencha à mão ou use Colar texto.":!o.v?"Li parte dos dados, mas não achei o valor. Digite o valor ou use Colar texto.":"Arquivo lido. Confira os dados abaixo.";
@@ -1701,7 +1735,7 @@ function cpOpen(){
  <div class="nfacts"><button class="btnp" id="cpQ" type="button">Ler QR da nota</button><button class="btn" id="cpA" type="button">Anexar arquivo</button><button class="btn" id="cpM" type="button">Preencher à mão</button></div>
  <input type="file" id="cpFi" hidden accept="image/*,application/pdf,.pdf,.html,.htm,.mhtml,.mht">
  <video id="nfV" playsinline muted hidden></video><div class="note" id="nfS" style="margin:0"></div><div id="cpEx" class="cpf"></div><details><summary class="note" style="margin:0">Colar texto da nota</summary><textarea id="cpT" rows="3" style="width:100%;margin:8px 0" placeholder="Abra a nota, selecione tudo, copie e cole aqui"></textarea><button class="btn" id="cpTb" type="button">Ler texto</button></details>
- <form id="cpF" class="cpf" hidden><div class="banner box warnban" id="cpDup" hidden></div>
+ <form id="cpF" class="cpf" hidden><div class="banner box warnban" id="cpDup" hidden></div><div class="cpf" id="cpMt" hidden></div>
  <label class="field">Mercado<input id="cpN" list="cpNL" autocomplete="off" placeholder="Nome do mercado"></label><datalist id="cpNL">${[...new Set(Object.values(D.lojas||{}))].map(x=>`<option value="${esc(x)}">`).join("")}</datalist><div class="note" id="cpI" style="margin:0"></div>
  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><label class="field">Data<input id="cpD" type="date"></label><label class="field">Valor total (R$)<input id="cpV" inputmode="decimal" placeholder="0,00"></label></div>
  <div><div class="note" style="margin:0">Forma de pagamento</div><div class="chips" id="cpP">${FPG.map(([k,l])=>`<button type="button" data-fp="${k}">${l}</button>`).join("")}</div></div>
@@ -1711,19 +1745,21 @@ function cpOpen(){
  document.body.appendChild(o);
  const close=()=>{nfStop();o.remove()};$("nfX").onclick=close;o.onclick=e=>{if(e.target===o)close()};
  $("cpQ").onclick=nfStart;$("cpA").onclick=()=>$("cpFi").click();$("cpM").onclick=()=>{nfStop();$("nfV").hidden=true;$("nfS").textContent="";cpMerge({})};
- $("cpTb").onclick=()=>{const t=$("cpT").value;if(t.trim())cpText(t,null)};$("cpCat").onchange=()=>{CP.catSet=1};
+ $("cpTb").onclick=()=>{const t=$("cpT").value;if(t.trim())cpText(t,null)};$("cpCat").onchange=()=>{CP.catSet=1};$("cpV").onchange=$("cpD").onchange=()=>{cpRead();cpMatches()};
  $("cpFi").onchange=e=>{const f=e.target.files[0];e.target.value="";if(f)cpFile(f)};
  $("cpP").onclick=e=>{const b=e.target.closest("[data-fp]");if(b){cpRead();cpFp(b.dataset.fp)}};
  $("cpF").onsubmit=e=>{e.preventDefault();cpRead();
   const nome=CP.nome,v=CP.v,fp=CP.fp;
   if(!nome){toast("Escreva o nome do mercado");return}if(!v){toast("Informe o valor total");return}if(!fp){toast("Escolha a forma de pagamento");return}
-  if(CP.ch&&cpAll().some(x=>x.ch===CP.ch)){toast("Esta nota já foi lançada");return}
+  if(CP.ch&&cpHas(CP.ch)){toast("Esta nota já foi lançada");return}
+  if(cpNear(v,CP.d).length&&!CP.mg){toast("Escolha: juntar com um lançamento existente ou criar novo");$("cpMt").scrollIntoView({behavior:"smooth",block:"center"});return}
+  if(CP.mg&&CP.mg!=="new"){if(cpJoin(CP.mg)){close();renderAll()}return}
   const dt=(CP.d||isoD(new Date())).split("-"),dd=day(dt[2]),kk=mk(+dt[0],+dt[1]-1),cat=$("cpCat").value,und=snap(),it={id:uid(),by:me,at:now(),n:nome,v,d:dd,k:kk,fp};
-  if(cat)it.cat=cat;if(CP.ch)it.ch=CP.ch;
+  if(cat)it.cat=cat;if(CP.ch)it.ch=CP.ch;if(CP.cnpj)it.cnpj=CP.cnpj;if(CP.h)it.h=CP.h;if(CP.rec&&CP.rec!==nome)it.al=[CP.rec];if(CP.xid){it.ids=[CP.xid];it.cf=1}
   if(fp==="cred"){const cd=D.cards[+$("cpC").value];if(!cd){toast("Cadastre um cartão de crédito em Cartões");return}delete it.d;Object.assign(it,{p:1,dd,kc:kk,k:fatK(cd,dd,kk)});cd.lanc.push(it)}
   else if(fp==="vale"){const vl=D.vales[+$("cpVv").value];if(!vl){toast("Cadastre um vale em Cartões");return}vl.lanc.push(it)}
   else D.dia.push(it);
-  if(CP.cnpj){D.lojas=D.lojas||{};D.lojas[CP.cnpj]=nome}
+  cpLearn();
   addLog(`lançou ${nome} pelo comprovante`);toast(`${nome} lançado`,und);close();renderAll()};
  $("nfS").textContent="Escolha como ler o comprovante."}
 /* lista de compras */
