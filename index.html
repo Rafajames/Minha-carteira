@@ -452,6 +452,7 @@ body.priv :is(.bkchips b){filter:blur(7px)}
  .colp.col>.h::after{transform:rotate(-45deg)}
  .colp.col>*:not(.h){display:none!important}
 }
+.nfov{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.6);display:grid;place-items:center;padding:12px;overflow:auto}.nfbox{background:var(--card);color:var(--fg);border-radius:16px;padding:16px;max-width:420px;width:100%;display:flex;flex-direction:column;gap:12px}.nfbox video{width:100%;max-height:50vh;object-fit:cover;border-radius:12px;background:#000}.nfbox video[hidden]{display:none}.nfres{display:grid;gap:8px;font-size:14px;word-break:break-all}.nfres span{display:block;color:var(--muted);font-size:12px}.nfacts{display:flex;gap:8px;flex-wrap:wrap}.nfacts a{text-decoration:none;display:inline-flex;align-items:center}
 </style>
 </head>
 <body>
@@ -1583,13 +1584,60 @@ function pPatr(){
  $("fdv").onsubmit=e=>{e.preventDefault();const n=$("dn").value.trim(),s=num($("ds").value);if(!n||!s){toast(!n?"Escreva o nome da dívida":"Informe o saldo devedor");return}D.dividas.push({id:uid(),n,saldo:s,parcela:num($("dp").value),rest:Math.max(parseInt($("dr").value,10)||0,0)});addLog(`cadastrou a dívida ${n}`);renderAll()};
 }
 
+/* leitor de QR da nota fiscal (teste) */
+const JSQR="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js",UFS={11:"RO",12:"AC",13:"AM",14:"RR",15:"PA",16:"AP",17:"TO"};
+let nfStream=null,nfTimer=0;
+function nfStop(){clearInterval(nfTimer);if(nfStream){nfStream.getTracks().forEach(t=>t.stop());nfStream=null}}
+function nfParse(t){
+ let s=String(t||"").trim();try{s=decodeURIComponent(s)}catch(e){}
+ const m=s.match(/[?&]p=([^&\s]+)/),ch=((m?m[1].split("|")[0]:"").match(/^\d{44}$/)||[])[0]||(s.replace(/\D/g,"").match(/\d{44}/)||[])[0];
+ if(!ch)return null;
+ return{ch,url:/^https?:\/\//i.test(String(t).trim())?String(t).trim():"",uf:UFS[ch.slice(0,2)]||"UF "+ch.slice(0,2),mes:ch.slice(4,6)+"/20"+ch.slice(2,4),cnpj:ch.slice(6,20).replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/,"$1.$2.$3/$4-$5"),ser:+ch.slice(22,25),num:+ch.slice(25,34)}}
+async function nfDecoder(){
+ if(window.BarcodeDetector){try{if((await BarcodeDetector.getSupportedFormats()).includes("qr_code")){const d=new BarcodeDetector({formats:["qr_code"]});return async v=>{const r=await d.detect(v);return r[0]?r[0].rawValue:null}}}catch(e){}}
+ if(!window.jsQR)await new Promise((ok,no)=>{const x=document.createElement("script");x.src=JSQR;x.onload=ok;x.onerror=()=>no(new Error("lib"));document.head.appendChild(x)});
+ const cv=document.createElement("canvas"),cx=cv.getContext("2d",{willReadFrequently:true});
+ return async v=>{const w=v.videoWidth;if(!w)return null;const k=Math.min(1,900/w);cv.width=Math.round(w*k);cv.height=Math.round(v.videoHeight*k);cx.drawImage(v,0,0,cv.width,cv.height);const im=cx.getImageData(0,0,cv.width,cv.height),r=jsQR(im.data,cv.width,cv.height,{inversionAttempts:"dontInvert"});return r?r.data:null}}
+async function nfFetch(url,out){
+ out.textContent="Buscando a nota…";
+ try{const r=await fetch(url,{credentials:"omit"}),d=new DOMParser().parseFromString(await r.text(),"text/html"),rows=[...d.querySelectorAll("table.gx-cupom-itens tbody tr")];
+  if(!rows.length){out.textContent="A página abriu, mas o app não achou a lista de itens.";return}
+  const it=rows.map(tr=>({n:tr.children[1].querySelector("strong").textContent.trim(),v:tr.children[4].textContent.replace(/[^\d,]/g,"")}));
+  out.innerHTML=`<b>Funcionou: ${it.length} itens lidos</b>`+it.slice(0,5).map(x=>`<div>${esc(x.n)} · R$ ${esc(x.v)}</div>`).join("")+(it.length>5?`<div class="note">e mais ${it.length-5}…</div>`:"")}
+ catch(e){out.textContent="O navegador não deixou o app buscar a página sozinho. Toque em Abrir nota para ver os itens."}}
+function nfShow(t){
+ const r=nfParse(t),S=$("nfS"),R=$("nfR");
+ if(!r){S.textContent="Isso não parece o QR de uma nota fiscal. Tente de novo.";R.innerHTML=`<button class="btn" id="nfAg" type="button">Ler de novo</button>`;$("nfAg").onclick=nfStart;return}
+ if(navigator.vibrate)navigator.vibrate(60);
+ S.textContent="QR lido";
+ R.innerHTML=`<div class="nfres"><div><span>Loja (CNPJ)</span>${esc(r.cnpj)}</div><div><span>Estado e mês</span>${esc(r.uf)} · ${esc(r.mes)}</div><div><span>Nota</span>nº ${r.num} · série ${r.ser}</div><div><span>Chave de acesso</span>${esc(r.ch.replace(/(\d{4})(?=\d)/g,"$1 "))}</div></div>`+
+ (r.url?`<div class="nfacts"><a class="btnp" href="${esc(r.url)}" target="_blank" rel="noopener">Abrir nota</a><button class="btn" id="nfBu" type="button">Testar busca dos itens</button></div><div class="note" id="nfO"></div>`:`<div class="note">Só a chave foi lida (sem o link da nota).</div>`)+`<button class="btn" id="nfAg" type="button">Ler outra nota</button>`;
+ $("nfAg").onclick=nfStart;if(r.url)$("nfBu").onclick=()=>nfFetch(r.url,$("nfO"))}
+async function nfStart(){
+ nfStop();const v=$("nfV"),S=$("nfS");$("nfR").innerHTML="";v.hidden=false;S.textContent="Abrindo a câmera…";
+ try{
+  nfStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"},width:{ideal:1280}},audio:false});
+  v.srcObject=nfStream;await v.play();
+  const det=await nfDecoder();S.textContent="Aponte para o QR da nota";let busy=0;
+  nfTimer=setInterval(async()=>{if(busy)return;busy=1;try{const t=await det(v);if(t){nfStop();v.hidden=true;nfShow(t)}}catch(e){}busy=0},250)}
+ catch(e){v.hidden=true;nfStop();S.textContent=e&&e.name==="NotAllowedError"?"Permita a câmera no navegador para ler o QR.":e&&e.message==="lib"?"Sem internet para carregar o leitor. Cole o link abaixo.":"Não consegui abrir a câmera. Cole o link da nota abaixo."}}
+function nfOpen(){
+ nfStop();const old=$("nfOv");if(old)old.remove();
+ const o=document.createElement("div");o.id="nfOv";o.className="nfov";
+ o.innerHTML=`<div class="nfbox"><div class="hhead"><b>Ler QR da nota</b><span class="sp"></span><button class="btn" id="nfX" type="button">Fechar</button></div><video id="nfV" playsinline muted></video><div class="note" id="nfS"></div><div id="nfR"></div><details><summary class="note">Colar o link ou a chave</summary><textarea id="nfT" rows="3" style="width:100%;margin-top:8px" placeholder="Cole aqui o link do QR ou a chave de 44 dígitos"></textarea><button class="btn" id="nfP" type="button">Ler texto</button></details></div>`;
+ document.body.appendChild(o);
+ const close=()=>{nfStop();o.remove()};$("nfX").onclick=close;o.onclick=e=>{if(e.target===o)close()};
+ $("nfP").onclick=()=>{nfStop();$("nfV").hidden=true;nfShow($("nfT").value)};
+ nfStart()}
 /* lista de compras */
 function pLista(){
  const L=Object.entries(D.lista||{}).map(([id,x])=>({id,...x})).sort((a,b)=>(a.ok-b.ok)||((a.t||0)-(b.t||0))),ok=L.filter(x=>x.ok);
  $("v-lista").innerHTML=PH("shopping_cart","Lista de compras","A mesma lista para toda a família, atualizada na hora")+
+ `<section class="c box"><div class="h">Nota fiscal <small>· teste</small></div><div class="note" style="margin:0 0 8px">Aponte a câmera para o QR da nota do mercado.</div><button class="btnp" id="nfGo" type="button">Ler QR da nota</button></section>`+
  `<section class="c box"><form id="fli" class="form f2"><label class="field">Item<input id="lin" required placeholder="Ex.: Café" autocomplete="off"></label><button class="btnp">Adicionar</button></form>
  <div style="margin-top:8px">${L.length?L.map(x=>`<div class="bill${x.ok?" done":""}"><button class="tg" data-li="${x.id}"><span class="ck"></span><span class="nm">${esc(x.n)}${x.by&&x.by!==me&&D.people.some(p=>p.id===x.by)?`<small>pedido por ${N(x.by)}</small>`:""}</span></button><button class="ed" data-lx="${x.id}" aria-label="Remover ${esc(x.n)}">×</button></div>`).join(""):`<div class="note">A lista está vazia.</div>`}</div></section>
  ${ok.length?`<section class="c box"><div class="h">Fechar a compra <small>· ${ok.length} ${ok.length>1?"itens marcados":"item marcado"}</small></div><form id="ffc" class="form f3"><label class="field">Valor pago (R$)<input id="fcv" inputmode="decimal" required placeholder="0,00"></label><label class="field">Lançar como<select id="fcc"><option value="-1">Gasto do dia</option>${(D.vales||[]).map((v,i)=>`<option value="v${i}">No vale ${esc(v.emp)}</option>`).join("")}${D.cards.map((c,i)=>`<option value="${i}">Compra no ${esc(c.bk)}</option>`).join("")}</select></label><button class="btnp">Fechar compra</button></form><div class="note">Os itens marcados saem da lista e a compra entra em Mercado.</div></section>`:""}`;
+ $("nfGo").onclick=nfOpen;
  $("fli").onsubmit=e=>{e.preventDefault();const n=$("lin").value.trim();if(!n)return;if(!D.lista)D.lista={};D.lista[uid()]={n:n.replace(/^./,c=>c.toUpperCase()),ok:0,t:now(),by:me};renderAll();const i=$("lin");if(i)i.focus()};
  on("[data-li]","click",b=>{const x=D.lista[b.dataset.li];if(x){x.ok=x.ok?0:1;renderAll()}});
  on("[data-lx]","click",b=>{const und=snap(),x=D.lista[b.dataset.lx];delete D.lista[b.dataset.lx];toast(`${x?x.n:"Item"} removido`,und);renderAll()});
