@@ -433,6 +433,25 @@ body.priv :is(.bkchips b){filter:blur(7px)}
 .btn,.btnp,.arrow,.circ,.bell,.opt,.kc,.bnav button,.add button{transition:transform .12s ease,background-color .15s ease,border-color .15s ease,box-shadow .15s ease,color .15s ease}
 .btn:active,.btnp:active,.arrow:active,.circ:active,.bell:active,.opt:active,.kc:active,.bnav button:active,.add button:active{transform:scale(.96)}
 @media (hover:hover){.kc:hover{transform:translateY(-2px);box-shadow:0 8px 24px #0f172a14}}
+/* barras que crescem, troca de mês deslizando, microfone, aviso offline e seções recolhíveis */
+@keyframes mcGrow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes mcSlideL{from{opacity:0;transform:translateX(-24px)}to{opacity:1;transform:none}}
+@keyframes mcSlideR{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:none}}
+@keyframes mcPulse{0%,100%{box-shadow:0 0 0 0 #e11d4866}50%{box-shadow:0 0 0 8px #e11d4800}}
+.enter .kbar>span,.enter .sg,.enter .stack>*,.enter .split>*,.enter #mfill,.enter .mbar>div{transform-origin:left center;animation:mcGrow .7s cubic-bezier(.2,.8,.2,1) backwards}
+.view.sl{animation:mcSlideL .28s ease-out backwards}.view.sr{animation:mcSlideR .28s ease-out backwards}
+.quick{align-items:center}#qkMic{flex:none;font-size:16px;background:var(--card);cursor:pointer}#qkMic.rec{animation:mcPulse 1.2s infinite;border-color:var(--pink)}
+.offb{position:fixed;left:50%;top:calc(8px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:60;max-width:min(92vw,420px);padding:8px 16px;border-radius:16px;background:#92400e;color:#fff;font-size:12px;font-weight:600;text-align:center;box-shadow:0 8px 24px #0f172a33;animation:mcPop .2s ease-out backwards}.offb.ok{background:#15803d}
+#inst{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+@media (max-width:820px){
+ #vx{display:contents}
+ #v-visao>.hello{order:0}#gastar{order:1}#hoje{order:2}#kpis{order:3}#bancos,#novid,#inst,#resumo,#aviso,#semana{order:4}#v-visao>.grid{order:5}#onde{order:6}#conq{order:7}
+ #qkMic{width:40px;height:40px}
+ .colp>.h{cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px}
+ .colp>.h::after{content:"";width:8px;height:8px;margin-right:4px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);transition:transform .2s ease;flex:none}
+ .colp.col>.h::after{transform:rotate(-45deg)}
+ .colp.col>*:not(.h){display:none!important}
+}
 </style>
 </head>
 <body>
@@ -494,6 +513,7 @@ body.priv :is(.bkchips b){filter:blur(7px)}
    <section class="c box" id="hoje"></section>
    <section class="c box" id="bancos" hidden></section>
    <div class="banner box" id="novid" hidden></div>
+   <div class="banner box" id="inst" hidden></div>
    <div class="banner box" id="resumo" hidden></div>
    <div class="kpis" id="kpis"></div>
    <div class="banner box warnban" id="aviso" hidden></div>
@@ -581,6 +601,7 @@ body.priv :is(.bkchips b){filter:blur(7px)}
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 
+<div class="offb" id="offb" role="status" hidden></div>
 <script>
 /* ===== datas e chaves ===== */
 const MESES=["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
@@ -2446,18 +2467,89 @@ function pAjuda(){
 
 /* ===== rotas e render ===== */
 const V={visao:null,fluxo:pFluxo,cartoes:pCartoes,casa:pCasa,reserva:pReserva,renda:pRenda,contas:pContas,plano:pPlano,patrimonio:pPatr,lista:pLista,ajuda:pAjuda,cat:pCat,extratos:pExt,sobre:pSobre,adm:pAdm};
+
+/* ===== animações de entrada, microfone, offline, instalar e seções recolhíveis ===== */
+function animNums(root){
+ if(matchMedia("(prefers-reduced-motion:reduce)").matches)return;
+ root.querySelectorAll("#kpis .money,#gastar .money,#sobraBig").forEach(el=>{
+  const m=el.textContent.replace(/\s+/g," ").match(/(−|-)?\s*R\$\s*([\d.]+),(\d{2})/);if(!m)return;
+  const v=(m[1]?-1:1)*parseFloat(m[2].replace(/\./g,"")+"."+m[3]);if(!v)return;
+  const html=el.innerHTML,t0=performance.now();
+  const step=n=>{const p=Math.min((n-t0)/650,1);if(p<1&&el.isConnected){el.innerHTML=money(v*(1-Math.pow(1-p,3)));requestAnimationFrame(step)}else if(el.isConnected)el.innerHTML=html};
+  requestAnimationFrame(step)})}
+function playEnter(dir){
+ const v=document.querySelector(".view:not([hidden])");if(!v)return;
+ v.classList.remove("enter","sl","sr");void v.offsetWidth;v.classList.add("enter");if(dir)v.classList.add(dir<0?"sl":"sr");
+ setTimeout(()=>v.classList.remove("enter","sl","sr"),900);animNums(v)}
+const COLP=["div","mor","saude","conq","onde","obra"],COLP_DEF=["div","mor","saude","conq","obra"];
+const colSt=()=>{try{return JSON.parse(lsGet("mc-col")||"{}")}catch(e){return{}}};
+function initColp(){const st=colSt();COLP.forEach(id=>{const e=$(id);if(!e)return;e.classList.add("colp");if(st[id]===undefined?COLP_DEF.includes(id):st[id])e.classList.add("col")})}
+document.addEventListener("click",e=>{
+ const h=e.target.closest(".colp>.h");if(!h||!matchMedia("(max-width:820px)").matches||e.target.closest("button,a,input,select"))return;
+ const s=h.parentElement;s.classList.toggle("col");const st=colSt();st[s.id]=s.classList.contains("col")?1:0;lsSet("mc-col",JSON.stringify(st))});
+initColp();
+
+function voiceFix(t){
+ t=String(t).toLowerCase().replace(/r\$/g,"").replace(/\breais?\b/g," ").replace(/\bcentavos?\b/g," ").replace(/\s+/g," ").trim();
+ const U={zero:0,um:1,uma:1,dois:2,duas:2,"três":3,tres:3,quatro:4,cinco:5,seis:6,sete:7,oito:8,nove:9,dez:10,onze:11,doze:12,treze:13,catorze:14,quatorze:14,quinze:15,dezesseis:16,dezessete:17,dezoito:18,dezenove:19,vinte:20,trinta:30,quarenta:40,cinquenta:50,sessenta:60,setenta:70,oitenta:80,noventa:90,cem:100,cento:100,duzentos:200,trezentos:300,quatrocentos:400,quinhentos:500,seiscentos:600,setecentos:700,oitocentos:800,novecentos:900};
+ const w=t.split(" "),out=[];
+ for(let i=0;i<w.length;){
+  if(w[i] in U||w[i]==="mil"){
+   let tot=0,cur=0,last=Infinity,j=i,any=false;
+   while(j<w.length){const x=w[j];
+    if(x==="e"&&any&&j+1<w.length&&(w[j+1] in U)&&last>U[w[j+1]]){j++;continue}
+    if(x in U){if(any&&U[x]>=last)break;cur+=U[x];last=U[x];any=true;j++}
+    else if(x==="mil"){tot+=(cur||1)*1000;cur=0;last=1000;any=true;j++}
+    else break}
+   out.push(String(tot+cur));i=j}
+  else{out.push(w[i]);i++}}
+ let s=out.join(" ");
+ s=s.replace(/(\d+)\s+e\s+(\d{1,2})(?!\d)/,(m,a,b)=>a+","+b.padStart(2,"0"));
+ s=s.replace(/(\d+)\s+(\d{2})(?!\d)/,(m,a,b)=>a+","+b);
+ return s.replace(/\s+/g," ").trim()}
+(function(){
+ const SR=window.SpeechRecognition||window.webkitSpeechRecognition,q=$("quick");if(!SR||!q)return;
+ const b=document.createElement("button");b.type="button";b.id="qkMic";b.className="circ";b.setAttribute("aria-label","Falar o lançamento");b.title="Falar o lançamento";b.textContent="🎤";
+ q.insertBefore(b,q.querySelector(".btnp"));let rec=null;
+ b.onclick=()=>{
+  if(rec){rec.stop();return}
+  rec=new SR();rec.lang="pt-BR";rec.interimResults=false;rec.maxAlternatives=1;b.classList.add("rec");
+  rec.onresult=ev=>{$("qk").value=voiceFix(ev.results[0][0].transcript);$("qk").focus();toast("Confira o texto e toque em Lançar")};
+  rec.onerror=ev=>toast(ev.error==="not-allowed"||ev.error==="service-not-allowed"?"Permita o microfone no navegador para falar.":"Não entendi, tente de novo.");
+  rec.onend=()=>{rec=null;b.classList.remove("rec")};
+  try{rec.start()}catch(e){rec=null;b.classList.remove("rec")}}
+})();
+
+(function(){
+ const o=$("offb");let tm;
+ const show=(t,ok)=>{o.textContent=t;o.className="offb"+(ok?" ok":"");o.hidden=false;clearTimeout(tm);if(ok)tm=setTimeout(()=>o.hidden=true,2500)};
+ const chk=()=>{if(!navigator.onLine)show(MODE==="cloud"?"Sem internet. O app continua funcionando e envia seus lançamentos quando a conexão voltar.":"Sem internet. Tudo continua salvo neste aparelho.")};
+ addEventListener("offline",chk);addEventListener("online",()=>{if(!o.hidden)show("Conexão de volta",1)});setTimeout(chk,1500);
+})();
+let instEv=null;
+const instIOS=/iphone|ipad|ipod/i.test(navigator.userAgent),instStand=matchMedia("(display-mode: standalone)").matches||navigator.standalone;
+function renderInst(){
+ const b=$("inst");if(!b)return;
+ if(instStand||lsGet("mc-inst-no")||(!instEv&&!instIOS)){b.hidden=true;return}
+ b.hidden=false;
+ b.innerHTML=`<div><b>Instale o Minha Carteira</b><div class="note" style="margin:4px 0 0">${instEv?"Abre mais rápido, em tela cheia, e funciona sem internet.":"No iPhone: toque em Compartilhar e depois em Adicionar à Tela de Início."}</div></div><div class="gact">${instEv?`<button class="btnp" id="instGo" type="button">Instalar</button>`:""}<button class="btn" id="instNo" type="button">Agora não</button></div>`;
+ if($("instGo"))$("instGo").onclick=async()=>{instEv.prompt();try{await instEv.userChoice}catch(e){}instEv=null;renderInst()};
+ $("instNo").onclick=()=>{lsSet("mc-inst-no","1");b.hidden=true}}
+addEventListener("beforeinstallprompt",e=>{e.preventDefault();instEv=e;renderInst()});
+addEventListener("appinstalled",()=>{instEv=null;renderInst()});
+renderInst();
 function route(){
  cur=(location.hash||"#visao").slice(1);if(!(cur in V))cur="visao";
  document.querySelectorAll(".view").forEach(v=>v.hidden=v.id!=="v-"+cur);
  document.querySelectorAll("[data-v]").forEach(b=>b.classList.toggle("on",b.dataset.v===cur));
  $("maisBtn").classList.toggle("on",MAIS.some(m=>m[0]===cur));
- if(D&&V[cur])V[cur]();scrollTo(0,0);
+ if(D&&V[cur])V[cur]();scrollTo(0,0);playEnter();
 }
 addEventListener("hashchange",route);
 function renderMonth(){$("month").innerHTML=`${MESES[mes]} <span>${ano}</span>`}
 function renderAll(){if(!D)return;syncCats();save();renderSide();renderMonth();renderHello();renderHoje();renderBancos();renderNovid();renderResumo();renderKpis();renderAviso();renderSemana();renderOnde();renderGastar();renderConq();renderSaldo();renderContas();renderDiv();renderCart();renderVline();renderMor();renderObra();renderSaude();renderBell();if(V[cur])V[cur]()}
 const goM=n=>{[ano,mes]=mAdd(ano,mes,n);selDay=null;renderAll()};
-$("prev").onclick=()=>goM(-1);$("next").onclick=()=>goM(1);
+$("prev").onclick=()=>{goM(-1);playEnter(-1)};$("next").onclick=()=>{goM(1);playEnter(1)};
 
 /* ===== tema ===== */
 function syncTheme(){const t=document.documentElement.dataset.theme||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");document.querySelectorAll(".tl").forEach(b=>b.classList.toggle("on",t==="light"));document.querySelectorAll(".td").forEach(b=>b.classList.toggle("on",t==="dark"))}
