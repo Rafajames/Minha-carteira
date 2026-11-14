@@ -452,7 +452,7 @@ body.priv :is(.bkchips b){filter:blur(7px)}
  .colp.col>.h::after{transform:rotate(-45deg)}
  .colp.col>*:not(.h){display:none!important}
 }
-.nfov{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.6);display:grid;place-items:center;padding:12px;overflow:auto}.nfbox{background:var(--card);color:var(--fg);border-radius:16px;padding:16px;max-width:420px;width:100%;display:flex;flex-direction:column;gap:12px}.nfbox video{width:100%;max-height:50vh;object-fit:cover;border-radius:12px;background:#000}.nfbox video[hidden]{display:none}.nfres{display:grid;gap:8px;font-size:14px;word-break:break-all}.nfres span{display:block;color:var(--muted);font-size:12px}.nfacts{display:flex;gap:8px;flex-wrap:wrap}.nfacts a{text-decoration:none;display:inline-flex;align-items:center}
+.nfov{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.6);display:grid;place-items:center;padding:12px;overflow:auto}.nfbox{background:var(--card);color:var(--fg);border-radius:16px;padding:16px;max-width:420px;width:100%;display:flex;flex-direction:column;gap:12px}.nfbox video{width:100%;max-height:50vh;object-fit:cover;border-radius:12px;background:#000}.nfbox video[hidden]{display:none}.nfres{display:grid;gap:8px;font-size:14px;word-break:break-all}.nfres span{display:block;color:var(--muted);font-size:12px}.nfacts{display:flex;gap:8px;flex-wrap:wrap}.nfacts a{text-decoration:none;display:inline-flex;align-items:center}.btnp:disabled{opacity:.4;cursor:not-allowed}.cpf{display:flex;flex-direction:column;gap:12px}.nfbox .opt{width:100%}.nfbox .field{margin:0}
 </style>
 </head>
 <body>
@@ -1271,8 +1271,8 @@ $("addForm").onsubmit=e=>{
 $("addBtn").onclick=()=>openForm("conta");
 function pinTop(){const h=document.querySelector("header.top");if(h&&h.getBoundingClientRect().top<0)h.scrollIntoView({behavior:"smooth",block:"start"})}
 $("addMore").onclick=e=>{e.stopPropagation();$("bellPop").hidden=true;const p=$("addPop");
- p.innerHTML=`<h4>Adicionar</h4>${TIPOS.map(([k,l,ic])=>`<button class="opt" data-t="${k}"><img src="${ICON(ic)}" alt="" style="width:32px;height:32px"><div><b>${l}</b></div></button>`).join("")}<button class="opt" id="ocrOpt"><img src="${ICON("receipt")}" alt="" style="width:32px;height:32px"><div><b>Por foto ou print</b><small>comprovante ou fatura</small></div></button>`;
- p.hidden=!p.hidden;if(!p.hidden)pinTop();on("#addPop [data-t]","click",b=>openForm(b.dataset.t));$("ocrOpt").onclick=openOCR};
+ p.innerHTML=`<h4>Adicionar</h4>${TIPOS.filter(t=>t[0]!=="vale").map(([k,l,ic])=>`<button class="opt" data-t="${k}"><img src="${ICON(ic)}" alt="" style="width:32px;height:32px"><div><b>${l}</b></div></button>`).join("")}<button class="opt" id="cpOpt"><img src="${ICON("receipt")}" alt="" style="width:32px;height:32px"><div><b>Comprovante</b><small>QR da nota, foto ou arquivo</small></div></button>`;
+ p.hidden=!p.hidden;if(!p.hidden)pinTop();on("#addPop [data-t]","click",b=>openForm(b.dataset.t));$("cpOpt").onclick=()=>{p.hidden=true;cpOpen()}};
 document.addEventListener("click",e=>{
  const b=e.target.closest("[data-e]");if(b&&D){const f=find(b.dataset.e);if(f)openForm(f.kind,f);return}
  const ct=e.target.closest("[data-cat]");if(ct&&D){openCat(ct.dataset.cat);return}
@@ -1598,46 +1598,139 @@ async function nfDecoder(){
  if(!window.jsQR)await new Promise((ok,no)=>{const x=document.createElement("script");x.src=JSQR;x.onload=ok;x.onerror=()=>no(new Error("lib"));document.head.appendChild(x)});
  const cv=document.createElement("canvas"),cx=cv.getContext("2d",{willReadFrequently:true});
  return async v=>{const w=v.videoWidth;if(!w)return null;const k=Math.min(1,900/w);cv.width=Math.round(w*k);cv.height=Math.round(v.videoHeight*k);cx.drawImage(v,0,0,cv.width,cv.height);const im=cx.getImageData(0,0,cv.width,cv.height),r=jsQR(im.data,cv.width,cv.height,{inversionAttempts:"dontInvert"});return r?r.data:null}}
-async function nfFetch(url,out){
- out.textContent="Buscando a nota…";
- try{const r=await fetch(url,{credentials:"omit"}),d=new DOMParser().parseFromString(await r.text(),"text/html"),rows=[...d.querySelectorAll("table.gx-cupom-itens tbody tr")];
-  if(!rows.length){out.textContent="A página abriu, mas o app não achou a lista de itens.";return}
-  const it=rows.map(tr=>({n:tr.children[1].querySelector("strong").textContent.trim(),v:tr.children[4].textContent.replace(/[^\d,]/g,"")}));
-  out.innerHTML=`<b>Funcionou: ${it.length} itens lidos</b>`+it.slice(0,5).map(x=>`<div>${esc(x.n)} · R$ ${esc(x.v)}</div>`).join("")+(it.length>5?`<div class="note">e mais ${it.length-5}…</div>`:"")}
- catch(e){out.textContent="O navegador não deixou o app buscar a página sozinho. Toque em Abrir nota para ver os itens."}}
-function nfShow(t){
- const r=nfParse(t),S=$("nfS"),R=$("nfR");
- if(!r){S.textContent="Isso não parece o QR de uma nota fiscal. Tente de novo.";R.innerHTML=`<button class="btn" id="nfAg" type="button">Ler de novo</button>`;$("nfAg").onclick=nfStart;return}
- if(navigator.vibrate)navigator.vibrate(60);
- S.textContent="QR lido";
- R.innerHTML=`<div class="nfres"><div><span>Loja (CNPJ)</span>${esc(r.cnpj)}</div><div><span>Estado e mês</span>${esc(r.uf)} · ${esc(r.mes)}</div><div><span>Nota</span>nº ${r.num} · série ${r.ser}</div><div><span>Chave de acesso</span>${esc(r.ch.replace(/(\d{4})(?=\d)/g,"$1 "))}</div></div>`+
- (r.url?`<div class="nfacts"><a class="btnp" href="${esc(r.url)}" target="_blank" rel="noopener">Abrir nota</a><button class="btn" id="nfBu" type="button">Testar busca dos itens</button></div><div class="note" id="nfO"></div>`:`<div class="note">Só a chave foi lida (sem o link da nota).</div>`)+`<button class="btn" id="nfAg" type="button">Ler outra nota</button>`;
- $("nfAg").onclick=nfStart;if(r.url)$("nfBu").onclick=()=>nfFetch(r.url,$("nfO"))}
 async function nfStart(){
- nfStop();const v=$("nfV"),S=$("nfS");$("nfR").innerHTML="";v.hidden=false;S.textContent="Abrindo a câmera…";
+ nfStop();const v=$("nfV"),S=$("nfS");v.hidden=false;S.textContent="Abrindo a câmera…";
  try{
   nfStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"},width:{ideal:1280}},audio:false});
   v.srcObject=nfStream;await v.play();
   const det=await nfDecoder();S.textContent="Aponte para o QR da nota";let busy=0;
-  nfTimer=setInterval(async()=>{if(busy)return;busy=1;try{const t=await det(v);if(t){nfStop();v.hidden=true;nfShow(t)}}catch(e){}busy=0},250)}
- catch(e){v.hidden=true;nfStop();S.textContent=e&&e.name==="NotAllowedError"?"Permita a câmera no navegador para ler o QR.":e&&e.message==="lib"?"Sem internet para carregar o leitor. Cole o link abaixo.":"Não consegui abrir a câmera. Cole o link da nota abaixo."}}
-function nfOpen(){
- nfStop();const old=$("nfOv");if(old)old.remove();
+  nfTimer=setInterval(async()=>{if(busy)return;busy=1;try{const t=await det(v);if(t){nfStop();v.hidden=true;cpQR(t)}}catch(e){}busy=0},250)}
+ catch(e){v.hidden=true;nfStop();S.textContent=e&&e.name==="NotAllowedError"?"Permita a câmera no navegador para ler o QR.":e&&e.message==="lib"?"Sem internet para carregar o leitor. Use Anexar arquivo ou Preencher à mão.":"Não consegui abrir a câmera. Use Anexar arquivo ou Preencher à mão."}}
+/* ===== comprovante: QR da nota, anexo ou à mão ===== */
+const FPG=[["pix","Pix"],["deb","Débito"],["cred","Crédito"],["vale","Vale alimentação"],["din","Dinheiro"]],MESN=["janeiro","fevereiro","marco","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"],JSPDF="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js",JSPDFW="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
+let CP={};
+const isoD=d=>`${d.getFullYear()}-${two(d.getMonth()+1)}-${two(d.getDate())}`,cpAll=()=>[].concat(D.dia,...D.cards.map(c=>c.lanc||[]),...D.vales.map(v=>v.lanc||[])),
+ cpNome=t=>String(t||"").replace(/\s*-\s*FILIAL.*$/i,"").replace(/\b(LTDA|S\/A|EIRELI|EPP)\b\.?/gi,"").replace(/\s+/g," ").trim().toLowerCase().replace(/(^|\s)(\p{L})/gu,(m,a,c)=>a+c.toUpperCase());
+function cpRead(){const n=$("cpN").value.trim();if(n!==(CP.nome||""))CP.nomeMan=1;CP.nome=n;CP.d=$("cpD").value||CP.d;CP.v=num($("cpV").value)||0}
+function cpFp(k){CP.fp=k||"";document.querySelectorAll("#cpP button").forEach(b=>b.classList.toggle("on",b.dataset.fp===k));
+ $("cpCw").hidden=k!=="cred";$("cpC").innerHTML=D.cards.map((c,i)=>[i,c]).filter(([i,c])=>!isDeb(c)).map(([i,c])=>`<option value="${i}">${esc(c.bk)} ${esc(c.nm)}</option>`).join("")||`<option value="">Nenhum cartão de crédito</option>`;
+ $("cpVw").hidden=k!=="vale";$("cpVv").innerHTML=D.vales.map((v,i)=>`<option value="${i}">${esc(v.emp)} · ${vtl(v.tipo).toLowerCase()} · saldo R$ ${brl(valeSaldo(v))}</option>`).join("")||`<option value="">Nenhum vale cadastrado</option>`}
+function cpShow(){
+ $("cpF").hidden=false;$("cpN").value=CP.nome||"";$("cpD").value=CP.d||isoD(new Date());$("cpV").value=CP.v?brl(CP.v):"";cpFp(CP.fp);
+ $("cpI").innerHTML=[CP.cnpj&&"CNPJ "+esc(CP.cnpj),CP.num&&"Nota nº "+CP.num+(CP.ser?" · série "+CP.ser:""),CP.url?`<a href="${esc(CP.url)}" target="_blank" rel="noopener">Abrir nota</a>`:""].filter(Boolean).join(" · ");
+ const du=CP.ch?cpAll().find(x=>x.ch===CP.ch):null;$("cpDup").hidden=!du;$("cpGo").disabled=!!du;
+ if(du)$("cpDup").innerHTML=`<p><b>Nota repetida.</b> Esta nota já foi lançada como ${esc(du.n)}, R$ ${brl(du.v*(du.p||1))}. Ela não será lançada de novo.</p>`}
+function cpMerge(o){
+ if(!$("cpF").hidden)cpRead();
+ for(const k in o){const x=o[k];if(!x)continue;
+  if(k==="nome"){if(!CP.nome||(!CP.nomeMan&&x.length>CP.nome.length))CP.nome=x}
+  else if(k==="d"){if(!CP.dSet){CP.d=x;CP.dSet=1}}
+  else if(!CP[k])CP[k]=x}
+ if(!CP.nome&&CP.cnpj&&D.lojas&&D.lojas[CP.cnpj])CP.nome=D.lojas[CP.cnpj];
+ cpShow()}
+function cpQR(t){
+ const r=nfParse(t),S=$("nfS");
+ if(!r){S.textContent="Isso não parece o QR de uma nota fiscal. Toque em Ler QR da nota para tentar de novo.";return}
+ if(navigator.vibrate)navigator.vibrate(60);
+ S.textContent=`QR lido · ${r.uf} · ${r.mes}. Confira os dados e informe o valor.`;
+ cpMerge({cnpj:r.cnpj,ch:r.ch,num:r.num,ser:r.ser,url:r.url})}
+function cpHtml(raw){
+ if(!/^\s*(From|MIME-Version|Subject|Content-Type):/i.test(raw))return raw;
+ const b=(raw.match(/boundary="?([^"\r\n;]+)"?/i)||[])[1];if(!b)return raw;
+ for(const p of raw.split("--"+b)){const i=p.search(/\r?\n\r?\n/);if(i<0)continue;const hd=p.slice(0,i);if(!/content-type:\s*text\/html/i.test(hd))continue;let body=p.slice(i).replace(/^\s+/,"");
+  if(/quoted-printable/i.test(hd)){body=body.replace(/=\r?\n/g,"");const by=[];for(let j=0;j<body.length;j++){if(body[j]==="="&&/^[0-9A-F]{2}$/i.test(body.substr(j+1,2))){by.push(parseInt(body.substr(j+1,2),16));j+=2}else by.push(body.charCodeAt(j)&255)}body=new TextDecoder("utf-8").decode(new Uint8Array(by))}
+  else if(/base64/i.test(hd)){try{body=new TextDecoder().decode(Uint8Array.from(atob(body.replace(/\s/g,"")),c=>c.charCodeAt(0)))}catch(e){}}
+  return body}
+ return raw}
+function cpNota(h){
+ const d=new DOMParser().parseFromString(h,"text/html"),t=(d.body?d.body.textContent:"").replace(/\s+/g," ");
+ if(!d.querySelector("table.gx-cupom-itens")&&!/NFC-e/i.test(t))return null;
+ const o={},m=t.match(/(?:\d{4}\s?){10}\d{4}/),p=m?nfParse(m[0].replace(/\s/g,"")):null;if(p)Object.assign(o,{ch:p.ch,cnpj:p.cnpj,num:p.num,ser:p.ser});
+ const n=t.match(/AUTORIZADA\s+(.+?)\s+CNPJ\/CPF:/i),e=t.match(/Emiss\S*\s+(\d{2})\/(\d{2})\/(\d{4})/),v=t.match(/VALOR TOTAL\s*R\$\s*([\d.]+,\d{2})/i);
+ if(n)o.nome=cpNome(n[1]);if(e)o.d=`${e[3]}-${e[2]}-${e[1]}`;if(v)o.v=num(v[1]);return o}
+async function cpPdf(f){
+ if(!window.pdfjsLib){await new Promise((ok,no)=>{const x=document.createElement("script");x.src=JSPDF;x.onload=ok;x.onerror=()=>no(new Error("lib"));document.head.appendChild(x)});
+  pdfjsLib.GlobalWorkerOptions.workerSrc=URL.createObjectURL(await (await fetch(JSPDFW)).blob())}
+ const pdf=await pdfjsLib.getDocument({data:await f.arrayBuffer()}).promise,out=[];
+ for(let p=1;p<=pdf.numPages;p++){const c=await (await pdf.getPage(p)).getTextContent(),R={};
+  c.items.forEach(it=>{const y=Math.round(it.transform[5]/4);(R[y]=R[y]||[]).push([it.transform[4],it.str])});
+  Object.keys(R).map(Number).sort((a,b)=>b-a).forEach(y=>out.push(R[y].sort((a,b)=>a[0]-b[0]).map(x=>x[1]).join(" ")))}
+ return out.join("\n")}
+async function cpOcr(f){const T=await loadTess(),cv=await prepImg(f,false),r=await T.recognize(cv,"por",{logger:m=>{$("nfS").textContent=m.status==="recognizing text"?`Lendo a imagem… ${Math.round(m.progress*100)}%`:"Preparando o leitor (na primeira vez, ele é baixado)…"}});return r.data.text}
+function cpExtrato(tx){
+ const L=tx.split(/\n/).map(x=>x.replace(/\s+/g," ").trim()).filter(Boolean),E=[],S=$("nfS");let dt=null;
+ L.forEach((l,i)=>{const hm=l.normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().match(new RegExp("^(\\d{1,2}) ("+MESN.join("|")+") (\\d{4})$"));
+  if(hm){dt=`${hm[3]}-${two(MESN.indexOf(hm[2])+1)}-${two(+hm[1])}`;return}
+  const m=l.match(/^(.+?) ([-+])\s?R\$\s?([\d.]+,\d{2})$/);
+  if(m&&dt&&m[2]==="-")E.push({nome:cpNome(m[1]),v:num(m[3]),d:dt,h:((L[i+1]||"").match(/(\d{2}:\d{2})/)||[])[1]||""})});
+ if(!E.length){S.textContent="Não achei compras nesse extrato.";return}
+ if(!$("cpF").hidden)cpRead();
+ const mt=CP.v&&E.find(e=>Math.abs(e.v-CP.v)<.005&&(!CP.dSet||e.d===CP.d));
+ if(mt){S.textContent=`Achei no extrato: ${mt.nome}. Dados completados.`;$("cpEx").innerHTML="";cpMerge({nome:mt.nome,d:mt.d,v:mt.v,fp:"vale"});return}
+ S.textContent="Extrato lido. Toque na compra que quer lançar.";
+ $("cpEx").innerHTML=E.slice(0,12).map((e,i)=>`<button type="button" class="opt" data-ex="${i}"><div><b>${esc(e.nome)}</b><small>${e.d.slice(8)}/${e.d.slice(5,7)} ${e.h} · R$ ${brl(e.v)}${cpAll().some(x=>Math.abs(x.v*(x.p||1)-e.v)<.005&&(x.d||x.dd)===+e.d.slice(8))?" · talvez já lançada":""}</small></div></button>`).join("");
+ on("#cpEx [data-ex]","click",b=>{const e=E[+b.dataset.ex];CP.nome=e.nome;CP.nomeMan=0;CP.d=e.d;CP.dSet=1;CP.v=e.v;CP.fp="vale";$("cpEx").innerHTML="";S.textContent="";cpShow()})}
+function cpText(tx,info){
+ const S=$("nfS"),g=re=>(tx.match(re)||[])[1];
+ if(/saldo total/i.test(tx)&&/compra no/i.test(tx))return cpExtrato(tx);
+ const o=info||{};
+ if(!o.ch){const m=tx.match(/(?:\d{4}\s?){10}\d{4}/),p=m?nfParse(m[0].replace(/\s/g,"")):null;if(p)Object.assign(o,{ch:p.ch,cnpj:p.cnpj,num:p.num,ser:p.ser})}
+ if(!o.cnpj)o.cnpj=g(/(\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2})/);
+ if(!o.d){const m=tx.match(/(\d{2})\/(\d{2})\/(\d{2,4})/);if(m)o.d=`${m[3].length===2?"20"+m[3]:m[3]}-${m[2]}-${m[1]}`}
+ if(!o.v){const s=g(/(?:valor total|total a pagar|valor pago|valor)\s*:?\s*(?:r\$)?\s*([\d.]+,\d{2})/i);if(s)o.v=num(s)}
+ if(!o.fp)o.fp=/sodexo|pluxee|alelo|ticket|voucher|alimenta[cç][aã]o|refei[cç][aã]o/i.test(tx)?"vale":/d[eé]bito/i.test(tx)?"deb":/cr[eé]dito/i.test(tx)?"cred":/\bpix\b/i.test(tx)?"pix":/dinheiro/i.test(tx)?"din":"";
+ if(!o.nome){const l=tx.split(/\n/).map(x=>x.replace(/\s+/g," ").trim()).find(x=>/(super|mercad|atacad|hiper|assa[ií]|comercial|ltda)/i.test(x)&&x.length<60);if(l)o.nome=cpNome(l)}
+ S.textContent=Object.values(o).some(Boolean)?"Arquivo lido. Confira os dados abaixo.":"Não achei dados nesse arquivo. Preencha à mão.";
+ cpMerge(o)}
+async function cpFile(f){
+ const S=$("nfS"),nm=f.name.toLowerCase();nfStop();$("nfV").hidden=true;S.textContent="Lendo o arquivo…";
+ try{let tx="",info=null;
+  if(/\.(mhtml?|html?)$/.test(nm)||/html|rfc822/.test(f.type)){const h=cpHtml(await f.text());info=cpNota(h);tx=h.replace(/<[^>]+>/g,"\n")}
+  else if(/pdf/.test(f.type)||/\.pdf$/.test(nm))tx=await cpPdf(f);
+  else if(/^image\//.test(f.type))tx=await cpOcr(f);
+  else{S.textContent="Esse tipo de arquivo não é lido. Use PDF, foto ou página salva.";return}
+  cpText(tx,info)}
+ catch(e){S.textContent=e&&e.message==="lib"?"Sem internet para carregar o leitor. Preencha à mão.":"Não consegui ler esse arquivo. Preencha à mão ou tente outro."}}
+function cpOpen(){
+ nfStop();const old=$("nfOv");if(old)old.remove();CP={};
  const o=document.createElement("div");o.id="nfOv";o.className="nfov";
- o.innerHTML=`<div class="nfbox"><div class="hhead"><b>Ler QR da nota</b><span class="sp"></span><button class="btn" id="nfX" type="button">Fechar</button></div><video id="nfV" playsinline muted></video><div class="note" id="nfS"></div><div id="nfR"></div><details><summary class="note">Colar o link ou a chave</summary><textarea id="nfT" rows="3" style="width:100%;margin-top:8px" placeholder="Cole aqui o link do QR ou a chave de 44 dígitos"></textarea><button class="btn" id="nfP" type="button">Ler texto</button></details></div>`;
+ o.innerHTML=`<div class="nfbox"><div class="hhead"><b>Comprovante</b><span class="sp"></span><button class="btn" id="nfX" type="button">Fechar</button></div>
+ <div class="nfacts"><button class="btnp" id="cpQ" type="button">Ler QR da nota</button><button class="btn" id="cpA" type="button">Anexar arquivo</button><button class="btn" id="cpM" type="button">Preencher à mão</button></div>
+ <input type="file" id="cpFi" hidden accept="image/*,application/pdf,.pdf,.html,.htm,.mhtml,.mht">
+ <video id="nfV" playsinline muted hidden></video><div class="note" id="nfS" style="margin:0"></div><div id="cpEx" class="cpf"></div>
+ <form id="cpF" class="cpf" hidden><div class="banner box warnban" id="cpDup" hidden></div>
+ <label class="field">Mercado<input id="cpN" list="cpNL" autocomplete="off" placeholder="Nome do mercado"></label><datalist id="cpNL">${[...new Set(Object.values(D.lojas||{}))].map(x=>`<option value="${esc(x)}">`).join("")}</datalist><div class="note" id="cpI" style="margin:0"></div>
+ <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><label class="field">Data<input id="cpD" type="date"></label><label class="field">Valor total (R$)<input id="cpV" inputmode="decimal" placeholder="0,00"></label></div>
+ <div><div class="note" style="margin:0">Forma de pagamento</div><div class="chips" id="cpP">${FPG.map(([k,l])=>`<button type="button" data-fp="${k}">${l}</button>`).join("")}</div></div>
+ <label class="field" id="cpCw" hidden>Cartão de crédito<select id="cpC"></select></label><label class="field" id="cpVw" hidden>Vale<select id="cpVv"></select></label>
+ <label class="field">Categoria<select id="cpCat">${CATS.map(([id,l])=>`<option value="${id}"${id==="mercado"?" selected":""}>${esc(l)}</option>`).join("")}</select></label>
+ <button class="btnp" id="cpGo" type="submit">Lançar</button></form></div>`;
  document.body.appendChild(o);
  const close=()=>{nfStop();o.remove()};$("nfX").onclick=close;o.onclick=e=>{if(e.target===o)close()};
- $("nfP").onclick=()=>{nfStop();$("nfV").hidden=true;nfShow($("nfT").value)};
- nfStart()}
+ $("cpQ").onclick=nfStart;$("cpA").onclick=()=>$("cpFi").click();$("cpM").onclick=()=>{nfStop();$("nfV").hidden=true;$("nfS").textContent="";cpMerge({})};
+ $("cpFi").onchange=e=>{const f=e.target.files[0];e.target.value="";if(f)cpFile(f)};
+ $("cpP").onclick=e=>{const b=e.target.closest("[data-fp]");if(b){cpRead();cpFp(b.dataset.fp)}};
+ $("cpF").onsubmit=e=>{e.preventDefault();cpRead();
+  const nome=CP.nome,v=CP.v,fp=CP.fp;
+  if(!nome){toast("Escreva o nome do mercado");return}if(!v){toast("Informe o valor total");return}if(!fp){toast("Escolha a forma de pagamento");return}
+  if(CP.ch&&cpAll().some(x=>x.ch===CP.ch)){toast("Esta nota já foi lançada");return}
+  const dt=(CP.d||isoD(new Date())).split("-"),dd=day(dt[2]),kk=mk(+dt[0],+dt[1]-1),cat=$("cpCat").value,und=snap(),it={id:uid(),by:me,at:now(),n:nome,v,d:dd,k:kk,fp};
+  if(cat)it.cat=cat;if(CP.ch)it.ch=CP.ch;
+  if(fp==="cred"){const cd=D.cards[+$("cpC").value];if(!cd){toast("Cadastre um cartão de crédito em Cartões");return}delete it.d;Object.assign(it,{p:1,dd,kc:kk,k:fatK(cd,dd,kk)});cd.lanc.push(it)}
+  else if(fp==="vale"){const vl=D.vales[+$("cpVv").value];if(!vl){toast("Cadastre um vale em Cartões");return}vl.lanc.push(it)}
+  else D.dia.push(it);
+  if(CP.cnpj){D.lojas=D.lojas||{};D.lojas[CP.cnpj]=nome}
+  addLog(`lançou ${nome} pelo comprovante`);toast(`${nome} lançado`,und);close();renderAll()};
+ $("nfS").textContent="Escolha como ler o comprovante."}
 /* lista de compras */
 function pLista(){
  const L=Object.entries(D.lista||{}).map(([id,x])=>({id,...x})).sort((a,b)=>(a.ok-b.ok)||((a.t||0)-(b.t||0))),ok=L.filter(x=>x.ok);
  $("v-lista").innerHTML=PH("shopping_cart","Lista de compras","A mesma lista para toda a família, atualizada na hora")+
- `<section class="c box"><div class="h">Nota fiscal <small>· teste</small></div><div class="note" style="margin:0 0 8px">Aponte a câmera para o QR da nota do mercado.</div><button class="btnp" id="nfGo" type="button">Ler QR da nota</button></section>`+
+ `<section class="c box"><div class="h">Comprovante</div><div class="note" style="margin:0 0 8px">Leia o QR da nota do mercado, anexe a nota ou preencha à mão.</div><button class="btnp" id="nfGo" type="button">Abrir comprovante</button></section>`+
  `<section class="c box"><form id="fli" class="form f2"><label class="field">Item<input id="lin" required placeholder="Ex.: Café" autocomplete="off"></label><button class="btnp">Adicionar</button></form>
  <div style="margin-top:8px">${L.length?L.map(x=>`<div class="bill${x.ok?" done":""}"><button class="tg" data-li="${x.id}"><span class="ck"></span><span class="nm">${esc(x.n)}${x.by&&x.by!==me&&D.people.some(p=>p.id===x.by)?`<small>pedido por ${N(x.by)}</small>`:""}</span></button><button class="ed" data-lx="${x.id}" aria-label="Remover ${esc(x.n)}">×</button></div>`).join(""):`<div class="note">A lista está vazia.</div>`}</div></section>
  ${ok.length?`<section class="c box"><div class="h">Fechar a compra <small>· ${ok.length} ${ok.length>1?"itens marcados":"item marcado"}</small></div><form id="ffc" class="form f3"><label class="field">Valor pago (R$)<input id="fcv" inputmode="decimal" required placeholder="0,00"></label><label class="field">Lançar como<select id="fcc"><option value="-1">Gasto do dia</option>${(D.vales||[]).map((v,i)=>`<option value="v${i}">No vale ${esc(v.emp)}</option>`).join("")}${D.cards.map((c,i)=>`<option value="${i}">Compra no ${esc(c.bk)}</option>`).join("")}</select></label><button class="btnp">Fechar compra</button></form><div class="note">Os itens marcados saem da lista e a compra entra em Mercado.</div></section>`:""}`;
- $("nfGo").onclick=nfOpen;
+ $("nfGo").onclick=cpOpen;
  $("fli").onsubmit=e=>{e.preventDefault();const n=$("lin").value.trim();if(!n)return;if(!D.lista)D.lista={};D.lista[uid()]={n:n.replace(/^./,c=>c.toUpperCase()),ok:0,t:now(),by:me};renderAll();const i=$("lin");if(i)i.focus()};
  on("[data-li]","click",b=>{const x=D.lista[b.dataset.li];if(x){x.ok=x.ok?0:1;renderAll()}});
  on("[data-lx]","click",b=>{const und=snap(),x=D.lista[b.dataset.lx];delete D.lista[b.dataset.lx];toast(`${x?x.n:"Item"} removido`,und);renderAll()});
@@ -2476,7 +2569,8 @@ const HELP=[
  ["Cadastrar um cartão","cartoes",["Abra Cartões e desça até Novo cartão.","Informe o banco, o tipo (crédito, débito ou os dois), o nome do cartão (ex.: Gold), o dia em que a fatura fecha, o dia do vencimento e o limite. No débito, só banco e nome importam.","Toque em Adicionar."],"O dia de fechamento define em qual fatura cada compra entra."],
  ["Lançar uma compra no cartão","cartoes",["Toque na setinha ao lado de + Adicionar e escolha No cartão.","Informe descrição, valor total, parcelas, o cartão e o dia da compra.","O app mostra em qual fatura a compra vai entrar. Toque em Adicionar."],"As próximas faturas e o limite livre são calculados pelas parcelas."],
  ["Vale alimentação e refeição","cartoes",["Em Cartões, desça até Vales alimentação e refeição.","Escolha a empresa (Pluxee, VR, Alelo, Ticket…), o tipo, de quem é, o dia e o valor da recarga e o saldo atual. Toque em Adicionar.","Para lançar uma compra no vale, use Adicionar → No vale, ou escreva vale no lançamento rápido: mercado 85 vale.","O saldo cai a cada compra, e a recarga entra sozinha no dia certo."],"Os gastos com o vale aparecem nas categorias, mas não saem do saldo do salário. Se o saldo ficar diferente do app do vale, toque em Corrigir saldo."],
- ["Lançar por foto ou print","cartoes",["Toque na setinha ao lado de + Adicionar e escolha Por foto ou print.","Tire uma foto do comprovante ou escolha um print da fatura no app do banco.","Escolha onde lançar: gasto do dia, cartão ou vale.","Confira o que foi lido, corrija se precisar e toque em Lançar."],"Na primeira vez, o leitor é baixado (uns 10 MB). Prints e comprovantes nítidos dão os melhores resultados."],
+ ["Lançar pelo comprovante","lista",["Toque em + Adicionar e em Comprovante (ou abra Lista de compras).","Escolha Ler QR da nota, Anexar arquivo (foto, PDF, página salva da nota ou extrato do vale) ou Preencher à mão.","Confira o mercado, a data e o valor total, e escolha a forma de pagamento: Pix, Débito, Crédito, Vale alimentação ou Dinheiro.","Toque em Lançar."],"Se a nota já foi lançada, o app avisa e não lança de novo. Se o app não souber o nome do mercado pelo CNPJ, escreva uma vez e ele guarda."],
+ ["Lançar por foto ou print","cartoes",["Em Cartões, toque em Lançar por foto.","Tire uma foto do comprovante ou escolha um print da fatura no app do banco.","Escolha onde lançar: gasto do dia, cartão ou vale.","Confira o que foi lido, corrija se precisar e toque em Lançar."],"Na primeira vez, o leitor é baixado (uns 10 MB). Prints e comprovantes nítidos dão os melhores resultados."],
  ["Salário do fim do mês e sobra do mês anterior","fluxo",["O salário que cai a partir do dia 27 conta para o mês seguinte, porque é com ele que vocês pagam o próximo mês. O adiantamento do dia 15 continua no mês em que cai.","Para mudar o dia, abra Nossa renda → Pessoas e valores e altere o campo Salário que cai a partir do dia… (0 desliga).","Cada mês começa com o que sobrou do anterior. No Fluxo de caixa aparecem Começou com, Receitas, Despesas e Termina com.","Se o valor de começo não bater, toque em ajustar e informe quanto você tinha no dia 1. Os meses seguintes partem desse valor."],"O Ainda dá para gastar também conta a sobra do mês anterior."],
  ["Conferir o mês com os bancos","fluxo",["Importe os extratos de todas as suas contas (CSV ou OFX) cobrindo o mês inteiro.","No Fluxo de caixa, o card Conferência com os bancos mostra quanto havia no dia 1, o que entrou, o que saiu e quanto havia no fim, exatamente como nos bancos.","Se aparecer diferença, abra as listas: linhas do extrato que não estão no app (toque em Lançar) e lançamentos do app que não estão no extrato (toque no ✎ para corrigir ou excluir).","Transferências entre as suas contas e o salário do fim do mês são tratados sozinhos."],"Quando o extrato cobre o dia 1, o mês começa com o saldo real dos bancos."],
  ["Ver o saldo dos bancos e o extrato","extratos",["Importe o extrato da conta em CSV ou OFX (Fluxo de caixa → Importar extrato). O app pega o saldo que vem no arquivo; confira ou corrija no campo Saldo hoje no banco.","Na Visão geral, o card Meus bancos mostra o saldo de cada banco e o total.","Lançou um gasto depois? Escolha o banco no lançamento (ou escreva o nome do banco no lançamento rápido: padaria 12 inter) e o saldo vira estimado até o próximo extrato.","Em Meus extratos, veja as linhas iguais às do banco, com o saldo linha a linha, e corrija o saldo se não bater."],"Os saldos e extratos ficam só no seu perfil: a família não vê. Agência e número da conta não são guardados."],
@@ -2494,7 +2588,7 @@ const HELP=[
  ["Recuperar dados com as cópias de segurança","renda",["O app guarda uma cópia por dia na nuvem, dos últimos 7 dias.","Em Nossa renda, no card Cópias de segurança, toque em Restaurar na data que quiser.","Também dá para baixar uma cópia em arquivo e restaurar depois."],""],
  ["Ver o detalhe de uma categoria","fluxo",["Na Visão geral, em Onde foi o dinheiro, ou no Fluxo de caixa, em Gastos por categoria, toque numa categoria.","Veja o total, a comparação com a média, quem gastou, os últimos 12 meses com a linha de tendência e tudo o que entrou.","Algo na categoria errada? Toque no ✎ e escolha a certa. O app aprende pelo nome."],"A linha tracejada mostra se o gasto vem subindo ou caindo."],
  ["Controlar os gastos do carro","visao",["Ao lançar um abastecimento, preencha a quilometragem do painel e os litros. Os campos aparecem quando o gasto é do carro.","Abra a categoria Carro para ver o custo no mês, no ano e por km, o consumo e a comparação com o Uber.","Em Lembretes do carro, cadastre IPVA, licenciamento, seguro e revisão, por data ou por km."],"O sino avisa 15 dias antes da data e quando faltarem 500 km."],
- ["Lançar pedidos do iFood","visao",["Toque na setinha ao lado de + Adicionar e escolha Por foto ou print.","Em Lançar como, escolha Pedidos do iFood e escolha o print da lista de pedidos.","Confira e toque em Lançar. Os pedidos que já estão na fatura como IFD* só ganham o nome do restaurante, sem duplicar."],"Na categoria Delivery aparecem os pedidos, o valor médio e os dias em que vocês mais pedem."],
+ ["Lançar pedidos do iFood","visao",["Em Cartões, toque em Lançar por foto.","Em Lançar como, escolha Pedidos do iFood e escolha o print da lista de pedidos.","Confira e toque em Lançar. Os pedidos que já estão na fatura como IFD* só ganham o nome do restaurante, sem duplicar."],"Na categoria Delivery aparecem os pedidos, o valor médio e os dias em que vocês mais pedem."],
  ["Ler o contracheque","renda",["Abra Nossa renda e toque em Ler contracheque.","Escolha a foto ou o print do recibo de pagamento.","Confira proventos e descontos. O app mostra se os valores conferem com o líquido.","Toque em Salvar contracheque. As parcelas dos consignados são conferidas sozinhas."],"Em mês de férias, o salário previsto não muda. O FGTS aparece só como informação."],
  ["Salário em duas datas (adiantamento)","renda",["Em Nossa renda, em Pessoas e valores, informe o dia do adiantamento (ex.: 15), o valor previsto e o dia do restante (ex.: 30). Toque em Salvar.","Se o dia cair em fim de semana ou feriado (nacional, de Roraima ou de Boa Vista), o app usa o dia útil anterior.","Quando o contracheque do mês é lido, os valores previstos são trocados pelos reais."],""],
  ["Cadastrar um empréstimo ou consignado","patrimonio",["Abra Patrimônio e toque em + Empréstimo ou consignado. Em Como é pago, escolha Desconto no contracheque (consignado) ou Débito na conta do banco (ex.: Inter).","Escolha o print da tela Detalhes do empréstimo do app do banco, ou preencha à mão.","Informe o valor da parcela e quantas parcelas faltam: o último desconto é calculado sozinho (ou informe o último desconto e o app conta as que faltam). Total de parcelas e valor liberado são opcionais, para mostrar as já pagas e os juros.","Toque em Cadastrar dívida. Para corrigir depois, toque em ✎ Editar no card.","A parcela do consignado é abatida ao ler o contracheque do mês. A do banco é abatida ao importar o extrato com o débito, que entra como Empréstimo Inter · parcela 8 de 12. No Fluxo de caixa, o consignado aparece como linha informativa, sem somar de novo."],"O app mostra quantas parcelas faltam, quanto é juro e em que mês o salário sobe."],
